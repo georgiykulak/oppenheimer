@@ -1,0 +1,7 @@
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
+
+#define VISUAL_DEBUGGING 1
+//#define EUCLIDEAN_DISTANCE_FORMULA 1
+
+#endif // CONFIG_HPP
