@@ -55,3 +55,6 @@ compile_commands.json
 
 # Build directories
 [Bb]uild
+
+# Links
+app/logic/simulation
