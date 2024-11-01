@@ -37,7 +37,7 @@ void LogicVectorEdit::setEnabled(bool enable)
 void LogicVectorEdit::setMaximumDigitCount(int digitCount)
 {
     m_digitCount = digitCount;
-    m_maximumNumber = std::pow(2, digitCount);
+    m_maximumNumber = 1 << digitCount; // 2 ^ N, N = digitCount
 }
 
 void LogicVectorEdit::setNotation(bool isBinary)

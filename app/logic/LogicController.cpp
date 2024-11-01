@@ -108,7 +108,8 @@ void LogicController::StartFunctionalFaultSimulation(quint64 elementId)
                 "element with id =" << elementId;
 
     const auto qNumber = element->second->GetNumParam();
-    const auto inputVectorSize = element->second->GetInputsSize();
+    const auto inputsSize = element->second->GetInputsSize();
+    const auto inputVectorSize = 1 << inputsSize; // 2 ^ N, N = inputsSize
 
     DHQTable dhqTable;
 

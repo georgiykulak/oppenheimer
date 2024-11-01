@@ -69,7 +69,9 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     m_lineEdit->move(25, 45);
     m_lineEdit->show();
     m_lineEdit->setEnabled(numParamEnabled);
-    m_lineEdit->setMaximumDigitCount(endPoints.size());
+
+    const auto vectorSize = 1 << endPoints.size(); // 2 ^ N
+    m_lineEdit->setMaximumDigitCount(vectorSize);
     m_lineEdit->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(m_lineEdit, &LogicVectorEdit::numberChangedAndValid,
@@ -323,7 +325,8 @@ void CircuitElement::SetInputsNumber(int size)
         DrawToPixmap();
     }
 
-    m_lineEdit->setMaximumDigitCount(m_endingConnectors.size());
+    const auto vectorSize = 1 << m_endingConnectors.size(); // 2 ^ N
+    m_lineEdit->setMaximumDigitCount(vectorSize);
 }
 
 void CircuitElement::SetInputsNumberAndRebook(int size)
