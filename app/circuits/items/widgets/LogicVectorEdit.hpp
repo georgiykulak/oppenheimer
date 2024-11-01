@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-class QLineEdit;
+class QTextEdit;
 
 class LogicVectorEdit : public QWidget
 {
@@ -29,7 +29,7 @@ protected:
 private:
     static constexpr QSize m_margin = QSize(4, 4);
 
-    QLineEdit* m_lineEdit;
+    QTextEdit* m_textEdit;
     int m_digitCount = 1;
     int m_maximumNumber = 1;
     bool m_valid = true;
@@ -38,7 +38,7 @@ private:
     void drawValidityFrame(QPainter& painter) const;
 
 private slots:
-    void onTextChanged(const QString& newText);
+    void onTextChanged();
 };
 
 #endif // LOGICVECTOREDIT_HPP

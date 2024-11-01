@@ -1,6 +1,8 @@
 #include "LogicVectorEdit.hpp"
 
 #include <QLineEdit>
+
+#include <QTextEdit>
 #include <QPainter>
 #include <QResizeEvent>
 #include <QDebug>
@@ -10,28 +12,28 @@
 LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     : QWidget{parent}
 {
-    m_lineEdit = new QLineEdit(this);
+    QLineEdit l;
+    m_textEdit = new QTextEdit(this);
     QString styleSheet;
     styleSheet += "background-color: " + QColor(Qt::white).name();
     styleSheet += ";color: " + QColor(Qt::black).name();
-    m_lineEdit->setStyleSheet(styleSheet);
-    m_lineEdit->setFrame(false);
-    m_lineEdit->move(2, 2);
+    m_textEdit->setStyleSheet(styleSheet);
+    m_textEdit->move(2, 2);
 
-    setSizePolicy(m_lineEdit->sizePolicy());
+    setSizePolicy(m_textEdit->sizePolicy());
 
-    connect(m_lineEdit, &QLineEdit::textChanged,
+    connect(m_textEdit, &QTextEdit::textChanged,
             this, &LogicVectorEdit::onTextChanged);
 }
 
 QSize LogicVectorEdit::sizeHint() const
 {
-    return m_lineEdit->sizeHint() + m_margin;
+    return m_textEdit->sizeHint() + m_margin;
 }
 
 void LogicVectorEdit::setEnabled(bool enable)
 {
-    m_lineEdit->setEnabled(enable);
+    m_textEdit->setEnabled(enable);
 }
 
 void LogicVectorEdit::setMaximumDigitCount(int digitCount)
@@ -46,7 +48,8 @@ void LogicVectorEdit::setNotation(bool isBinary)
         return;
 
     m_isBinaryNotation = isBinary;
-    onTextChanged(m_lineEdit->text());
+    onTextChanged();
+    //m_textEdit->toPlainText()
 }
 
 bool LogicVectorEdit::IsNotationBinary() const
@@ -65,11 +68,11 @@ void LogicVectorEdit::setNumber(int number)
             number >>= 1;
         }
         std::reverse(numVector.begin(), numVector.end());
-        m_lineEdit->setText(numVector);
+        m_textEdit->setText(numVector);
     }
     else
     {
-        m_lineEdit->setText(QString::number(number));
+        m_textEdit->setText(QString::number(number));
     }
 }
 
@@ -83,7 +86,7 @@ void LogicVectorEdit::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
 
-    m_lineEdit->resize(event->size() - m_margin);
+    m_textEdit->resize(event->size() - m_margin);
 }
 
 void LogicVectorEdit::drawValidityFrame(QPainter &painter) const
@@ -104,8 +107,9 @@ void LogicVectorEdit::drawValidityFrame(QPainter &painter) const
     painter.drawRoundedRect(0, 0, width(), height(), 17, 17, Qt::RelativeSize);
 }
 
-void LogicVectorEdit::onTextChanged(const QString &newText)
+void LogicVectorEdit::onTextChanged()
 {
+    auto newText = m_textEdit->toPlainText();
     qDebug() << "LogicVectorEdit onTextChanged: new text =" << newText << " maximum number =" << m_maximumNumber;
 
     bool ok = false;
