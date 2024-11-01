@@ -605,7 +605,23 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                     this, [this, circuitOutput] (bool) {
                         emit circuitOutput->closeDialogs();
 
-                        // TODO: Add deleting code here
+                        qDebug() << "Action Delete for circuit input invoked, ID ="
+                                 << circuitOutput->GetId();
+
+                        const auto uid = circuitOutput->GetId();
+                        emit removeItem(uid);
+                        m_idHandler.RemoveUid(circuitOutput->GetId());
+                        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
+
+                        const auto connId = circuitOutput->GetEndPoint().connId;
+                        RemoveConnectionById(connId);
+
+                        QRect area(circuitOutput->pos(), circuitOutput->GetSize());
+                        m_areaManager.ClearArea(area);
+
+                        circuitOutput->close();
+
+                        update();
                     });
 
             menu->addAction(actionChangeColor);
