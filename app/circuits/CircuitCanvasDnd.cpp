@@ -482,21 +482,33 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionChangeColor = new QAction("Change Color", this);
             connect(actionChangeColor, &QAction::triggered,
                     this, [this, circuitInput] (bool) {
-                        auto* d = new QColorDialog(this);
-                        d->setOptions(QColorDialog::DontUseNativeDialog);
-                        d->show();
-                        d->setAttribute(Qt::WA_DeleteOnClose);
+                        emit circuitInput->closeDialogs();
 
-                        connect(d, &QColorDialog::colorSelected,
+                        auto* colorDialog = new QColorDialog(this);
+                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                        colorDialog->show();
+                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                        connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitInput, &CircuitInput::SetColor);
+                        connect(circuitInput, &CircuitInput::closeDialogs,
+                                colorDialog, &QColorDialog::close);
+                    });
+
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitInput] (bool) {
+                        emit circuitInput->closeDialogs();
+
+                        // TODO: Add deleting code here
                     });
 
             menu->addAction(actionChangeColor);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
-            // TODO: Add combobox to delete item
         }
 
         return;
@@ -556,21 +568,33 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionChangeColor = new QAction("Change Color", this);
             connect(actionChangeColor, &QAction::triggered,
                     this, [this, circuitOutput] (bool) {
-                        auto* d = new QColorDialog(this);
-                        d->setOptions(QColorDialog::DontUseNativeDialog);
-                        d->show();
-                        d->setAttribute(Qt::WA_DeleteOnClose);
+                        emit circuitOutput->closeDialogs();
 
-                        connect(d, &QColorDialog::colorSelected,
+                        auto* colorDialog = new QColorDialog(this);
+                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                        colorDialog->show();
+                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                        connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitOutput, &CircuitOutput::SetColor);
+                        connect(circuitOutput, &CircuitOutput::closeDialogs,
+                                colorDialog, &QColorDialog::close);
+                    });
+
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitOutput] (bool) {
+                        emit circuitOutput->closeDialogs();
+
+                        // TODO: Add deleting code here
                     });
 
             menu->addAction(actionChangeColor);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
-            // TODO: Add combobox to delete item
         }
 
         return;
@@ -827,10 +851,19 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
             });
 
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitElement] (bool) {
+                        emit circuitElement->closeDialogs();
+
+                        // TODO: Add deleting code here
+            });
+
             menu->addAction(actionSimulate);
             menu->addAction(actionChangeColor);
             menu->addAction(actionChangeSize);
             menu->addAction(actionDuplicate);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
