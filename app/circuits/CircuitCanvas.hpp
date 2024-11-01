@@ -23,6 +23,7 @@ signals:
     void addNewInputItem(quint64 id);
     void addNewOutputItem(quint64 id);
     void addNewElementItem(quint64 id, std::size_t inputsSize);
+    void removeItem(quint64 id);
     void changeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void setInputOrderIdHint(int orderId);
     void setOutputOrderIdHint(int orderId);

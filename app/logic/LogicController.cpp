@@ -19,7 +19,7 @@ void LogicController::AddNewInputItem(quint64 id)
     m_items.insert(std::make_pair(id, item));
 
     qDebug() << "AddNewInputItem: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items[id]->GetItemType();
+             << "type =" << m_items.at(id)->GetItemType();
 }
 
 void LogicController::AddNewOutputItem(quint64 id)
@@ -28,7 +28,7 @@ void LogicController::AddNewOutputItem(quint64 id)
     m_items.insert(std::make_pair(id, item));
 
     qDebug() << "AddNewOutputItem: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items[id]->GetItemType();
+             << "type =" << m_items.at(id)->GetItemType();
 }
 
 void LogicController::AddNewElementItem(quint64 id, std::size_t inputsSize)
@@ -38,7 +38,19 @@ void LogicController::AddNewElementItem(quint64 id, std::size_t inputsSize)
     m_items.insert(std::make_pair(id, item));
 
     qDebug() << "AddNewElementItem: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items[id]->GetItemType();
+             << "type =" << m_items.at(id)->GetItemType();
+}
+
+void LogicController::RemoveItem(quint64 id)
+{
+    if (!m_items.contains(id))
+    {
+        return;
+    }
+
+    qDebug() << "RemoveItem: size =" << m_items.size() << "id =" << id
+             << "type =" << m_items.at(id)->GetItemType();
+    m_items.erase(id);
 }
 
 void LogicController::ChangeElementItemInputsSize(quint64 id, std::size_t inputsSize)

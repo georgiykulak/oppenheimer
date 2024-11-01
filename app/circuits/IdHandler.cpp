@@ -15,11 +15,22 @@ quint64 IdHandler::NewUid()
     return uid;
 }
 
+void IdHandler::RemoveUid(quint64 id)
+{
+    if (m_uids.contains(id))
+    {
+        return;
+    }
+
+    m_uids.erase(id);
+}
+
 bool IdHandler::NewInputOrderId(int orderId)
 {
-    auto iter = m_inputOrderIds.find(orderId);
-    if (iter != m_inputOrderIds.end())
+    if (m_inputOrderIds.contains(orderId))
+    {
         return false;
+    }
 
     m_inputOrderIds.insert(orderId);
 
@@ -31,11 +42,22 @@ bool IdHandler::NewInputOrderId(int orderId)
     return true;
 }
 
+void IdHandler::RemoveInputOrderId(int orderId)
+{
+    if (!m_inputOrderIds.contains(orderId))
+    {
+        return;
+    }
+
+    m_inputOrderIds.erase(orderId);
+}
+
 bool IdHandler::NewOutputOrderId(int orderId)
 {
-    auto iter = m_outputOrderIds.find(orderId);
-    if (iter != m_outputOrderIds.end())
+    if (m_outputOrderIds.contains(orderId))
+    {
         return false;
+    }
 
     m_outputOrderIds.insert(orderId);
 
@@ -47,11 +69,22 @@ bool IdHandler::NewOutputOrderId(int orderId)
     return true;
 }
 
+void IdHandler::RemoveOutputOrderId(int orderId)
+{
+    if (!m_outputOrderIds.contains(orderId))
+    {
+        return;
+    }
+
+    m_outputOrderIds.erase(orderId);
+}
+
 bool IdHandler::NewElementOrderId(int orderId)
 {
-    auto iter = m_elementOrderIds.find(orderId);
-    if (iter != m_elementOrderIds.end())
+    if (m_elementOrderIds.contains(orderId))
+    {
         return false;
+    }
 
     m_elementOrderIds.insert(orderId);
 
@@ -61,6 +94,16 @@ bool IdHandler::NewElementOrderId(int orderId)
     ++m_lastElementOrderId;
 
     return true;
+}
+
+void IdHandler::RemoveElementOrderId(int orderId)
+{
+    if (!m_elementOrderIds.contains(orderId))
+    {
+        return;
+    }
+
+    m_elementOrderIds.erase(orderId);
 }
 
 quint64 IdHandler::ContainsUid(quint64 uid) const

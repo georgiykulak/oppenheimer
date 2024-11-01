@@ -31,6 +31,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_canvas, &CircuitCanvas::addNewElementItem,
             m_logicController, &LogicController::AddNewElementItem);
 
+    connect(m_canvas, &CircuitCanvas::removeItem,
+            m_logicController, &LogicController::RemoveItem);
+
     connect(m_canvas, &CircuitCanvas::changeElementItemInputsSize,
             m_logicController, &LogicController::ChangeElementItemInputsSize);
 
