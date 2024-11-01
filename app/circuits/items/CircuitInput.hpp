@@ -29,6 +29,9 @@ public:
     const StartingPoint& GetStartPoint() const;
     void RemoveConnectionId(quint64 connId);
 
+signals:
+    bool closeDialogs() override;
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 

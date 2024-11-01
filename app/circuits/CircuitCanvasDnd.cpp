@@ -482,21 +482,34 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionChangeColor = new QAction("Change Color", this);
             connect(actionChangeColor, &QAction::triggered,
                     this, [this, circuitInput] (bool) {
-                        auto* d = new QColorDialog(this);
-                        d->setOptions(QColorDialog::DontUseNativeDialog);
-                        d->show();
-                        d->setAttribute(Qt::WA_DeleteOnClose);
+                        emit circuitInput->closeDialogs();
 
-                        connect(d, &QColorDialog::colorSelected,
+                        auto* colorDialog = new QColorDialog(this);
+                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                        colorDialog->show();
+                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                        connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitInput, &CircuitInput::SetColor);
+                        connect(circuitInput, &CircuitInput::closeDialogs,
+                                colorDialog, &QColorDialog::close);
+                    });
+
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitInput] (bool) {
+                        qDebug() << "Action Delete for circuit input invoked, ID ="
+                                 << circuitInput->GetId();
+
+                        RemoveCircuitItem(circuitInput);
                     });
 
             menu->addAction(actionChangeColor);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
-            // TODO: Add combobox to delete item
         }
 
         return;
@@ -556,21 +569,34 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionChangeColor = new QAction("Change Color", this);
             connect(actionChangeColor, &QAction::triggered,
                     this, [this, circuitOutput] (bool) {
-                        auto* d = new QColorDialog(this);
-                        d->setOptions(QColorDialog::DontUseNativeDialog);
-                        d->show();
-                        d->setAttribute(Qt::WA_DeleteOnClose);
+                        emit circuitOutput->closeDialogs();
 
-                        connect(d, &QColorDialog::colorSelected,
+                        auto* colorDialog = new QColorDialog(this);
+                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                        colorDialog->show();
+                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                        connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitOutput, &CircuitOutput::SetColor);
+                        connect(circuitOutput, &CircuitOutput::closeDialogs,
+                                colorDialog, &QColorDialog::close);
+                    });
+
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitOutput] (bool) {
+                        qDebug() << "Action Delete for circuit input invoked, ID ="
+                                 << circuitOutput->GetId();
+
+                        RemoveCircuitItem(circuitOutput);
                     });
 
             menu->addAction(actionChangeColor);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
-            // TODO: Add combobox to delete item
         }
 
         return;
@@ -827,10 +853,20 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
             });
 
+            QAction* actionDelete = new QAction("Delete", this);
+            connect(actionDelete, &QAction::triggered,
+                    this, [this, circuitElement] (bool) {
+                        qDebug() << "Action Delete for circuit input invoked, ID ="
+                                 << circuitElement->GetId();
+
+                        RemoveCircuitItem(circuitElement);
+            });
+
             menu->addAction(actionSimulate);
             menu->addAction(actionChangeColor);
             menu->addAction(actionChangeSize);
             menu->addAction(actionDuplicate);
+            menu->addAction(actionDelete);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
@@ -983,6 +1019,71 @@ void CircuitCanvas::AcceptDndEvent(QDropEvent* baseDndEvent)
     }
 }
 
+void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    emit item->closeDialogs();
+
+    const auto uid = item->GetId();
+    emit removeItem(uid);
+    m_idHandler.RemoveUid(item->GetId());
+
+    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
+    {
+        m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
+
+        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
+        for (const auto& connId : connIdSet)
+        {
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
+    {
+        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
+
+        const auto connId = circuitOutput->GetEndPoint().connId;
+        RemoveConnectionById(connId);
+    }
+    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
+    {
+        m_idHandler.RemoveElementOrderId(item->GetOrderId());
+
+        const auto& startPoints = circuitElement->GetStartPoints();
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = circuitElement->GetEndPoints();
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else
+    {
+        throw std::runtime_error("ItemType is unknown, type = "
+                                 + std::to_string(item->GetItemType()));
+    }
+
+    QRect area(item->pos(), item->GetSize());
+    m_areaManager.ClearArea(area);
+
+    item->close();
+
+    update();
+}
+
 void CircuitCanvas::RemoveConnectionById(quint64 connId)
 {
     qDebug() << "CircuitCanvas::RemoveConnectionById: Trying to remove connection, ID ="
@@ -1004,6 +1105,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                          << "item ID =" << circuitInput->GetId();
                 circuitInput->RemoveConnectionId(connId);
             }
+
+            continue;
         }
 
         CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(obj);
@@ -1015,6 +1118,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                          << "item ID =" << circuitOutput->GetId();
                 circuitOutput->RemoveConnectionId(connId);
             }
+
+            continue;
         }
 
         CircuitElement* circuitElement = qobject_cast<CircuitElement*>(obj);
@@ -1043,6 +1148,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                     break;
                 }
             }
+
+            continue;
         }
     }
 }

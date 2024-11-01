@@ -1,4 +1,5 @@
 #include "CircuitCanvas.hpp"
+#include "items/BaseCircuitItem.hpp"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -37,9 +38,11 @@ void CircuitCanvas::CreateNewCircuit()
 
     for (auto* obj : childList)
     {
-        QWidget* childLabel = qobject_cast<QWidget*>(obj);
-        if (childLabel)
-            childLabel->close();
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
+        {
+            RemoveCircuitItem(item);
+        }
     }
 
     m_idHandler.Clear();

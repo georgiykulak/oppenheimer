@@ -31,6 +31,9 @@ public:
     virtual void SetNumberParameter(int)   { WarnNotImplemented();   }
     virtual int GetNumberParameter() const { WarnNotImplemented(-1); }
 
+signals:
+    virtual bool closeDialogs();
+
 private:
     quint64 m_id;
     QSize m_size;

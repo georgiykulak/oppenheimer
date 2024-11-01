@@ -19,6 +19,7 @@ public:
     void SetMatrixSize(QSize windowSize);
     bool TryBookArea(const QRect& region,
                      const std::vector<std::pair<QPoint, QPoint>>& oldNewPoints);
+    void ClearArea(const QRect& region);
     void ClearAndBackupArea(const QRect& region);
     void ClearMatrix();
 

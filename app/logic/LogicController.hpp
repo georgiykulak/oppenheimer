@@ -23,8 +23,9 @@ signals:
 
 public slots:
     void AddNewInputItem(quint64 id);
-    void AddNewOutputItem(quint64);
+    void AddNewOutputItem(quint64 id);
     void AddNewElementItem(quint64 id, std::size_t inputsSize);
+    void RemoveItem(quint64 id);
     void ChangeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void ClearAllItems();
     void AddNewConnection(quint64 idStart, quint64 idEnd);

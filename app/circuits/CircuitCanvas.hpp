@@ -6,6 +6,8 @@
 
 #include <QWidget>
 
+class BaseCircuitItem;
+
 class CircuitCanvas : public QWidget
 {
     Q_OBJECT
@@ -23,6 +25,7 @@ signals:
     void addNewInputItem(quint64 id);
     void addNewOutputItem(quint64 id);
     void addNewElementItem(quint64 id, std::size_t inputsSize);
+    void removeItem(quint64 id);
     void changeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void setInputOrderIdHint(int orderId);
     void setOutputOrderIdHint(int orderId);
@@ -53,6 +56,7 @@ private:
     void ProcessDropEvent(QDropEvent *event);
     void ProcessMousePressEvent(QMouseEvent *event);
     void AcceptDndEvent(QDropEvent* baseDndEvent);
+    void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
 };
 

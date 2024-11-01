@@ -11,9 +11,13 @@ class IdHandler : public QObject
 public:
     explicit IdHandler(QObject *parent = nullptr);
     quint64 NewUid();
+    void RemoveUid(quint64 id);
     bool NewInputOrderId(int orderId);
+    void RemoveInputOrderId(int orderId);
     bool NewOutputOrderId(int orderId);
+    void RemoveOutputOrderId(int orderId);
     bool NewElementOrderId(int orderId);
+    void RemoveElementOrderId(int orderId);
     quint64 ContainsUid(quint64 uid) const;
     bool ContainsInputOrderId(int orderId) const;
     bool ContainsOutputOrderId(int orderId) const;

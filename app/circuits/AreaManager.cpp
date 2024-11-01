@@ -136,6 +136,24 @@ bool AreaManager::TryBookArea(
     return true;
 }
 
+void AreaManager::ClearArea(const QRect &region)
+{
+    // Closest access point indexes
+    IndexRegion idxReg;
+
+    auto handleBookStatus = [](BookStatus, IndexPoint){ return false; };
+    FindSubmatrix(region, idxReg, handleBookStatus);
+
+    qDebug() << "Found submatrix for clearing, region = [{"
+             << idxReg.startI << "," << idxReg.startJ << "}, {"
+             << idxReg.endI << "," << idxReg.endJ << "}]";
+
+    // On this stage the area booking can be done
+    for (std::size_t i = idxReg.startI; i <= idxReg.endI; ++i)
+        for (std::size_t j = idxReg.startJ; j <= idxReg.endJ; ++j)
+            m_matrix[i][j] = BookStatus::Free;
+}
+
 void AreaManager::ClearAndBackupArea(const QRect& region)
 {
     // Closest access point indexes
@@ -151,7 +169,7 @@ void AreaManager::ClearAndBackupArea(const QRect& region)
     m_dndBackup->ClearBackup();
     m_dndBackup->BackupOldPosItem(idxReg);
 
-    // On this stage the are book can be done
+    // On this stage the area booking can be done
     for (std::size_t i = idxReg.startI; i <= idxReg.endI; ++i)
         for (std::size_t j = idxReg.startJ; j <= idxReg.endJ; ++j)
             m_matrix[i][j] = BookStatus::Free;
