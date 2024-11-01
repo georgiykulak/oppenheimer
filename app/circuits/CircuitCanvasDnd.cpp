@@ -498,28 +498,10 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionDelete = new QAction("Delete", this);
             connect(actionDelete, &QAction::triggered,
                     this, [this, circuitInput] (bool) {
-                        emit circuitInput->closeDialogs();
-
                         qDebug() << "Action Delete for circuit input invoked, ID ="
                                  << circuitInput->GetId();
 
-                        const auto uid = circuitInput->GetId();
-                        emit removeItem(uid);
-                        m_idHandler.RemoveUid(circuitInput->GetId());
-                        m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
-
-                        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
-                        for (const auto& connId : connIdSet)
-                        {
-                            RemoveConnectionById(connId);
-                        }
-
-                        QRect area(circuitInput->pos(), circuitInput->GetSize());
-                        m_areaManager.ClearArea(area);
-
-                        circuitInput->close();
-
-                        update();
+                        RemoveCircuitItem(circuitInput);
                     });
 
             menu->addAction(actionChangeColor);
@@ -603,25 +585,10 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionDelete = new QAction("Delete", this);
             connect(actionDelete, &QAction::triggered,
                     this, [this, circuitOutput] (bool) {
-                        emit circuitOutput->closeDialogs();
-
                         qDebug() << "Action Delete for circuit input invoked, ID ="
                                  << circuitOutput->GetId();
 
-                        const auto uid = circuitOutput->GetId();
-                        emit removeItem(uid);
-                        m_idHandler.RemoveUid(circuitOutput->GetId());
-                        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
-
-                        const auto connId = circuitOutput->GetEndPoint().connId;
-                        RemoveConnectionById(connId);
-
-                        QRect area(circuitOutput->pos(), circuitOutput->GetSize());
-                        m_areaManager.ClearArea(area);
-
-                        circuitOutput->close();
-
-                        update();
+                        RemoveCircuitItem(circuitOutput);
                     });
 
             menu->addAction(actionChangeColor);
@@ -889,39 +856,10 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionDelete = new QAction("Delete", this);
             connect(actionDelete, &QAction::triggered,
                     this, [this, circuitElement] (bool) {
-                        emit circuitElement->closeDialogs();
-
                         qDebug() << "Action Delete for circuit input invoked, ID ="
                                  << circuitElement->GetId();
 
-                        const auto uid = circuitElement->GetId();
-                        emit removeItem(uid);
-                        m_idHandler.RemoveUid(circuitElement->GetId());
-                        m_idHandler.RemoveElementOrderId(circuitElement->GetOrderId());
-
-                        const auto& startPoints = circuitElement->GetStartPoints();
-                        for (const auto& startPoint : startPoints)
-                        {
-                            const auto& connIdSet = startPoint.connIds;
-                            for (const auto& connId : connIdSet)
-                            {
-                                RemoveConnectionById(connId);
-                            }
-                        }
-
-                        const auto& endPoints = circuitElement->GetEndPoints();
-                        for (const auto& endPoint : endPoints)
-                        {
-                            const auto connId = endPoint.connId;
-                            RemoveConnectionById(connId);
-                        }
-
-                        QRect area(circuitElement->pos(), circuitElement->GetSize());
-                        m_areaManager.ClearArea(area);
-
-                        circuitElement->close();
-
-                        update();
+                        RemoveCircuitItem(circuitElement);
             });
 
             menu->addAction(actionSimulate);
@@ -1079,6 +1017,71 @@ void CircuitCanvas::AcceptDndEvent(QDropEvent* baseDndEvent)
     {
         baseDndEvent->acceptProposedAction();
     }
+}
+
+void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    emit item->closeDialogs();
+
+    const auto uid = item->GetId();
+    emit removeItem(uid);
+    m_idHandler.RemoveUid(item->GetId());
+
+    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
+    {
+        m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
+
+        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
+        for (const auto& connId : connIdSet)
+        {
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
+    {
+        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
+
+        const auto connId = circuitOutput->GetEndPoint().connId;
+        RemoveConnectionById(connId);
+    }
+    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
+    {
+        m_idHandler.RemoveElementOrderId(item->GetOrderId());
+
+        const auto& startPoints = circuitElement->GetStartPoints();
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = circuitElement->GetEndPoints();
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else
+    {
+        throw std::runtime_error("ItemType is unknown, type = "
+                                 + std::to_string(item->GetItemType()));
+    }
+
+    QRect area(item->pos(), item->GetSize());
+    m_areaManager.ClearArea(area);
+
+    item->close();
+
+    update();
 }
 
 void CircuitCanvas::RemoveConnectionById(quint64 connId)

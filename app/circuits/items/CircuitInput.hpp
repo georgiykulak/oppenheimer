@@ -30,7 +30,7 @@ public:
     void RemoveConnectionId(quint64 connId);
 
 signals:
-    bool closeDialogs();
+    bool closeDialogs() override;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
