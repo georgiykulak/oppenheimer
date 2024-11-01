@@ -508,7 +508,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                         m_idHandler.RemoveUid(circuitInput->GetId());
                         m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
 
-                        const auto connIdSet = circuitInput->GetStartPoint().connIds;
+                        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
                         for (const auto& connId : connIdSet)
                         {
                             RemoveConnectionById(connId);
@@ -891,7 +891,37 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                     this, [this, circuitElement] (bool) {
                         emit circuitElement->closeDialogs();
 
-                        // TODO: Add deleting code here
+                        qDebug() << "Action Delete for circuit input invoked, ID ="
+                                 << circuitElement->GetId();
+
+                        const auto uid = circuitElement->GetId();
+                        emit removeItem(uid);
+                        m_idHandler.RemoveUid(circuitElement->GetId());
+                        m_idHandler.RemoveElementOrderId(circuitElement->GetOrderId());
+
+                        const auto& startPoints = circuitElement->GetStartPoints();
+                        for (const auto& startPoint : startPoints)
+                        {
+                            const auto& connIdSet = startPoint.connIds;
+                            for (const auto& connId : connIdSet)
+                            {
+                                RemoveConnectionById(connId);
+                            }
+                        }
+
+                        const auto& endPoints = circuitElement->GetEndPoints();
+                        for (const auto& endPoint : endPoints)
+                        {
+                            const auto connId = endPoint.connId;
+                            RemoveConnectionById(connId);
+                        }
+
+                        QRect area(circuitElement->pos(), circuitElement->GetSize());
+                        m_areaManager.ClearArea(area);
+
+                        circuitElement->close();
+
+                        update();
             });
 
             menu->addAction(actionSimulate);
@@ -1072,6 +1102,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                          << "item ID =" << circuitInput->GetId();
                 circuitInput->RemoveConnectionId(connId);
             }
+
+            continue;
         }
 
         CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(obj);
@@ -1083,6 +1115,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                          << "item ID =" << circuitOutput->GetId();
                 circuitOutput->RemoveConnectionId(connId);
             }
+
+            continue;
         }
 
         CircuitElement* circuitElement = qobject_cast<CircuitElement*>(obj);
@@ -1111,6 +1145,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
                     break;
                 }
             }
+
+            continue;
         }
     }
 }
