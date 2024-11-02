@@ -82,8 +82,6 @@ private:
     bool m_outputValue = 0;
 
     QColor m_color = Qt::lightGray;
-
-    std::size_t MaxConnectors() const;
 };
 
 #endif // CIRCUITELEMENT_HPP

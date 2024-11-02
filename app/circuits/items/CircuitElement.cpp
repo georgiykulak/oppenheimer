@@ -138,9 +138,7 @@ void CircuitElement::DrawToPixmap()
     painter.setBrush(m_color);
     int wBig = 90;
     int hBig = GetSize().height();
-    qreal xRad = 18 - MaxConnectors();
-    qreal yRad = 18 - MaxConnectors();
-    painter.drawRoundedRect(10, 0, wBig, hBig, xRad, yRad, Qt::RelativeSize);
+    painter.drawRoundedRect(10, 0, wBig, hBig, 10, 10, Qt::AbsoluteSize);
     int xStartText = 25;
     int yStartText = 45;
     int wSmall = 60;
@@ -510,9 +508,4 @@ int CircuitElement::GetOffsetBetweenConnectionPoints() const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
-}
-
-std::size_t CircuitElement::MaxConnectors() const
-{
-    return std::max(m_startingConnectors.size(), m_endingConnectors.size());
 }
