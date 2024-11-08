@@ -1,13 +1,9 @@
 #include "LogicVectorEdit.hpp"
 
-#include <QLineEdit>
-
 #include <QPlainTextEdit>
 #include <QPainter>
 #include <QResizeEvent>
 #include <QDebug>
-
-#include <cmath>
 
 LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     : QWidget{parent}
@@ -21,6 +17,7 @@ LogicVectorEdit::LogicVectorEdit(QWidget *parent)
 
     setSizePolicy(m_textEdit->sizePolicy());
 
+    m_textEdit->setFrameStyle(QFrame::NoFrame);
     m_textEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
