@@ -2,6 +2,7 @@
 #include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
 #include "widgets/LogicVectorEdit.hpp"
+#include "Config.hpp"
 
 #include <QPainter>
 #include <QPushButton>
@@ -133,16 +134,25 @@ void CircuitElement::DrawToPixmap()
 
     QPen mPen;
     mPen.setColor(m_color);
-    mPen.setWidth(2);
     painter.setPen(mPen);
     painter.setBrush(m_color);
     int wBig = 90;
     int hBig = GetSize().height();
-    painter.drawRoundedRect(10, 0, wBig, hBig, 10, 10, Qt::AbsoluteSize);
+    const int borderWidth = 2;
+    painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
+
+#ifdef DRAW_ELEMENT_ITEM_BORDERS
+    mPen.setWidth(borderWidth);
+    mPen.setColor(Qt::darkGray);
+    painter.setPen(mPen);
+    painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
+#endif
+
     int xStartText = 25;
     int yStartText = 45;
     int wSmall = 60;
     int hSmall = 30;
+    mPen.setWidth(2);
     mPen.setColor(Qt::darkGray);
     painter.setPen(mPen);
     painter.setBrush(Qt::white);
