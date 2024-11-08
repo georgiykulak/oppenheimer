@@ -2,7 +2,7 @@
 
 #include <QLineEdit>
 
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QPainter>
 #include <QResizeEvent>
 #include <QDebug>
@@ -12,8 +12,7 @@
 LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     : QWidget{parent}
 {
-    QLineEdit l;
-    m_textEdit = new QTextEdit(this);
+    m_textEdit = new QPlainTextEdit(this);
     QString styleSheet;
     styleSheet += "background-color: " + QColor(Qt::white).name();
     styleSheet += ";color: " + QColor(Qt::black).name();
@@ -22,7 +21,11 @@ LogicVectorEdit::LogicVectorEdit(QWidget *parent)
 
     setSizePolicy(m_textEdit->sizePolicy());
 
-    connect(m_textEdit, &QTextEdit::textChanged,
+    m_textEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    connect(m_textEdit, &QPlainTextEdit::textChanged,
             this, &LogicVectorEdit::onTextChanged);
 }
 
@@ -68,11 +71,11 @@ void LogicVectorEdit::setNumber(int number)
             number >>= 1;
         }
         std::reverse(numVector.begin(), numVector.end());
-        m_textEdit->setText(numVector);
+        m_textEdit->setPlainText(numVector);
     }
     else
     {
-        m_textEdit->setText(QString::number(number));
+        m_textEdit->setPlainText(QString::number(number));
     }
 }
 
