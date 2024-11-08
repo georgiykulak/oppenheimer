@@ -1,5 +1,6 @@
 #include "CircuitInput.hpp"
 #include "connectors/StartingConnector.hpp"
+#include "Config.hpp"
 
 #include <QPainter>
 
@@ -37,14 +38,21 @@ void CircuitInput::DrawToPixmap()
 
     int arr[10] = {20,0, 50,0, 70,15, 50,30, 20,30};
     QPen mPen;
-    mPen.setColor(m_color);
-    mPen.setWidth(2);
     painter.setPen(mPen);
     painter.setBrush(m_color);
     QPolygon poly;
     poly.setPoints(5, arr);
     painter.drawPolygon(poly);
 
+#ifdef DRAW_INPUT_ITEM_BORDERS
+    const int borderWidth = 2;
+    mPen.setWidth(borderWidth);
+    mPen.setColor(Qt::black);
+    painter.setPen(mPen);
+    painter.drawPolygon(poly);
+#endif
+
+    mPen.setWidth(2);
     mPen.setColor(Qt::gray);
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
