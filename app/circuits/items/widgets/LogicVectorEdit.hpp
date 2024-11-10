@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-class QPlainTextEdit;
+class MultilineNumberEdit;
 
 class LogicVectorEdit : public QWidget
 {
@@ -29,7 +29,7 @@ protected:
 private:
     static constexpr QSize m_margin = QSize(4, 4);
 
-    QPlainTextEdit* m_textEdit;
+    MultilineNumberEdit* m_textEdit;
     int m_digitCount = 1;
     int m_maximumNumber = 1;
     bool m_valid = true;
