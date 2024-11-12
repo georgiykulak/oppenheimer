@@ -110,10 +110,26 @@ void LogicVectorEdit::onTextChanged()
     if (m_isBinaryNotation)
     {
         number = newText.toInt(&ok, 2);
+        const auto textSize = newText.size();
         if (ok && newText.size() == m_digitCount)
         {
             valid = true;
         }
+
+        const auto binaryPerRowMaximum = 4;
+        // Rows with wrapped lines
+        std::size_t rows = textSize / binaryPerRowMaximum;
+        rows += (textSize % 4) ? 1 : 0;
+        if (!rows)
+        {
+            rows = 1;
+        }
+        qDebug() << "Text rows:" << rows;
+
+        QFontMetrics fontMetrics(m_textEdit->font());
+        const auto approximateHeightOffset = 12;
+        setFixedHeight(fontMetrics.height() * rows
+                       + approximateHeightOffset);
     }
     else
     {
