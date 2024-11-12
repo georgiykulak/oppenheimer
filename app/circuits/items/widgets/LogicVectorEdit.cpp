@@ -105,27 +105,31 @@ void LogicVectorEdit::onTextChanged()
     qDebug() << "LogicVectorEdit onTextChanged: new text =" << newText << " maximum number =" << m_maximumNumber;
 
     bool ok = false;
+    bool valid = false;
     int number;
     if (m_isBinaryNotation)
     {
         number = newText.toInt(&ok, 2);
+        if (ok && newText.size() == m_digitCount)
+        {
+            valid = true;
+        }
     }
     else
     {
         number = newText.toInt(&ok, 10);
+        if (ok && number < m_maximumNumber)
+        {
+            valid = true;
+        }
     }
 
-    if (ok && number < m_maximumNumber)
+    m_valid = valid;
+    if (m_valid)
     {
-        m_valid = true;
         emit numberChangedAndValid(number);
-        emit setNumberValidity(true);
     }
-    else
-    {
-        m_valid = false;
-        emit setNumberValidity(false);
-    }
+    emit setNumberValidity(m_valid);
 
     update();
 }
