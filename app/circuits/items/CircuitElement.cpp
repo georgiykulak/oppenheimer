@@ -87,6 +87,14 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
             {
                 m_numberParameterIsValid = isValid;
             });
+    connect(m_textField, &LogicVectorEdit::textRowsCountChanged,
+            this, [this]()
+            {
+                auto lePos = m_textField->pos();
+                m_notationSwitchButton->move(lePos.x(),
+                                             lePos.y() + m_textField->height());
+                update();
+            });
 
     m_notationSwitchButton = new QPushButton("bin", this);
     m_notationSwitchButton->setMinimumSize(30, 15);

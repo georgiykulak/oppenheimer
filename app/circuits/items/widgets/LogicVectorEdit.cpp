@@ -133,11 +133,11 @@ void LogicVectorEdit::onTextChanged()
                        + approximateHeightOffset);
         number = newText.toInt(&ok, 2);
 
-        /*if (m_rows != rows)
+        if (m_rows != rows)
         {
-            emit textRowsCountChanged(rows);
+            emit textRowsCountChanged();
             m_rows = rows;
-        }*/
+        }
 
         if (ok && newText.size() == m_digitCount)
         {

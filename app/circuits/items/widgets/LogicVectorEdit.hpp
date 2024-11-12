@@ -21,6 +21,7 @@ public:
 signals:
     void numberChangedAndValid(int validNumber);
     void setNumberValidity(bool isValid);
+    void textRowsCountChanged();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
