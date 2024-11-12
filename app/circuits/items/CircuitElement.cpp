@@ -144,18 +144,17 @@ void CircuitElement::DrawToPixmap()
     int xStartText = 25;
     int yStartText = 45;
     int wSmall = 60;
-    int hSmall = 30;
+    int hSmall = m_textField->height();
     mPen.setColor(Qt::darkGray);
     painter.setPen(mPen);
     painter.setBrush(Qt::white);
-    painter.drawRoundedRect(xStartText, yStartText, wSmall, hSmall, 17, 17, Qt::RelativeSize);
+    painter.drawRoundedRect(xStartText, yStartText, wSmall, hSmall, 3, 3, Qt::AbsoluteSize);
 
     mPen.setColor(Qt::gray);
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
-    QString strParam;
-    strParam.setNum(m_numberParam);
-    painter.drawText(QRect(xStartText, yStartText, wSmall - 10, hSmall), Qt::AlignCenter, strParam);
+    QString strParam = "...";
+    painter.drawText(QRect(xStartText, yStartText, wSmall, hSmall), Qt::AlignCenter, strParam);
 
     mPen.setColor(Qt::black);
     painter.setPen(mPen);

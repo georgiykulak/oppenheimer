@@ -30,6 +30,8 @@ private:
     static constexpr QSize m_margin = QSize(4, 4);
 
     MultilineNumberEdit* m_textEdit;
+    QString m_currentText;
+    std::size_t m_rows = 1;
     int m_digitCount = 1;
     int m_maximumNumber = 1;
     bool m_valid = true;

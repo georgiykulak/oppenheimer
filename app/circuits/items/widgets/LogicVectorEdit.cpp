@@ -96,7 +96,7 @@ void LogicVectorEdit::drawValidityFrame(QPainter &painter) const
 
     pen.setWidth(2);
     painter.setPen(pen);
-    painter.drawRoundedRect(0, 0, width(), height(), 17, 17, Qt::RelativeSize);
+    painter.drawRoundedRect(0, 0, width(), height(), 3, 3, Qt::AbsoluteSize);
 }
 
 void LogicVectorEdit::onTextChanged()
@@ -109,27 +109,40 @@ void LogicVectorEdit::onTextChanged()
     int number;
     if (m_isBinaryNotation)
     {
-        number = newText.toInt(&ok, 2);
-        const auto textSize = newText.size();
-        if (ok && newText.size() == m_digitCount)
+        // validate before resizing
+        if (newText.size() > m_digitCount)
         {
-            valid = true;
+            m_textEdit->setPlainText(m_currentText);
+            return;
         }
+        m_currentText = newText;
 
         const auto binaryPerRowMaximum = 4;
         // Rows with wrapped lines
+        const auto textSize = newText.size();
         std::size_t rows = textSize / binaryPerRowMaximum;
         rows += (textSize % 4) ? 1 : 0;
         if (!rows)
         {
             rows = 1;
         }
-        qDebug() << "Text rows:" << rows;
 
         QFontMetrics fontMetrics(m_textEdit->font());
         const auto approximateHeightOffset = 12;
         setFixedHeight(fontMetrics.height() * rows
                        + approximateHeightOffset);
+        number = newText.toInt(&ok, 2);
+
+        /*if (m_rows != rows)
+        {
+            emit textRowsCountChanged(rows);
+            m_rows = rows;
+        }*/
+
+        if (ok && newText.size() == m_digitCount)
+        {
+            valid = true;
+        }
     }
     else
     {
