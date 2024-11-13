@@ -24,10 +24,14 @@ public:
     void ClearMatrix();
 
     std::size_t ConnectionSize() const;
-    quint64 AddConnection(const QLine& line);
+    quint64 AddConnection(const QLine& line,
+                          quint64 startId,
+                          quint64 endId);
     void RemoveConnection(quint64 connId);
     std::vector<QPolygon> GetConnections() const;
     void RemoveAllConnections();
+    std::unordered_map<quint64, std::pair<quint64, quint64>>
+    GetConnectedItemIds() const { return m_connectedItemIds; }
 
 private:
     StatusMatrix m_matrix;
@@ -35,6 +39,7 @@ private:
     std::unordered_map<quint64, IndexVector> m_edges;
     std::unordered_map<quint64, QLine> m_connectedPoints;
     std::unordered_map<quint64, std::pair<QPoint, QPoint>> m_curvePoints;
+    std::unordered_map<quint64, std::pair<quint64, quint64>> m_connectedItemIds;
 
     const int m_cellSize;
 

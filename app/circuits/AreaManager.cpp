@@ -187,7 +187,9 @@ std::size_t AreaManager::ConnectionSize() const
     return m_edges.size();
 }
 
-quint64 AreaManager::AddConnection(const QLine& line)
+quint64 AreaManager::AddConnection(const QLine& line,
+                                   quint64 startId,
+                                   quint64 endId)
 {
     static quint64 connId = 1;
 
@@ -215,6 +217,7 @@ quint64 AreaManager::AddConnection(const QLine& line)
     m_connectedPoints.insert({connId, line});
     m_edges.insert({connId, std::move(edge)});
     m_curvePoints.insert({connId, {srcCurvePoint, dstCurvePoint}});
+    m_connectedItemIds.insert({connId, {startId, endId}});
 
     return connId++;
 }
@@ -244,6 +247,7 @@ void AreaManager::RemoveConnection(quint64 connId)
     m_connectedPoints.erase(connId);
     m_edges.erase(connId);
     m_curvePoints.erase(connId);
+    m_connectedItemIds.erase(connId);
 }
 
 std::vector<QPolygon> AreaManager::GetConnections() const

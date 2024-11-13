@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QPainter>
+#include <QFile>
 
 CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
@@ -58,14 +59,33 @@ void CircuitCanvas::SaveCircuitToFile()
     QObjectList childList = this->children();
     qDebug() << "Saving circuit, items:" << childList.size();
 
+    json metaRoot;
+    auto& metaItems = metaRoot["items"];
+    auto& metaConnections = metaRoot["connections"];
+
     for (auto* obj : childList)
     {
         auto* item = qobject_cast<BaseCircuitItem*>(obj);
         if (item)
         {
-            SaveCircuitItem(item);
+            SaveCircuitItem(item, metaItems);
         }
     }
+
+    for (auto&& [_, connPair] : m_areaManager.GetConnectedItemIds())
+    {
+        auto&& [startId, endId] = connPair;
+        metaConnections.push_back({startId, endId});
+    }
+
+    QFile file("tmp_project.json");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        return;
+    }
+
+    QTextStream out(&file);
+    out << metaRoot.dump(4).c_str();
 }
 
 void CircuitCanvas::paintEvent(QPaintEvent *event)

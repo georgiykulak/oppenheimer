@@ -1,11 +1,12 @@
 #include "EndingConnector.hpp"
+#include "circuits/items/BaseCircuitItem.hpp"
 
 #include <QDebug>
 #include <QPainter>
 
 EndingConnector::EndingConnector(const EndingPoint& endPoint,
                                  QPoint positionOffset,
-                                 QWidget *parent)
+                                 QWidget* parent)
     : QWidget{parent}
 {
     auto size = QSize(12, 12);
@@ -16,6 +17,13 @@ EndingConnector::EndingConnector(const EndingPoint& endPoint,
 
     m_endPoint = endPoint;
     m_positionOffset = positionOffset;
+
+    m_sourceItem = qobject_cast<BaseCircuitItem*>(parent);
+}
+
+quint64 EndingConnector::GetItemId() const
+{
+    return m_sourceItem ? m_sourceItem->GetId() : 0;
 }
 
 const EndingPoint& EndingConnector::GetEndPoint() const

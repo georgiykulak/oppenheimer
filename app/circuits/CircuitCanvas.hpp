@@ -6,6 +6,10 @@
 
 #include <QWidget>
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 class BaseCircuitItem;
 
 class CircuitCanvas : public QWidget
@@ -59,7 +63,7 @@ private:
     void AcceptDndEvent(QDropEvent* baseDndEvent);
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
-    void SaveCircuitItem(BaseCircuitItem* item);
+    void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
 };
 
 #endif // DRAGANDDROPFRAME_H

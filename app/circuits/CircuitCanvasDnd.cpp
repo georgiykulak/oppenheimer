@@ -38,7 +38,9 @@ void CircuitCanvas::ProcessDragEnterEvent(QDragEnterEvent *event)
         QPixmap pixmap;
         QPoint endingPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> endingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = QLine(endingPosition + offset, event->pos());
         update();
@@ -87,7 +89,9 @@ void CircuitCanvas::ProcessDragMoveEvent(QDragMoveEvent *event)
         QPixmap pixmap;
         QPoint endingPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> endingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = QLine(endingPosition + offset, event->pos());
         update();
@@ -324,7 +328,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QPixmap pixmap;
         QPoint endingPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> endingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -338,7 +344,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
                 const auto connId = m_areaManager.AddConnection(
                     QLine(startingConnector->GetStartPoint().connPos,
-                          endingPosition + offset)
+                          endingPosition + offset),
+                    startingConnector->GetItemId(),
+                    itemId
                     );
 
                 if (connId)
@@ -367,7 +375,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QPixmap pixmap;
         QPoint startingPosition;
         QPoint offset;
-        dataStream >> pixmap >> startingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> startingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -391,7 +401,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
                 const auto connId = m_areaManager.AddConnection(
                     QLine(startingPosition + offset,
-                          endingConnector->GetEndPoint().connPos)
+                          endingConnector->GetEndPoint().connPos),
+                    itemId,
+                    endingConnector->GetItemId()
                     );
 
                 if (connId)
@@ -884,11 +896,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             QPixmap pixmap = endingConnector->GetPixmap();
             QPoint endingPosition = endingConnector->GetEndPoint().connPos;
+            quint64 itemId = endingConnector->GetItemId();
             QPoint offset = {};
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << endingPosition << offset;
+            dataStream << pixmap << endingPosition << offset
+                       << itemId;
 
             QMimeData *mimeData = new QMimeData;
             mimeData->setData("application/x-oph-endingconnector", itemData);
@@ -947,11 +961,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             QPixmap pixmap = startingConnector->GetPixmap();
             QPoint startingPosition = startingConnector->GetStartPoint().connPos;
+            quint64 itemId = startingConnector->GetItemId();
             QPoint offset = {};
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << startingPosition << offset;
+            dataStream << pixmap << startingPosition << offset
+                       << itemId;
 
             QMimeData *mimeData = new QMimeData;
             mimeData->setData("application/x-oph-startingconnector", itemData);
@@ -1155,28 +1171,68 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
     }
 }
 
-void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item)
+void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
 {
     if (!item)
     {
         return;
     }
 
+    json itemMeta;
+
     if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
     {
+        itemMeta["type"] = circuitInput->GetItemType();
+        itemMeta["id"] = circuitInput->GetId();
+        itemMeta["orderId"] = circuitInput->GetOrderId();
+        itemMeta["pos"]["x"] = circuitInput->pos().x();
+        itemMeta["pos"]["y"] = circuitInput->pos().y();
+        itemMeta["color"] = static_cast<quint64>(
+                                circuitInput->GetColor().rgba64());
 
+        auto& metaStartPoint = itemMeta["startPoint"];
+        const auto& startPoint = circuitInput->GetStartPoint();
+        metaStartPoint["connPos"]["x"] = startPoint.connPos.x();
+        metaStartPoint["connPos"]["y"] = startPoint.connPos.y();
+        //metaStartPoint["connIds"] = json(startPoint.connIds);
     }
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
+        itemMeta["type"] = circuitOutput->GetItemType();
+        itemMeta["id"] = circuitOutput->GetId();
+        itemMeta["orderId"] = circuitOutput->GetOrderId();
+        itemMeta["pos"]["x"] = circuitOutput->pos().x();
+        itemMeta["pos"]["y"] = circuitOutput->pos().y();
+        itemMeta["color"] = static_cast<quint64>(
+            circuitOutput->GetColor().rgba64());
 
+        auto& metaEndPoint = itemMeta["endPoint"];
+        const auto& endPoint = circuitOutput->GetEndPoint();
+        metaEndPoint["connPos"]["x"] = endPoint.connPos.x();
+        metaEndPoint["connPos"]["y"] = endPoint.connPos.y();
+        //metaEndPoint["connId"] = endPoint.connId;
     }
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
     {
+        itemMeta["type"] = circuitElement->GetItemType();
+        itemMeta["id"] = circuitElement->GetId();
+        itemMeta["orderId"] = circuitElement->GetOrderId();
+        itemMeta["pos"]["x"] = circuitElement->pos().x();
+        itemMeta["pos"]["y"] = circuitElement->pos().y();
+        itemMeta["color"] = static_cast<quint64>(
+            circuitElement->GetColor().rgba64());
 
+        //inputMeta["itemSize"]["width"] = circuitInput->GetSize().width();
+        //inputMeta["itemSize"]["height"] = circuitInput->GetSize().height();
     }
     else
     {
         throw std::runtime_error("ItemType is unknown, type = "
                                  + std::to_string(item->GetItemType()));
+        return;
     }
+
+    qDebug() << "Saving input item:" << itemMeta.dump().c_str();
+
+    metaItems.push_back(itemMeta);
 }
