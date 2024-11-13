@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QPainter>
-#include <QFile>
+#include <QFileDialog>
 
 CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
@@ -56,6 +56,19 @@ void CircuitCanvas::CreateNewCircuit()
 
 void CircuitCanvas::SaveCircuitToFile()
 {
+    qDebug() << "Saving circuit to file:" << m_fileName;
+
+    if (m_fileName.isEmpty())
+    {
+        m_fileName = QFileDialog::getSaveFileName(this, "Save Project As");
+    }
+
+    QFile file(m_fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        return;
+    }
+
     QObjectList childList = this->children();
     qDebug() << "Saving circuit, items:" << childList.size();
 
@@ -78,14 +91,16 @@ void CircuitCanvas::SaveCircuitToFile()
         metaConnections.push_back({startId, endId});
     }
 
-    QFile file("tmp_project.json");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        return;
-    }
-
     QTextStream out(&file);
     out << metaRoot.dump(4).c_str();
+}
+
+void CircuitCanvas::NewSavingFile()
+{
+    qDebug() << "NewSavingFile: Filename to reset:" << m_fileName;
+    m_fileName = "";
+
+    SaveCircuitToFile();
 }
 
 void CircuitCanvas::paintEvent(QPaintEvent *event)

@@ -5,6 +5,7 @@
 #include "IdHandler.hpp"
 
 #include <QWidget>
+#include <QFile>
 
 #include <nlohmann/json.hpp>
 
@@ -41,6 +42,7 @@ signals:
 public slots:
     void CreateNewCircuit();
     void SaveCircuitToFile();
+    void NewSavingFile();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -53,6 +55,7 @@ protected:
 private:
     AreaManager m_areaManager;
     IdHandler m_idHandler;
+    QString m_fileName;
 
     QLine m_currentConnectingLine;
 
