@@ -98,7 +98,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
                 m_numberParameterIsValid = isValid;
             });
     connect(m_textField, &LogicVectorEdit::textRowsCountChanged,
-            this, [this](QString previousNumberParameter)
+            this, [this]()
             {
                 auto lePos = m_textField->pos();
                 m_notationSwitchButton->move(lePos.x(),
@@ -541,11 +541,6 @@ int CircuitElement::GetOffsetBetweenConnectionPoints() const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
-}
-
-void CircuitElement::SetPreviousNumberParameter(int height)
-{
-    m_textField->SetPlainText(m_previousNumberParameter);
 }
 
 std::size_t CircuitElement::MaxConnectors() const

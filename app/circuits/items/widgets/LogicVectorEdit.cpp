@@ -50,11 +50,6 @@ bool LogicVectorEdit::IsNotationBinary() const
     return m_isBinaryNotation;
 }
 
-void LogicVectorEdit::SetPlainText(QString previousText)
-{
-    m_textEdit->setPlainText(previousText);
-}
-
 void LogicVectorEdit::setNumber(int number)
 {
     if (m_isBinaryNotation)
@@ -144,7 +139,7 @@ void LogicVectorEdit::onTextChanged()
 
         if (m_rows != rows)
         {
-            emit textRowsCountChanged(m_currentText);
+            emit textRowsCountChanged();
             m_rows = rows;
         }
         m_currentText = newText;

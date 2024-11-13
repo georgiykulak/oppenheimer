@@ -48,8 +48,6 @@ public:
     int GetOffsetBetweenConnectionPoints() const;
     bool IsNumberParameterValid() const;
 
-    void SetPreviousNumberParameter(int height);
-
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
     bool closeDialogs() override;
@@ -73,7 +71,6 @@ private:
     std::vector<StartingConnector*> m_startingConnectors;
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
-    QString m_previousNumberParameter;
 
     int m_minimumHeight;
     int m_minimumYShift;

@@ -830,7 +830,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                                         emit circuitElement->inputsNumber(previousInputsNumber);
                                         circuitElement->SetOutputsNumber(previousOutputsNumber);
                                         emit circuitElement->outputsNumber(previousOutputsNumber);
-                                        //circuitElement->SetPreviousNumberParameter(previousArea.height());
                                     }
 
                                     // To redraw connections

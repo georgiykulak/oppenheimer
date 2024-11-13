@@ -17,12 +17,11 @@ public:
     void setNumber(int number);
     void setNotation(bool isBinary);
     bool IsNotationBinary() const;
-    void SetPlainText(QString previousText);
 
 signals:
     void numberChangedAndValid(int validNumber);
     void setNumberValidity(bool isValid);
-    void textRowsCountChanged(QString previousText);
+    void textRowsCountChanged();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
