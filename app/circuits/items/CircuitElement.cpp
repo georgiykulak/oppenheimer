@@ -284,25 +284,20 @@ void CircuitElement::SetInputsNumber(int size)
     const auto vectorSize = 1 << number; // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setNumber(m_numberParam);
+    const auto calculatedHeight =
+        25 + m_textField->height() + m_notationSwitchButton->height() + 25;
 
     if (number > m_endingConnectors.size())
     {
-        const int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        if (calculatedHeight > newHeight)
+        {
+            newHeight = calculatedHeight;
+        }
+
         if (newHeight > height())
         {
-            const auto calculatedHeight =
-                25 + m_textField->height() + m_notationSwitchButton->height() + 25;
-
-            QSize newWidgetSize;
-            if (calculatedHeight > newHeight)
-            {
-                newWidgetSize = {width(), calculatedHeight};
-            }
-            else
-            {
-                newWidgetSize = {width(), newHeight};
-            }
-
+            QSize newWidgetSize(width(), newHeight);
             setMinimumSize(newWidgetSize);
             setMaximumSize(newWidgetSize);
             SetSize(newWidgetSize);
@@ -345,7 +340,12 @@ void CircuitElement::SetInputsNumber(int size)
 
         m_endingConnectors.resize(number);
 
-        const int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        if (calculatedHeight > newHeight)
+        {
+            newHeight = calculatedHeight;
+        }
+
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
