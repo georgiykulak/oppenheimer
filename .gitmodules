@@ -1,0 +1,3 @@
+[submodule "app/json"]
+	path = app/json
+	url = https://github.com/nlohmann/json/
