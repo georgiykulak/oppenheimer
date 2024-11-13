@@ -112,3 +112,25 @@ void MainWindow::on_actionNew_Circuit_triggered()
 
     emit newCircuitTriggered();
 }
+
+void MainWindow::on_actionOpen_Circuit_triggered()
+{
+    qDebug() << "Main window action: Open Circuit triggered";
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    qDebug() << "Main window action: Save triggered";
+}
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    qDebug() << "Main window action: Save As triggered";
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    qDebug() << "Main window action: Exit triggered";
+
+    close();
+}
