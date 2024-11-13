@@ -15,7 +15,8 @@ public:
     explicit CircuitElement(const EndingPointVector& endPoints,
                             const StartingPointVector& startPoints,
                             QWidget *parent = nullptr,
-                            bool numParamEnabled = true);
+                            QSize itemSize = {},
+                            bool numParamEnabled = false);
     ~CircuitElement();
 
     inline ItemType GetItemType() const noexcept final
@@ -47,6 +48,8 @@ public:
     int GetOffsetBetweenConnectionPoints() const;
     bool IsNumberParameterValid() const;
 
+    void SetPreviousNumberParameter(int height);
+
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
     bool closeDialogs() override;
@@ -70,6 +73,7 @@ private:
     std::vector<StartingConnector*> m_startingConnectors;
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
+    QString m_previousNumberParameter;
 
     int m_minimumHeight;
     int m_minimumYShift;

@@ -31,6 +31,7 @@ void LogicVectorEdit::setEnabled(bool enable)
 void LogicVectorEdit::setMaximumDigitCount(int digitCount)
 {
     m_digitCount = digitCount;
+    // TODO: Use different approach, to avoid overflow
     m_maximumNumber = 1 << digitCount; // 2 ^ N, N = digitCount
 }
 
@@ -47,6 +48,11 @@ void LogicVectorEdit::setNotation(bool isBinary)
 bool LogicVectorEdit::IsNotationBinary() const
 {
     return m_isBinaryNotation;
+}
+
+void LogicVectorEdit::SetPlainText(QString previousText)
+{
+    m_textEdit->setPlainText(previousText);
 }
 
 void LogicVectorEdit::setNumber(int number)
@@ -102,6 +108,10 @@ void LogicVectorEdit::drawValidityFrame(QPainter &painter) const
 void LogicVectorEdit::onTextChanged()
 {
     auto newText = m_textEdit->toPlainText();
+    if (newText == m_currentText)
+    {
+        return;
+    }
     qDebug() << "LogicVectorEdit onTextChanged: new text =" << newText << " maximum number =" << m_maximumNumber;
 
     bool ok = false;
@@ -115,7 +125,6 @@ void LogicVectorEdit::onTextChanged()
             m_textEdit->setPlainText(m_currentText);
             return;
         }
-        m_currentText = newText;
 
         const auto binaryPerRowMaximum = 4;
         // Rows with wrapped lines
@@ -135,9 +144,10 @@ void LogicVectorEdit::onTextChanged()
 
         if (m_rows != rows)
         {
-            emit textRowsCountChanged();
+            emit textRowsCountChanged(m_currentText);
             m_rows = rows;
         }
+        m_currentText = newText;
 
         if (ok && newText.size() == m_digitCount)
         {

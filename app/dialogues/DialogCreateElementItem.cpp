@@ -248,8 +248,7 @@ void DialogCreateElementItem::InitElementItem(int orderId)
 
     m_newElement = new CircuitElement(endPoints,
                                       startPoints,
-                                      this,
-                                      false);
+                                      this);
 
     m_newElement->SetId(0);
     m_newElement->SetOrderId(orderId);

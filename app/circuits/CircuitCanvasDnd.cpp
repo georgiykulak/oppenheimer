@@ -288,14 +288,15 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
             CircuitElement *cElement = new CircuitElement(mimeData.endingPointVector,
                                                           mimeData.startingPointVector,
-                                                          this);
+                                                          this,
+                                                          mimeData.itemSize,
+                                                          true);
             cElement->SetId(mimeData.id);
             cElement->SetOrderId(mimeData.orderId);
-            cElement->SetNumberParameter(mimeData.numberParam);
-            cElement->SetValue(mimeData.value);
-            cElement->SetSize(mimeData.itemSize);
-            cElement->SetColor(mimeData.color);
             cElement->SetNotation(mimeData.isNotationBinary);
+            cElement->SetValue(mimeData.value);
+            cElement->SetNumberParameter(mimeData.numberParam);
+            cElement->SetColor(mimeData.color);
             cElement->move(mimeData.itemPosition);
             cElement->update();
             cElement->show();
@@ -829,6 +830,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                                         emit circuitElement->inputsNumber(previousInputsNumber);
                                         circuitElement->SetOutputsNumber(previousOutputsNumber);
                                         emit circuitElement->outputsNumber(previousOutputsNumber);
+                                        //circuitElement->SetPreviousNumberParameter(previousArea.height());
                                     }
 
                                     // To redraw connections

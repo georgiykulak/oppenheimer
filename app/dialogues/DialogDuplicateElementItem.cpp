@@ -166,13 +166,12 @@ void DialogDuplicateElementItem::InitElementItem(CircuitElement* original,
     m_newElement = new CircuitElement(original->GetEndPoints(),
                                       original->GetStartPoints(),
                                       this,
-                                      false);
+                                      original->GetSize());
 
     m_newElement->SetId(original->GetId());
     m_newElement->SetOrderId(orderId);
     m_newElement->SetNumberParameter(original->GetNumberParameter());
     m_newElement->SetValue(original->GetValue());
-    m_newElement->SetSize(original->GetSize());
     m_newElement->SetColor(original->GetColor());
     m_newElement->SetNotation(original->IsNotationBinary());
     m_newElement->move(m_offset);
