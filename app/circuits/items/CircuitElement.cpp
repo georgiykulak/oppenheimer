@@ -10,17 +10,27 @@
 CircuitElement::CircuitElement(const EndingPointVector& endPoints,
                                const StartingPointVector& startPoints,
                                QWidget *parent,
+                               QSize itemSize,
                                bool numParamEnabled)
     : BaseCircuitItem{parent}
 {
     m_offsetBetweenConnection = 30;
     m_minimumHeight = 110;
     m_minimumYShift = 55;
-    const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
+    QSize size;
+    if (itemSize.isValid())
+    {
+        size = itemSize;
+    }
+    else
+    {
+        const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
                            (std::max(endPoints.size(), startPoints.size()) - 1);
-    setMinimumSize(110, realHeight);
-    setMaximumSize(110, realHeight);
-    SetSize(QSize(110, realHeight));
+        size = QSize(110, realHeight);
+    }
+    setMinimumSize(size);
+    setMaximumSize(size);
+    SetSize(QSize(size));
     m_pixmap = QPixmap(GetSize());
     m_pixmap.fill(QColor(Qt::transparent));
 
@@ -64,18 +74,18 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    m_lineEdit = new LogicVectorEdit(this);
-    m_lineEdit->setMinimumSize(60, 30);
-    m_lineEdit->setMaximumSize(60, 30);
-    m_lineEdit->move(25, 45);
-    m_lineEdit->show();
-    m_lineEdit->setEnabled(numParamEnabled);
+    m_textField = new LogicVectorEdit(this);
+    m_textField->setMinimumSize(60, 30);
+    m_textField->setMaximumSize(60, 30);
+    m_textField->move(25, 45);
+    m_textField->show();
+    m_textField->setEnabled(numParamEnabled);
 
     const auto vectorSize = 1 << endPoints.size(); // 2 ^ N
-    m_lineEdit->setMaximumDigitCount(vectorSize);
-    m_lineEdit->setAttribute(Qt::WA_DeleteOnClose);
+    m_textField->setMaximumDigitCount(vectorSize);
+    m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_lineEdit, &LogicVectorEdit::numberChangedAndValid,
+    connect(m_textField, &LogicVectorEdit::numberChangedAndValid,
             this, [this](int number)
             {
                 setNumberParameter(number);
@@ -83,31 +93,40 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
                     GetId(), GetNumberParameter()
                 );
             });
-    connect(m_lineEdit, &LogicVectorEdit::setNumberValidity,
+    connect(m_textField, &LogicVectorEdit::setNumberValidity,
             this, [this](bool isValid)
             {
                 m_numberParameterIsValid = isValid;
+            });
+    connect(m_textField, &LogicVectorEdit::textRowsCountChanged,
+            this, [this]()
+            {
+                auto lePos = m_textField->pos();
+                m_notationSwitchButton->move(lePos.x(),
+                                             lePos.y() + m_textField->height());
+
+                update();
             });
 
     m_notationSwitchButton = new QPushButton("bin", this);
     m_notationSwitchButton->setMinimumSize(30, 15);
     m_notationSwitchButton->setMaximumSize(30, 15);
-    auto lePos = m_lineEdit->pos();
-    m_notationSwitchButton->move(lePos.x(), lePos.y() + m_lineEdit->height());
-    m_lineEdit->show();
-    m_lineEdit->setAttribute(Qt::WA_DeleteOnClose);
+    auto lePos = m_textField->pos();
+    m_notationSwitchButton->move(lePos.x(), lePos.y() + m_textField->height());
+    m_textField->show();
+    m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(m_notationSwitchButton, &QAbstractButton::released,
             this, [this](){
-                if (m_lineEdit->IsNotationBinary())
+                if (m_textField->IsNotationBinary())
                 {
                     m_notationSwitchButton->setText("dec");
-                    m_lineEdit->setNotation(false);
+                    m_textField->setNotation(false);
                 }
                 else
                 {
                     m_notationSwitchButton->setText("bin");
-                    m_lineEdit->setNotation(true);
+                    m_textField->setNotation(true);
                 }
             });
 }
@@ -151,19 +170,18 @@ void CircuitElement::DrawToPixmap()
     int xStartText = 25;
     int yStartText = 45;
     int wSmall = 60;
-    int hSmall = 30;
+    int hSmall = m_textField->height();
     mPen.setWidth(2);
     mPen.setColor(Qt::darkGray);
     painter.setPen(mPen);
     painter.setBrush(Qt::white);
-    painter.drawRoundedRect(xStartText, yStartText, wSmall, hSmall, 17, 17, Qt::RelativeSize);
+    painter.drawRoundedRect(xStartText, yStartText, wSmall, hSmall, 3, 3, Qt::AbsoluteSize);
 
     mPen.setColor(Qt::gray);
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
-    QString strParam;
-    strParam.setNum(m_numberParam);
-    painter.drawText(QRect(xStartText, yStartText, wSmall - 10, hSmall), Qt::AlignCenter, strParam);
+    QString strParam = "...";
+    painter.drawText(QRect(xStartText, yStartText, wSmall, hSmall), Qt::AlignCenter, strParam);
 
     mPen.setColor(Qt::black);
     painter.setPen(mPen);
@@ -205,7 +223,7 @@ int CircuitElement::GetOrderId() const
 void CircuitElement::SetNumberParameter(int numberParam)
 {
     m_numberParam = numberParam;
-    m_lineEdit->setNumber(numberParam);
+    m_textField->setNumber(numberParam);
 }
 
 int CircuitElement::GetNumberParameter() const
@@ -235,7 +253,7 @@ QColor CircuitElement::GetColor() const
 
 void CircuitElement::SetNotation(bool isBinary)
 {
-    m_lineEdit->setNotation(isBinary);
+    m_textField->setNotation(isBinary);
     if (isBinary)
     {
         m_notationSwitchButton->setText("bin");
@@ -248,7 +266,7 @@ void CircuitElement::SetNotation(bool isBinary)
 
 bool CircuitElement::IsNotationBinary() const
 {
-    return m_lineEdit->IsNotationBinary();
+    return m_textField->IsNotationBinary();
 }
 
 void CircuitElement::setNumberParameter(int param)
@@ -271,9 +289,20 @@ void CircuitElement::SetInputsNumber(int size)
 
     const std::size_t number = size;
 
+    const auto vectorSize = 1 << number; // 2 ^ N
+    m_textField->setMaximumDigitCount(vectorSize);
+    m_textField->setNumber(m_numberParam);
+    const auto calculatedHeight =
+        25 + m_textField->height() + m_notationSwitchButton->height() + 25;
+
     if (number > m_endingConnectors.size())
     {
-        const int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        if (calculatedHeight > newHeight)
+        {
+            newHeight = calculatedHeight;
+        }
+
         if (newHeight > height())
         {
             QSize newWidgetSize(width(), newHeight);
@@ -319,7 +348,12 @@ void CircuitElement::SetInputsNumber(int size)
 
         m_endingConnectors.resize(number);
 
-        const int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
+        if (calculatedHeight > newHeight)
+        {
+            newHeight = calculatedHeight;
+        }
+
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
@@ -332,9 +366,6 @@ void CircuitElement::SetInputsNumber(int size)
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
-
-    const auto vectorSize = 1 << m_endingConnectors.size(); // 2 ^ N
-    m_lineEdit->setMaximumDigitCount(vectorSize);
 }
 
 void CircuitElement::SetInputsNumberAndRebook(int size)

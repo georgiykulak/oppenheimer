@@ -248,8 +248,7 @@ void DialogCreateElementItem::InitElementItem(int orderId)
 
     m_newElement = new CircuitElement(endPoints,
                                       startPoints,
-                                      this,
-                                      false);
+                                      this);
 
     m_newElement->SetId(0);
     m_newElement->SetOrderId(orderId);
@@ -264,8 +263,17 @@ void DialogCreateElementItem::InitElementItem(int orderId)
 void DialogCreateElementItem::ResizeWindow(int connectionsOnSideNumber)
 {
     const auto hOffset = m_newElement->GetOffsetBetweenConnectionPoints();
-    const auto newHeight = m_minimumHeight + (connectionsOnSideNumber - 1) * hOffset;
+    auto newHeight = m_minimumHeight + (connectionsOnSideNumber - 1) * hOffset;
+    // 40 == (CircuitElement()->height() - m_minimumHeight)
+    const auto itemHeight = m_newElement->height() + 40;
+
+    if (itemHeight > newHeight)
+    {
+        newHeight = itemHeight;
+    }
 
     if (newHeight > height())
+    {
         resize(QSize(width(), newHeight));
+    }
 }

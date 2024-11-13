@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-class QLineEdit;
+class MultilineNumberEdit;
 
 class LogicVectorEdit : public QWidget
 {
@@ -21,6 +21,7 @@ public:
 signals:
     void numberChangedAndValid(int validNumber);
     void setNumberValidity(bool isValid);
+    void textRowsCountChanged();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -29,7 +30,9 @@ protected:
 private:
     static constexpr QSize m_margin = QSize(4, 4);
 
-    QLineEdit* m_lineEdit;
+    MultilineNumberEdit* m_textEdit;
+    QString m_currentText;
+    std::size_t m_rows = 1;
     int m_digitCount = 1;
     int m_maximumNumber = 1;
     bool m_valid = true;
@@ -38,7 +41,7 @@ private:
     void drawValidityFrame(QPainter& painter) const;
 
 private slots:
-    void onTextChanged(const QString& newText);
+    void onTextChanged();
 };
 
 #endif // LOGICVECTOREDIT_HPP

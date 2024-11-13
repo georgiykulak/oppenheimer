@@ -15,7 +15,8 @@ public:
     explicit CircuitElement(const EndingPointVector& endPoints,
                             const StartingPointVector& startPoints,
                             QWidget *parent = nullptr,
-                            bool numParamEnabled = true);
+                            QSize itemSize = {},
+                            bool numParamEnabled = false);
     ~CircuitElement();
 
     inline ItemType GetItemType() const noexcept final
@@ -68,7 +69,7 @@ private:
     QPixmap m_pixmap;
     std::vector<EndingConnector*> m_endingConnectors;
     std::vector<StartingConnector*> m_startingConnectors;
-    LogicVectorEdit* m_lineEdit;
+    LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
 
     int m_minimumHeight;
