@@ -36,6 +36,7 @@ signals:
 
 public slots:
     void CreateNewCircuit();
+    void SaveCircuitToFile();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -58,6 +59,7 @@ private:
     void AcceptDndEvent(QDropEvent* baseDndEvent);
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
+    void SaveCircuitItem(BaseCircuitItem* item);
 };
 
 #endif // DRAGANDDROPFRAME_H

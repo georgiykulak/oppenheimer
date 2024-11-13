@@ -24,6 +24,7 @@ public:
 
 signals:
     void newCircuitTriggered();
+    void saveTriggered();
 
 private slots:
     void on_actionNew_Input_triggered();

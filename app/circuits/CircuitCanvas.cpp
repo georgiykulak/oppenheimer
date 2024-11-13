@@ -53,6 +53,21 @@ void CircuitCanvas::CreateNewCircuit()
     update();
 }
 
+void CircuitCanvas::SaveCircuitToFile()
+{
+    QObjectList childList = this->children();
+    qDebug() << "Saving circuit, items:" << childList.size();
+
+    for (auto* obj : childList)
+    {
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
+        {
+            SaveCircuitItem(item);
+        }
+    }
+}
+
 void CircuitCanvas::paintEvent(QPaintEvent *event)
 {
     (void)event;

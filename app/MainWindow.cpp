@@ -42,6 +42,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_logicController, &LogicController::clearAllItems,
             m_canvas, &CircuitCanvas::CreateNewCircuit);
 
+    connect(this, &MainWindow::saveTriggered,
+            m_canvas, &CircuitCanvas::SaveCircuitToFile);
+
     connect(m_canvas, &CircuitCanvas::setNumberParameterToElementItem,
             m_logicController, &LogicController::SetNumberParameterToElementItem);
 
@@ -121,6 +124,8 @@ void MainWindow::on_actionOpen_Circuit_triggered()
 void MainWindow::on_actionSave_triggered()
 {
     qDebug() << "Main window action: Save triggered";
+
+    emit saveTriggered();
 }
 
 void MainWindow::on_actionSave_As_triggered()

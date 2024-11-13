@@ -1154,3 +1154,29 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
         }
     }
 }
+
+void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
+    {
+
+    }
+    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
+    {
+
+    }
+    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
+    {
+
+    }
+    else
+    {
+        throw std::runtime_error("ItemType is unknown, type = "
+                                 + std::to_string(item->GetItemType()));
+    }
+}
