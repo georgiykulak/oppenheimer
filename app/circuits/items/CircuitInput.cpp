@@ -38,6 +38,7 @@ void CircuitInput::DrawToPixmap()
 
     int arr[10] = {20,0, 50,0, 70,15, 50,30, 20,30};
     QPen mPen;
+    mPen.setColor(m_color);
     painter.setPen(mPen);
     painter.setBrush(m_color);
     QPolygon poly;
