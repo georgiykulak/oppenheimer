@@ -44,7 +44,7 @@ public:
     void SetOutputsNumberAndRebook(int size);
     EndingPointVector GetEndPoints() const;
     StartingPointVector GetStartPoints() const;
-    void RemoveConnectionId(quint64 connId);
+    void RemoveConnectionId(quint64 connId) override;
     int GetOffsetBetweenConnectionPoints() const;
     bool IsNumberParameterValid() const;
 

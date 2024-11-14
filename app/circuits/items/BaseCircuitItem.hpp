@@ -31,6 +31,8 @@ public:
     virtual void SetNumberParameter(int)   { WarnNotImplemented();   }
     virtual int GetNumberParameter() const { WarnNotImplemented(-1); }
 
+    virtual void RemoveConnectionId(quint64) {};
+
 signals:
     virtual bool closeDialogs();
 

@@ -1101,55 +1101,10 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
 
     for (auto* obj : childList)
     {
-        CircuitInput* circuitInput = qobject_cast<CircuitInput*>(obj);
-        if (circuitInput)
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
         {
-            circuitInput->RemoveConnectionId(connId);
-
-            continue;
-        }
-
-        CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(obj);
-        if (circuitOutput)
-        {
-            if (circuitOutput->GetEndPoint().connId == connId)
-            {
-                qDebug() << "Found output item containing connection ID =" << connId
-                         << "item ID =" << circuitOutput->GetId();
-                circuitOutput->RemoveConnectionId(connId);
-            }
-
-            continue;
-        }
-
-        CircuitElement* circuitElement = qobject_cast<CircuitElement*>(obj);
-        if (circuitElement)
-        {
-            const auto& startPoints = circuitElement->GetStartPoints();
-            for (const auto& startPoint : startPoints)
-            {
-                if (startPoint.connIds.contains(connId))
-                {
-                    qDebug() << "Found element item (starting side) containing connection ID ="
-                             << connId << "item ID =" << circuitElement->GetId();
-                    circuitElement->RemoveConnectionId(connId);
-                    break;
-                }
-            }
-
-            const auto& endPoints = circuitElement->GetEndPoints();
-            for (const auto& endPoint : endPoints)
-            {
-                if (endPoint.connId == connId)
-                {
-                    qDebug() << "Found element item (ending side) containing connection ID ="
-                             << connId << "item ID =" << circuitElement->GetId();
-                    circuitElement->RemoveConnectionId(connId);
-                    break;
-                }
-            }
-
-            continue;
+            item->RemoveConnectionId(connId);
         }
     }
 }

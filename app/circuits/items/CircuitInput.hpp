@@ -23,7 +23,7 @@ public:
 
     CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
 
-    void RemoveConnectionId(quint64 connId);
+    void RemoveConnectionId(quint64 connId) override;
 
 signals:
     bool closeDialogs() override;
