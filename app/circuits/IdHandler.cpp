@@ -15,9 +15,24 @@ quint64 IdHandler::NewUid()
     return uid;
 }
 
-void IdHandler::RemoveUid(quint64 id)
+bool IdHandler::InsertUid(quint64 id)
 {
     if (m_uids.contains(id))
+    {
+        return false;
+    }
+
+    m_uids.insert(id);
+
+    m_lastUid = *std::max_element(m_uids.begin(), m_uids.end());
+    ++m_lastUid;
+
+    return true;
+}
+
+void IdHandler::RemoveUid(quint64 id)
+{
+    if (!m_uids.contains(id))
     {
         return;
     }
@@ -34,9 +49,8 @@ bool IdHandler::NewInputOrderId(int orderId)
 
     m_inputOrderIds.insert(orderId);
 
-    if (orderId > m_lastInputOrderId)
-        m_lastInputOrderId = orderId;
-
+    m_lastInputOrderId =
+        *std::max_element(m_inputOrderIds.begin(), m_inputOrderIds.end());
     ++m_lastInputOrderId;
 
     return true;

@@ -11,6 +11,7 @@ class IdHandler : public QObject
 public:
     explicit IdHandler(QObject *parent = nullptr);
     quint64 NewUid();
+    bool InsertUid(quint64 id);
     void RemoveUid(quint64 id);
     bool NewInputOrderId(int orderId);
     void RemoveInputOrderId(int orderId);

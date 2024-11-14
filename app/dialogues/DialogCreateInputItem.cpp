@@ -185,7 +185,6 @@ void DialogCreateInputItem::InitInputItem(int orderId)
 
     m_newInput->SetId(0);
     m_newInput->SetOrderId(orderId);
-    m_newInput->SetValue(0);
     m_newInput->move(offset);
     m_newInput->update();
     m_newInput->show();

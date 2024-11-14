@@ -1207,6 +1207,8 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
         itemMeta["type"] = circuitInput->GetItemType();
         itemMeta["id"] = circuitInput->GetId();
         itemMeta["orderId"] = circuitInput->GetOrderId();
+        itemMeta["width"] = circuitInput->GetSize().width();
+        itemMeta["height"] = circuitInput->GetSize().height();
         itemMeta["pos"]["x"] = circuitInput->pos().x();
         itemMeta["pos"]["y"] = circuitInput->pos().y();
         itemMeta["color"] = static_cast<quint64>(
@@ -1216,7 +1218,6 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
         const auto& startPoint = circuitInput->GetStartPoint();
         metaStartPoint["connPos"]["x"] = startPoint.connPos.x();
         metaStartPoint["connPos"]["y"] = startPoint.connPos.y();
-        //metaStartPoint["connIds"] = json(startPoint.connIds);
     }
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
@@ -1246,6 +1247,7 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
 
         //inputMeta["itemSize"]["width"] = circuitInput->GetSize().width();
         //inputMeta["itemSize"]["height"] = circuitInput->GetSize().height();
+        //metaStartPoint["connIds"] = json(startPoint.connIds);
     }
     else
     {
@@ -1267,6 +1269,31 @@ void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
     if (!itemsArray.is_null() && itemsArray.is_array())
     {
         qDebug() << "Items array is not empty, size =" << itemsArray.size();
+        for (const auto& item : itemsArray)
+        {
+            auto itemType = item.at("type").template get<int>();
+            switch (itemType)
+            {
+                case ItemType::Input:
+                {
+                    ConstructInputItemFromJson(item);
+
+                    break;
+                }
+                case ItemType::Output:
+                {
+                    break;
+                }
+                case ItemType::Element:
+                {
+                    break;
+                }
+                default:
+                {
+                    continue;
+                }
+            }
+        }
     }
 
     const auto& connectionsArray = metaRoot.at("connections");
@@ -1275,4 +1302,56 @@ void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
         qDebug() << "Connections array is not empty, size ="
                  << connectionsArray.size();
     }
+}
+
+void CircuitCanvas::ConstructInputItemFromJson(const json &item)
+{
+    const auto& pos = item.at("pos");
+    auto itemX = pos.at("x").template get<int>();
+    auto itemY = pos.at("y").template get<int>();
+    QPoint itemPosition(itemX, itemY);
+
+    auto width = item.at("width").template get<int>();
+    auto height = item.at("height").template get<int>();
+    QSize itemSize(width, height);
+
+    QRect area(itemPosition, itemSize);
+
+    std::vector<std::pair<QPoint, QPoint>> emptyVector;
+
+    if (!m_areaManager.TryBookArea(area, emptyVector))
+    {
+        return;
+    }
+
+    auto id = item.at("id").template get<quint64>();
+    auto orderId = item.at("orderId").template get<int>();
+
+    auto orderIdInserted = m_idHandler.NewInputOrderId(orderId);
+    auto uidInserted = m_idHandler.InsertUid(id);
+
+    if (!orderIdInserted || !uidInserted)
+    {
+        return;
+    }
+
+    emit addNewInputItem(id);
+
+    quint64 rgba64Color = item.at("color").template get<quint64>();
+    QColor color(QRgba64::fromRgba64(rgba64Color));
+
+    const auto& connPos = item.at("startPoint").at("connPos");
+    auto connX = connPos.at("x").template get<int>();
+    auto connY = connPos.at("y").template get<int>();
+    StartingPoint startPoint;
+    startPoint.connPos = {connX, connY};
+
+    CircuitInput *cInput = new CircuitInput(startPoint, this);
+    cInput->SetId(id);
+    cInput->SetOrderId(orderId);
+    cInput->SetColor(color);
+    cInput->move(itemPosition);
+    cInput->update();
+    cInput->show();
+    cInput->setAttribute(Qt::WA_DeleteOnClose);
 }

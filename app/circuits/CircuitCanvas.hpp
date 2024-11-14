@@ -71,6 +71,7 @@ private:
     void RemoveConnectionById(quint64 connId);
     void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
     void ConstructItemsFromJson(const json& metaRoot);
+    void ConstructInputItemFromJson(const json& item);
 };
 
 #endif // DRAGANDDROPFRAME_H
