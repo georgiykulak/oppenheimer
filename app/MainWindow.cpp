@@ -9,6 +9,7 @@
 
 #include <QDebug>
 #include <QKeyEvent>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -142,5 +143,13 @@ void MainWindow::on_actionExit_triggered()
 {
     qDebug() << "Main window action: Exit triggered";
 
-    close();
+    auto button = QMessageBox::question(this, tr("Quit"),
+                          tr("Are you sure you want to quit?"),
+                          QMessageBox::Yes,
+                          QMessageBox::No);
+
+    if (button == QMessageBox::Yes)
+    {
+        close();
+    }
 }
