@@ -177,16 +177,11 @@ void DialogCreateInputItem::InitLayout()
 
 void DialogCreateInputItem::InitInputItem(int orderId)
 {
-    QPoint offset(20, 20);
-    StartingPoint startPoint;
-    startPoint.connPos = QPoint(70, 15) + offset;
+    const QPoint offset(20, 20);
+    CircuitInputMimeData mimeDataHolder;
+    mimeDataHolder.startPoint.connPos = QPoint(70, 15) + offset;
+    mimeDataHolder.orderId = orderId;
 
-    m_newInput = new CircuitInput(startPoint, this);
-
-    m_newInput->SetId(0);
-    m_newInput->SetOrderId(orderId);
+    m_newInput = new CircuitInput(mimeDataHolder, this);
     m_newInput->move(offset);
-    m_newInput->update();
-    m_newInput->show();
-    m_newInput->setAttribute(Qt::WA_DeleteOnClose);
 }

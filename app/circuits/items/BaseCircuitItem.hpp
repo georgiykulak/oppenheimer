@@ -35,7 +35,7 @@ signals:
     virtual bool closeDialogs();
 
 private:
-    quint64 m_id;
+    quint64 m_id = 0;
     QSize m_size;
 };
 

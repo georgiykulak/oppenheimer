@@ -76,7 +76,6 @@ private:
     int m_minimumYShift;
     int m_offsetBetweenConnection = 0;
 
-    quint64 m_id = 0;
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;
     int m_orderId = -1;

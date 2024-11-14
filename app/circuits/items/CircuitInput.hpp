@@ -2,6 +2,7 @@
 #define CIRCUITINPUT_HPP
 
 #include "BaseCircuitItem.hpp"
+#include "mime/CircuitInputMimeData.hpp"
 
 class StartingConnector;
 
@@ -9,7 +10,8 @@ class CircuitInput : public BaseCircuitItem
 {
     Q_OBJECT
 public:
-    explicit CircuitInput(const StartingPoint& startPoint, QWidget *parent = nullptr);
+    explicit CircuitInput(const CircuitInputMimeData& mimeData,
+                          QWidget *parent = nullptr);
 
     inline ItemType GetItemType() const noexcept final
     { return ItemType::Input; }
@@ -26,6 +28,8 @@ public:
     void SetColor(const QColor& color);
     QColor GetColor() const;
 
+    CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
+
     const StartingPoint& GetStartPoint() const;
     void RemoveConnectionId(quint64 connId);
 
@@ -39,7 +43,6 @@ private:
     QPixmap m_pixmap;
     StartingConnector* m_startingConnector;
 
-    quint64 m_id = 0;
     int m_orderId = -1;
     bool m_inputValue = 0;
 

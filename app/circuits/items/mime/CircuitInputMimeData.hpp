@@ -5,7 +5,7 @@
 
 struct CircuitInputMimeData : public BaseCircuitItemMimeData
 {
-    CircuitInputMimeData(QPoint eventPos);
+    CircuitInputMimeData(QPoint eventPos = {});
 
     QPoint oldStartPointPos;
     QPoint startOffset;
@@ -14,6 +14,9 @@ struct CircuitInputMimeData : public BaseCircuitItemMimeData
     QColor color;
 };
 
-QDataStream& operator>>(QDataStream& iStream, CircuitInputMimeData& iData);
+QDataStream& operator>>(QDataStream& iStream,
+                        CircuitInputMimeData& iData);
+QDataStream& operator<<(QDataStream& oStream,
+                        const CircuitInputMimeData& oData);
 
 #endif // CIRCUITINPUTMIMEDATA_HPP

@@ -19,3 +19,16 @@ QDataStream &BaseCircuitItemMimeData::readBasicMimeData(QDataStream &iStream)
 
     return iStream;
 }
+
+QDataStream &BaseCircuitItemMimeData::writeBasicMimeData(QDataStream &oStream) const
+{
+    oStream
+        << pixmap
+        << offset
+        << id
+        << orderId
+        << itemSize
+        << value;
+
+    return oStream;
+}

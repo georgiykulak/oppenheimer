@@ -4,7 +4,8 @@
 
 #include <QPainter>
 
-CircuitInput::CircuitInput(const StartingPoint& startPoint, QWidget* parent)
+CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
+                           QWidget* parent)
     : BaseCircuitItem{parent}
 {
     setMinimumSize(80, 30);
@@ -14,12 +15,25 @@ CircuitInput::CircuitInput(const StartingPoint& startPoint, QWidget* parent)
     m_pixmap.fill(QColor(Qt::transparent));
 
     QPoint positionOffset(65, 9);
-    m_startingConnector = new StartingConnector(startPoint, positionOffset, this);
-
+    m_startingConnector = new StartingConnector(mimeData.startPoint,
+                                                positionOffset,
+                                                this);
     m_startingConnector->move(positionOffset);
     m_startingConnector->update();
     m_startingConnector->show();
     m_startingConnector->setAttribute(Qt::WA_DeleteOnClose);
+
+    SetId(mimeData.id);
+    m_orderId = mimeData.orderId;
+    m_inputValue = mimeData.value;
+    if (mimeData.color.isValid())
+    {
+        m_color = mimeData.color;
+    }
+
+    CircuitInput::DrawToPixmap();
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
 void CircuitInput::SetPixmap(const QPixmap& pixmap)
@@ -100,6 +114,29 @@ void CircuitInput::SetColor(const QColor& color)
 QColor CircuitInput::GetColor() const
 {
     return m_color;
+}
+
+CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
+{
+    CircuitInputMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+    mimeData.itemSize = GetSize();
+    mimeData.value = m_inputValue;
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    const auto startPoint = m_startingConnector->GetStartPoint();
+    mimeData.oldStartPointPos = startPoint.connPos;
+    mimeData.startOffset = QPoint(eventPos - startPoint.connPos);
+    mimeData.connIdsNumber = (unsigned int)(startPoint.connIds.size());
+    mimeData.color = m_color;
+    mimeData.startPoint = startPoint;
+    mimeData.oldNewPoints.emplace_back(mimeData.oldStartPointPos,
+                                       mimeData.startPoint.connPos);
+
+    return mimeData;
 }
 
 const StartingPoint& CircuitInput::GetStartPoint() const

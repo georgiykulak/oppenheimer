@@ -4,7 +4,8 @@ CircuitInputMimeData::CircuitInputMimeData(QPoint eventPos)
     : BaseCircuitItemMimeData{eventPos}
 {}
 
-QDataStream& operator>>(QDataStream& iStream, CircuitInputMimeData& iData)
+QDataStream& operator>>(QDataStream& iStream,
+                        CircuitInputMimeData& iData)
 {
     iData.readBasicMimeData(iStream);
 
@@ -27,4 +28,23 @@ QDataStream& operator>>(QDataStream& iStream, CircuitInputMimeData& iData)
                                     iData.startPoint.connPos);
 
     return iStream;
+}
+
+QDataStream& operator<<(QDataStream& oStream,
+                        const CircuitInputMimeData& oData)
+{
+    oData.writeBasicMimeData(oStream);
+
+    oStream
+        << oData.oldStartPointPos
+        << oData.startOffset
+        << oData.connIdsNumber
+        << oData.color;
+
+    for (const quint64 connId : oData.startPoint.connIds)
+    {
+        oStream << connId;
+    }
+
+    return oStream;
 }
