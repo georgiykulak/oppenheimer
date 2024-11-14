@@ -39,9 +39,9 @@ MainWindow::MainWindow(QWidget *parent)
             m_logicController, &LogicController::ChangeElementItemInputsSize);
 
     connect(this, &MainWindow::newCircuitTriggered,
-            m_logicController, &LogicController::ClearAllItems);
-    connect(m_logicController, &LogicController::clearAllItems,
             m_canvas, &CircuitCanvas::CreateNewCircuit);
+    connect(m_canvas, &CircuitCanvas::clearAllItems,
+            m_logicController, &LogicController::ClearAllItems);
 
     connect(this, &MainWindow::saveTriggered,
             m_canvas, &CircuitCanvas::SaveCircuitToFile);

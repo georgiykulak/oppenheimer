@@ -79,8 +79,6 @@ void LogicController::ClearAllItems()
     }
 
     m_items.clear();
-
-    emit clearAllItems();
 }
 
 void LogicController::AddNewConnection(quint64 idStart, quint64 idEnd)

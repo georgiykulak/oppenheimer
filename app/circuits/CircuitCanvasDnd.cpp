@@ -1036,6 +1036,28 @@ void CircuitCanvas::AcceptDndEvent(QDropEvent* baseDndEvent)
     }
 }
 
+void CircuitCanvas::ClearAll()
+{
+    QObjectList childList = this->children();
+    for (auto* obj : childList)
+    {
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
+        {
+            RemoveCircuitItem(item);
+        }
+    }
+
+    m_idHandler.Clear();
+
+    m_areaManager.RemoveAllConnections();
+    m_areaManager.ClearMatrix();
+
+    emit clearAllItems();
+
+    update();
+}
+
 void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
 {
     if (!item)

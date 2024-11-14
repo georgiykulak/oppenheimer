@@ -32,6 +32,7 @@ signals:
     void addNewElementItem(quint64 id, std::size_t inputsSize);
     void removeItem(quint64 id);
     void changeElementItemInputsSize(quint64 id, std::size_t inputsSize);
+    void clearAllItems();
     void setInputOrderIdHint(int orderId);
     void setOutputOrderIdHint(int orderId);
     void setElementOrderIdHint(int orderId);
@@ -64,6 +65,7 @@ private:
     void ProcessDropEvent(QDropEvent *event);
     void ProcessMousePressEvent(QMouseEvent *event);
     void AcceptDndEvent(QDropEvent* baseDndEvent);
+    void ClearAll();
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
     void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);

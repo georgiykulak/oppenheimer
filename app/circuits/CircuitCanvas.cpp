@@ -32,26 +32,24 @@ int CircuitCanvas::GetElementOrderIdHint()
 void CircuitCanvas::CreateNewCircuit()
 {
     QObjectList childList = this->children();
-    if (childList.size() > 1)
+    qDebug() << "CreateNewCircuit: childs:" << childList.size();
+    // childList.size() == 3 means no items placed on canvas
+    if (childList.size() > 3)
     {
-        qWarning() << "You need to save current file before creating the new one";
-    }
+        auto button = QMessageBox::question(this, tr("New Circuit"),
+                        tr("Do you want to save current circuit?"),
+                        QMessageBox::Yes,
+                        QMessageBox::No);
 
-    for (auto* obj : childList)
-    {
-        auto* item = qobject_cast<BaseCircuitItem*>(obj);
-        if (item)
+        if (button == QMessageBox::Yes)
         {
-            RemoveCircuitItem(item);
+            SaveCircuitToFile();
         }
     }
+    // Forget filename for saving
+    m_fileName = "";
 
-    m_idHandler.Clear();
-
-    m_areaManager.RemoveAllConnections();
-    m_areaManager.ClearMatrix();
-
-    update();
+    ClearAll();
 }
 
 void CircuitCanvas::SaveCircuitToFile()

@@ -18,7 +18,6 @@ public:
     explicit LogicController(QObject *parent = nullptr);
 
 signals:
-    void clearAllItems();
     void presentDHQTable(DHQTable dhqTable);
 
 public slots:
