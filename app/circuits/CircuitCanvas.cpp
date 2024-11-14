@@ -6,6 +6,8 @@
 #include <QPainter>
 #include <QFileDialog>
 
+#include <fstream>
+
 CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
     , m_areaManager{this}
@@ -56,15 +58,34 @@ void CircuitCanvas::OpenCircuitFromFile()
 {
     auto fileName = QFileDialog::getOpenFileName(this, "Open Circuit");
 
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    std::ifstream file(fileName.toStdString());
+    if (!file.is_open())
     {
         return;
     }
 
     CreateNewCircuit();
-
     m_fileName = fileName;
+
+    try
+    {
+        const json& metaRoot = json::parse(file);
+        ConstructItemsFromJson(metaRoot);
+    }
+    catch (json::parse_error& err)
+    {
+        qWarning() << "OpenCircuitFromFile, caught parsing exception:"
+                   << err.what();
+        CreateNewCircuit();
+        m_fileName = fileName;
+    }
+    catch (std::exception& err)
+    {
+        qWarning() << "OpenCircuitFromFile, caught unknown exception:"
+                   << err.what();
+        CreateNewCircuit();
+        m_fileName = fileName;
+    }
 }
 
 void CircuitCanvas::SaveCircuitToFile()

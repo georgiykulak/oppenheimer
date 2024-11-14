@@ -70,6 +70,7 @@ private:
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
     void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
+    void ConstructItemsFromJson(const json& metaRoot);
 };
 
 #endif // DRAGANDDROPFRAME_H

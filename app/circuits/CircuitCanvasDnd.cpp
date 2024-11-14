@@ -1258,3 +1258,21 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
 
     metaItems.push_back(itemMeta);
 }
+
+void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
+{
+    qDebug() << "ConstructItemsFromJson";
+
+    const auto& itemsArray = metaRoot.at("items");
+    if (!itemsArray.is_null() && itemsArray.is_array())
+    {
+        qDebug() << "Items array is not empty, size =" << itemsArray.size();
+    }
+
+    const auto& connectionsArray = metaRoot.at("connections");
+    if (!connectionsArray.is_null() && connectionsArray.is_array())
+    {
+        qDebug() << "Connections array is not empty, size ="
+                 << connectionsArray.size();
+    }
+}
