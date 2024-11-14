@@ -30,12 +30,6 @@ DialogCreateInputItem::DialogCreateInputItem(QPoint pos,
     InitInputItem(orderId);
 }
 
-void DialogCreateInputItem::SetOrderId(int orderId)
-{
-    m_newInput->SetOrderId(orderId);
-    m_newInput->update();
-}
-
 void DialogCreateInputItem::SetInputOrderIdHint(int orderId)
 {
     m_spinBox->setValue(orderId);
@@ -93,45 +87,22 @@ void DialogCreateInputItem::mousePressEvent(QMouseEvent *event)
 
     if (event->button() == Qt::LeftButton)
     {
-        QPixmap pixmap = circuitInput->GetPixmap();
-        quint64 id = circuitInput->GetId();
-        int orderId = circuitInput->GetOrderId();
-        bool value = circuitInput->GetValue();
-        QSize itemSize = circuitInput->GetSize();
-        QColor color = circuitInput->GetColor();
-        const StartingPoint& startPoint = circuitInput->GetStartPoint();
-
+        const auto mimeData = circuitInput->GetMimeData(event->pos());
         QByteArray itemData;
         QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream
-            << pixmap
-            << QPoint(event->pos() - circuitInput->pos())
-            << id
-            << orderId
-            << itemSize
-            << value
-            << startPoint.connPos
-            << QPoint(event->pos() - startPoint.connPos)
-            << (unsigned int)(startPoint.connIds.size())
-            << color;
+        dataStream << mimeData;
 
-        for (const quint64 connId : startPoint.connIds)
-        {
-            dataStream << connId;
-        }
-
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData(inputMime, itemData);
+        QMimeData *mime = new QMimeData;
+        mime->setData(inputMime, itemData);
 
         QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap);
+        drag->setMimeData(mime);
+        drag->setPixmap(mimeData.pixmap);
         drag->setHotSpot(event->pos() - circuitInput->pos());
 
         if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
         {
             circuitInput->show();
-            circuitInput->SetPixmap(pixmap);
         }
     }
 }
@@ -155,9 +126,6 @@ void DialogCreateInputItem::InitLayout()
     m_spinBox->setMaximumWidth(60);
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
-
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateInputItem::SetOrderId);
 
     QSpacerItem* spacer = new QSpacerItem(120, 90,
                                           QSizePolicy::Minimum,
@@ -184,4 +152,7 @@ void DialogCreateInputItem::InitInputItem(int orderId)
 
     m_newInput = new CircuitInput(mimeDataHolder, this);
     m_newInput->move(offset);
+
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newInput, &CircuitInput::SetOrderId);
 }

@@ -81,8 +81,6 @@ void StartingConnector::InsertConnectionId(quint64 connId)
 
 void StartingConnector::RemoveConnectionId(quint64 connId)
 {
-    qDebug() << "StartingConnector::RemoveConnectionId called, connections ="
-             << m_startPoint.connIds.size() << "connId =" << connId;
     if (!m_startPoint.connIds.contains(connId))
     {
         return;

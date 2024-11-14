@@ -14,7 +14,6 @@ public:
     explicit DialogCreateInputItem(QPoint pos,
                                    int orderId,
                                    QWidget *parent = nullptr);
-    void SetOrderId(int orderId);
 
 public slots:
     void SetInputOrderIdHint(int orderId);

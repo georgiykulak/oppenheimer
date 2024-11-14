@@ -453,7 +453,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             else
             {
                 circuitInput->show();
-                circuitInput->SetPixmap(mimeData.pixmap);
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
@@ -1040,9 +1039,10 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
 
     if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
     {
-        m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
+        const auto mimeData = circuitInput->GetMimeData();
+        m_idHandler.RemoveInputOrderId(mimeData.orderId);
 
-        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
+        const auto& connIdSet = mimeData.startPoint.connIds;
         for (const auto& connId : connIdSet)
         {
             RemoveConnectionById(connId);
@@ -1104,13 +1104,7 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
         CircuitInput* circuitInput = qobject_cast<CircuitInput*>(obj);
         if (circuitInput)
         {
-            const auto& connIdSet = circuitInput->GetStartPoint().connIds;
-            if (connIdSet.contains(connId))
-            {
-                qDebug() << "Found input item containing connection ID =" << connId
-                         << "item ID =" << circuitInput->GetId();
-                circuitInput->RemoveConnectionId(connId);
-            }
+            circuitInput->RemoveConnectionId(connId);
 
             continue;
         }

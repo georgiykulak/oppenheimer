@@ -36,16 +36,6 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
-void CircuitInput::SetPixmap(const QPixmap& pixmap)
-{
-    m_pixmap = pixmap;
-}
-
-QPixmap CircuitInput::GetPixmap() const
-{
-    return m_pixmap;
-}
-
 void CircuitInput::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);
@@ -86,34 +76,9 @@ void CircuitInput::DrawToPixmap()
                             m_startingConnector->GetPositionOffset());
 }
 
-void CircuitInput::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-}
-
-int CircuitInput::GetOrderId() const
-{
-    return m_orderId;
-}
-
 void CircuitInput::SetValue(bool value)
 {
     m_inputValue = value;
-}
-
-bool CircuitInput::GetValue() const
-{
-    return m_inputValue;
-}
-
-void CircuitInput::SetColor(const QColor& color)
-{
-    m_color = color;
-}
-
-QColor CircuitInput::GetColor() const
-{
-    return m_color;
 }
 
 CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
@@ -139,14 +104,21 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     return mimeData;
 }
 
-const StartingPoint& CircuitInput::GetStartPoint() const
-{
-    return m_startingConnector->GetStartPoint();
-}
-
 void CircuitInput::RemoveConnectionId(quint64 connId)
 {
     m_startingConnector->RemoveConnectionId(connId);
+}
+
+void CircuitInput::SetOrderId(int orderId)
+{
+    m_orderId = orderId;
+    update();
+}
+
+void CircuitInput::SetColor(const QColor& color)
+{
+    m_color = color;
+    update();
 }
 
 void CircuitInput::paintEvent(QPaintEvent *event)
