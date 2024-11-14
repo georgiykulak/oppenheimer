@@ -42,6 +42,7 @@ signals:
 
 public slots:
     void CreateNewCircuit();
+    void OpenCircuitFromFile();
     void SaveCircuitToFile();
     void NewSavingFile();
 

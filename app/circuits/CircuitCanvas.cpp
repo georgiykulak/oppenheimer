@@ -52,13 +52,28 @@ void CircuitCanvas::CreateNewCircuit()
     ClearAll();
 }
 
+void CircuitCanvas::OpenCircuitFromFile()
+{
+    auto fileName = QFileDialog::getOpenFileName(this, "Open Circuit");
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return;
+    }
+
+    CreateNewCircuit();
+
+    m_fileName = fileName;
+}
+
 void CircuitCanvas::SaveCircuitToFile()
 {
     qDebug() << "Saving circuit to file:" << m_fileName;
 
     if (m_fileName.isEmpty())
     {
-        m_fileName = QFileDialog::getSaveFileName(this, "Save Project As");
+        m_fileName = QFileDialog::getSaveFileName(this, "Save Circuit As");
     }
 
     QFile file(m_fileName);

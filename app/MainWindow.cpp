@@ -43,6 +43,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_canvas, &CircuitCanvas::clearAllItems,
             m_logicController, &LogicController::ClearAllItems);
 
+    connect(this, &MainWindow::openCircuitTriggered,
+            m_canvas, &CircuitCanvas::OpenCircuitFromFile);
+
     connect(this, &MainWindow::saveTriggered,
             m_canvas, &CircuitCanvas::SaveCircuitToFile);
 
@@ -123,6 +126,8 @@ void MainWindow::on_actionNew_Circuit_triggered()
 void MainWindow::on_actionOpen_Circuit_triggered()
 {
     qDebug() << "Main window action: Open Circuit triggered";
+
+    emit openCircuitTriggered();
 }
 
 void MainWindow::on_actionSave_triggered()

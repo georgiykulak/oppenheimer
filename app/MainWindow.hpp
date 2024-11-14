@@ -24,6 +24,7 @@ public:
 
 signals:
     void newCircuitTriggered();
+    void openCircuitTriggered();
     void saveTriggered();
     void saveAsTriggered();
 
