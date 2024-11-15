@@ -98,72 +98,39 @@ void DialogCreateElementItem::dragEnterEvent(QDragEnterEvent *event)
 
 void DialogCreateElementItem::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton)
+    {
+        return;
+    }
+
     QWidget* child = childAt(event->pos());
     if (!child)
+    {
         return;
+    }
 
     CircuitElement* circuitElement = qobject_cast<CircuitElement*>(child);
     if (!circuitElement)
-        return;
-
-    if (event->button() == Qt::LeftButton)
     {
-        QPixmap pixmap = circuitElement->GetPixmap();
-        quint64 id = circuitElement->GetId();
-        int orderId = circuitElement->GetOrderId();
-        int numberParam = circuitElement->GetNumberParameter();
-        bool value = circuitElement->GetValue();
-        QSize itemSize = circuitElement->GetSize();
-        QColor color = circuitElement->GetColor();
-        bool isNotationBinary = circuitElement->IsNotationBinary();
-        EndingPointVector endPoints = circuitElement->GetEndPoints();
-        StartingPointVector startPoints = circuitElement->GetStartPoints();
+        return;
+    }
 
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream
-            << pixmap
-            << QPoint(event->pos() - circuitElement->pos())
-            << id
-            << orderId
-            << itemSize
-            << value
-            << numberParam
-            << color
-            << isNotationBinary;
+    const auto mimeData = circuitElement->GetMimeData(event->pos());
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << mimeData;
 
-        dataStream << (unsigned int)(endPoints.size());
-        for (const auto& endPoint : endPoints)
-        {
-            dataStream << endPoint.connPos << QPoint(event->pos() - endPoint.connPos)
-                       << endPoint.connId;
-        }
+    QMimeData* mime = new QMimeData;
+    mime->setData(elementMime, itemData);
 
-        dataStream << (unsigned int)(startPoints.size());
-        for (const auto& startPoint : startPoints)
-        {
-            dataStream << startPoint.connPos << QPoint(event->pos() - startPoint.connPos);
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(mime);
+    drag->setPixmap(mimeData.pixmap);
+    drag->setHotSpot(event->pos() - circuitElement->pos());
 
-            dataStream << (unsigned int)(startPoint.connIds.size());
-            for (const auto& connId : startPoint.connIds)
-            {
-                dataStream << connId;
-            }
-        }
-
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData(elementMime, itemData);
-
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos() - circuitElement->pos());
-
-        if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-        {
-            circuitElement->show();
-            circuitElement->SetPixmap(pixmap);
-        }
+    if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
+    {
+        circuitElement->show();
     }
 }
 
@@ -200,15 +167,9 @@ void DialogCreateElementItem::InitLayout()
     m_inputsCount->setRange(1, 16);
     m_inputsCount->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateElementItem::SetInputsNumber);
-
     m_outputsCount = new QSpinBox(this);
     m_outputsCount->setRange(1, 16);
     m_outputsCount->setAttribute(Qt::WA_DeleteOnClose);
-
-    connect(m_outputsCount, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateElementItem::SetOutputsNumber);
 
     QSpacerItem* spacer = new QSpacerItem(130, 90,
                                           QSizePolicy::Minimum,
@@ -241,23 +202,20 @@ void DialogCreateElementItem::InitLayout()
 void DialogCreateElementItem::InitElementItem(int orderId)
 {
     QPoint offset(20, 20);
-    EndingPointVector endPoints;
-    endPoints.push_back({QPoint(5, 55) + offset, 0});
-    StartingPointVector startPoints;
-    startPoints.push_back({QPoint(105, 55) + offset, StartingPoint::IdsSet()});
+    CircuitElementMimeData mimeData;
+    mimeData.orderId = orderId;
+    mimeData.endingPointVector.push_back({QPoint(5, 55) + offset, 0});
+    mimeData.startingPointVector.push_back({QPoint(105, 55) + offset,
+                                            StartingPoint::IdsSet()});
 
-    m_newElement = new CircuitElement(endPoints,
-                                      startPoints,
-                                      this);
-
-    m_newElement->SetId(0);
-    m_newElement->SetOrderId(orderId);
-    m_newElement->SetNumberParameter(0);
-    m_newElement->SetValue(orderId % 2);
+    m_newElement = new CircuitElement(mimeData, this, false);
     m_newElement->move(offset);
-    m_newElement->update();
-    m_newElement->show();
-    m_newElement->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
+            this, &DialogCreateElementItem::SetInputsNumber);
+
+    connect(m_outputsCount, qOverload<int>(&QSpinBox::valueChanged),
+            this, &DialogCreateElementItem::SetOutputsNumber);
 }
 
 void DialogCreateElementItem::ResizeWindow(int connectionsOnSideNumber)

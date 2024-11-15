@@ -88,7 +88,6 @@ void EndingConnector::SetConnectionId(quint64 connId)
 
 void EndingConnector::RemoveConnectionId(quint64 connId)
 {
-    qDebug() << "EndingConnector::RemoveConnectionId called, connId =" << connId;
     if (m_endPoint.connId != connId)
     {
         return;

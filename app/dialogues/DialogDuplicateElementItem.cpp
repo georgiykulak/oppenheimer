@@ -75,75 +75,40 @@ void DialogDuplicateElementItem::dragEnterEvent(QDragEnterEvent *event)
 
 void DialogDuplicateElementItem::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton)
+    {
+        return;
+    }
+
     QWidget* child = childAt(event->pos());
     if (!child)
+    {
         return;
+    }
 
     CircuitElement* circuitElement = qobject_cast<CircuitElement*>(child);
     if (!circuitElement)
-        return;
-
-    if (event->button() == Qt::LeftButton)
     {
-        QPixmap pixmap = circuitElement->GetPixmap();
-        quint64 id = circuitElement->GetId();
-        int orderId = circuitElement->GetOrderId();
-        int numberParam = circuitElement->GetNumberParameter();
-        bool value = circuitElement->GetValue();
-        QSize itemSize = circuitElement->GetSize();
-        QColor color = circuitElement->GetColor();
-        bool isNotationBinary = circuitElement->IsNotationBinary();
-        EndingPointVector endPoints = circuitElement->GetEndPoints();
-        StartingPointVector startPoints = circuitElement->GetStartPoints();
-
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream
-            << pixmap
-            << QPoint(event->pos() - circuitElement->pos())
-            << id
-            << orderId
-            << itemSize
-            << value
-            << numberParam
-            << color
-            << isNotationBinary;
-
-        dataStream << (unsigned int)(endPoints.size());
-        for (const auto& endPoint : endPoints)
-        {
-            dataStream << endPoint.connPos << QPoint(event->pos() - endPoint.connPos)
-            << endPoint.connId;
-        }
-
-        dataStream << (unsigned int)(startPoints.size());
-        for (const auto& startPoint : startPoints)
-        {
-            dataStream << startPoint.connPos << QPoint(event->pos() - startPoint.connPos);
-
-            dataStream << (unsigned int)(startPoint.connIds.size());
-            for (const auto& connId : startPoint.connIds)
-            {
-                dataStream << connId;
-            }
-        }
-
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData(elementMime, itemData);
-
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos() - circuitElement->pos());
-
-        if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-        {
-            circuitElement->show();
-            circuitElement->SetPixmap(pixmap);
-        }
+        return;
     }
 
-    update();
+    const auto mimeData = circuitElement->GetMimeData(event->pos());
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << mimeData;
+
+    QMimeData* mime = new QMimeData;
+    mime->setData(elementMime, itemData);
+
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(mime);
+    drag->setPixmap(mimeData.pixmap);
+    drag->setHotSpot(event->pos() - circuitElement->pos());
+
+    if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
+    {
+        circuitElement->show();
+    }
 }
 
 void DialogDuplicateElementItem::InitLayout()
@@ -163,19 +128,9 @@ void DialogDuplicateElementItem::InitLayout()
 void DialogDuplicateElementItem::InitElementItem(CircuitElement* original,
                                                  int orderId)
 {
-    m_newElement = new CircuitElement(original->GetEndPoints(),
-                                      original->GetStartPoints(),
-                                      this,
-                                      original->GetSize());
+    auto mimeData = original->GetMimeData({});
+    mimeData.orderId = orderId;
 
-    m_newElement->SetId(original->GetId());
-    m_newElement->SetOrderId(orderId);
-    m_newElement->SetNumberParameter(original->GetNumberParameter());
-    m_newElement->SetValue(original->GetValue());
-    m_newElement->SetColor(original->GetColor());
-    m_newElement->SetNotation(original->IsNotationBinary());
+    m_newElement = new CircuitElement(mimeData, this, false);
     m_newElement->move(m_offset);
-    m_newElement->update();
-    m_newElement->show();
-    m_newElement->setAttribute(Qt::WA_DeleteOnClose);
 }

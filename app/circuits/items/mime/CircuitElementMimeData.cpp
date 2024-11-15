@@ -4,18 +4,20 @@ CircuitElementMimeData::CircuitElementMimeData(QPoint eventPos)
     : BaseCircuitItemMimeData{eventPos}
 {}
 
-QDataStream& operator>>(QDataStream& iStream, CircuitElementMimeData& eData)
+QDataStream& operator>>(QDataStream& iStream,
+                        CircuitElementMimeData& data)
 {
-    eData.readBasicMimeData(iStream);
+    data.readBasicMimeData(iStream);
 
-    iStream >> eData.numberParam >> eData.color >> eData.isNotationBinary;
+    iStream >> data.numberParam >> data.color >> data.isNotationBinary;
 
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
+    unsigned int endingPointVectorSize;
     unsigned int startingPointVectorSize;
 
-    iStream >> eData.endingPointVectorSize;
-    for (unsigned int i = 0; i < eData.endingPointVectorSize; ++i)
+    iStream >> endingPointVectorSize;
+    for (unsigned int i = 0; i < endingPointVectorSize; ++i)
     {
         EndingPoint endPoint;
         QPoint endOffset;
@@ -23,7 +25,7 @@ QDataStream& operator>>(QDataStream& iStream, CircuitElementMimeData& eData)
         iStream >> endPoint.connPos >> endOffset >> endPoint.connId;
 
         oldEndingPointVector.push_back(endPoint);
-        eData.endingPointVector.push_back({eData.eventPos - endOffset,
+        data.endingPointVector.push_back({data.eventPos - endOffset,
                                            endPoint.connId});
     }
 
@@ -44,21 +46,52 @@ QDataStream& operator>>(QDataStream& iStream, CircuitElementMimeData& eData)
         }
 
         oldStartingPointVector.push_back(startPoint);
-        eData.startingPointVector.push_back({eData.eventPos - startOffset,
+        data.startingPointVector.push_back({data.eventPos - startOffset,
                                              startPoint.connIds});
     }
 
-    for (unsigned int i = 0; i < eData.endingPointVectorSize; ++i)
+    for (unsigned int i = 0; i < endingPointVectorSize; ++i)
     {
-        eData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
-                                      eData.endingPointVector[i].connPos});
+        data.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                      data.endingPointVector[i].connPos});
     }
 
     for (unsigned int i = 0; i < startingPointVectorSize; ++i)
     {
-        eData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
-                                      eData.startingPointVector[i].connPos});
+        data.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                      data.startingPointVector[i].connPos});
     }
 
     return iStream;
+}
+
+QDataStream& operator<<(QDataStream& oStream,
+                        const CircuitElementMimeData& data)
+{
+    data.writeBasicMimeData(oStream);
+
+    oStream << data.numberParam << data.color << data.isNotationBinary;
+
+    oStream << (unsigned int)(data.endingPointVector.size());
+    for (const auto& endPoint : data.endingPointVector)
+    {
+        oStream
+            << endPoint.connPos
+            << QPoint(data.eventPos - endPoint.connPos)
+            << endPoint.connId;
+    }
+
+    oStream << (unsigned int)(data.startingPointVector.size());
+    for (const auto& startPoint : data.startingPointVector)
+    {
+        oStream
+            << startPoint.connPos
+            << QPoint(data.eventPos - startPoint.connPos);
+
+        oStream << (unsigned int)(startPoint.connIds.size());
+        for (const quint64 connId : startPoint.connIds)
+        {
+            oStream << connId;
+        }
+    }
 }

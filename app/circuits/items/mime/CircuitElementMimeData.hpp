@@ -5,17 +5,19 @@
 
 struct CircuitElementMimeData : public BaseCircuitItemMimeData
 {
-    CircuitElementMimeData(QPoint eventPos);
+    CircuitElementMimeData(QPoint eventPos = {});
 
-    unsigned int endingPointVectorSize;
     EndingPointVector endingPointVector;
     StartingPointVector startingPointVector;
 
-    int numberParam;
+    int numberParam = 0;
     QColor color;
-    bool isNotationBinary;
+    bool isNotationBinary = true;
 };
 
-QDataStream& operator>>(QDataStream& iStream, CircuitElementMimeData& eData);
+QDataStream& operator>>(QDataStream& iStream,
+                        CircuitElementMimeData& eData);
+QDataStream& operator<<(QDataStream& oStream,
+                        const CircuitElementMimeData& data);
 
 #endif // CIRCUITELEMENTMIMEDATA_HPP

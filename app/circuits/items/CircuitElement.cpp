@@ -7,10 +7,8 @@
 #include <QPainter>
 #include <QPushButton>
 
-CircuitElement::CircuitElement(const EndingPointVector& endPoints,
-                               const StartingPointVector& startPoints,
+CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
-                               QSize itemSize,
                                bool numParamEnabled)
     : BaseCircuitItem{parent}
 {
@@ -18,14 +16,15 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     m_minimumHeight = 110;
     m_minimumYShift = 55;
     QSize size;
-    if (itemSize.isValid())
+    if (mimeData.itemSize.isValid())
     {
-        size = itemSize;
+        size = mimeData.itemSize;
     }
     else
     {
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
-                           (std::max(endPoints.size(), startPoints.size()) - 1);
+                           (std::max(mimeData.endingPointVector.size(),
+                                     mimeData.startingPointVector.size()) - 1);
         size = QSize(110, realHeight);
     }
     setMinimumSize(size);
@@ -41,7 +40,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     int i = 0;
-    for (const auto& endPoint : endPoints)
+    for (const auto& endPoint : mimeData.endingPointVector)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(3, yShift - 4);
@@ -57,7 +56,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     }
 
     i = 0;
-    for (const auto& startPoint : startPoints)
+    for (const auto& startPoint : mimeData.startingPointVector)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(95, yShift - 4);
@@ -81,7 +80,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     m_textField->show();
     m_textField->setEnabled(numParamEnabled);
 
-    const auto vectorSize = 1 << endPoints.size(); // 2 ^ N
+    const auto vectorSize = 1 << mimeData.endingPointVector.size(); // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -129,6 +128,26 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
                     m_textField->setNotation(true);
                 }
             });
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    SetId(mimeData.id);
+    m_orderId = mimeData.orderId;
+    m_outputValue = mimeData.value;
+    if (mimeData.color.isValid())
+    {
+        m_color = mimeData.color;
+    }
+
+    m_numberParam = mimeData.numberParam;
+    m_textField->setNumber(m_numberParam);
+    m_notationSwitchButton->setText(mimeData.isNotationBinary ? "bin" : "dec");
+    m_textField->setNotation(mimeData.isNotationBinary);
+
+    CircuitElement::DrawToPixmap();
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
 CircuitElement::~CircuitElement()
@@ -526,6 +545,52 @@ StartingPointVector CircuitElement::GetStartPoints() const
     }
 
     return startingPointVector;
+}
+
+CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
+{
+    CircuitElementMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+    mimeData.itemSize = GetSize();
+    mimeData.value = m_outputValue;
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.color = m_color;
+
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    const auto endPoints = GetEndPoints();
+    for (const auto& endPoint : endPoints)
+    {
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPointVector.push_back({endPoint.connPos,
+                                              endPoint.connId});
+    }
+
+    const auto startPoints = GetStartPoints();
+    for (const auto& startPoint : startPoints)
+    {
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPointVector.push_back({startPoint.connPos,
+                                                startPoint.connIds});
+    }
+
+    for (unsigned int i = 0; i < mimeData.endingPointVector.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPointVector[i].connPos});
+    }
+
+    for (unsigned int i = 0; i < mimeData.startingPointVector.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPointVector[i].connPos});
+    }
+
+    return mimeData;
 }
 
 void CircuitElement::RemoveConnectionId(quint64 connId)

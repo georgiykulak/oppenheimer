@@ -2,6 +2,7 @@
 #define CIRCUITELEMENT_HPP
 
 #include "BaseCircuitItem.hpp"
+#include "mime/CircuitElementMimeData.hpp"
 
 class EndingConnector;
 class StartingConnector;
@@ -12,11 +13,9 @@ class CircuitElement : public BaseCircuitItem
 {
     Q_OBJECT
 public:
-    explicit CircuitElement(const EndingPointVector& endPoints,
-                            const StartingPointVector& startPoints,
+    explicit CircuitElement(const CircuitElementMimeData& mimeData,
                             QWidget *parent = nullptr,
-                            QSize itemSize = {},
-                            bool numParamEnabled = false);
+                            bool numParamEnabled = true);
     ~CircuitElement();
 
     inline ItemType GetItemType() const noexcept final
@@ -44,6 +43,9 @@ public:
     void SetOutputsNumberAndRebook(int size);
     EndingPointVector GetEndPoints() const;
     StartingPointVector GetStartPoints() const;
+
+    CircuitElementMimeData GetMimeData(QPoint eventPos = {}) const;
+
     void RemoveConnectionId(quint64 connId) override;
     int GetOffsetBetweenConnectionPoints() const;
     bool IsNumberParameterValid() const;
