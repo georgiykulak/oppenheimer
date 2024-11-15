@@ -87,9 +87,9 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     connect(m_textField, &LogicVectorEdit::numberChangedAndValid,
             this, [this](int number)
             {
-                setNumberParameter(number);
+                m_numberParam = number;
                 emit setNumberParameterToElementItem(
-                    GetId(), GetNumberParameter()
+                    GetId(), m_numberParam
                 );
             });
     connect(m_textField, &LogicVectorEdit::setNumberValidity,
@@ -156,16 +156,6 @@ CircuitElement::~CircuitElement()
     m_startingConnectors.clear();
 }
 
-void CircuitElement::SetPixmap(const QPixmap& pixmap)
-{
-    m_pixmap = pixmap;
-}
-
-QPixmap CircuitElement::GetPixmap() const
-{
-    return m_pixmap;
-}
-
 void CircuitElement::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);
@@ -229,76 +219,15 @@ void CircuitElement::DrawToPixmap()
     }
 }
 
-void CircuitElement::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-}
-
-int CircuitElement::GetOrderId() const
-{
-    return m_orderId;
-}
-
 void CircuitElement::SetNumberParameter(int numberParam)
 {
     m_numberParam = numberParam;
     m_textField->setNumber(numberParam);
 }
 
-int CircuitElement::GetNumberParameter() const
-{
-    return m_numberParam;
-}
-
 void CircuitElement::SetValue(bool value)
 {
     m_outputValue = value;
-}
-
-bool CircuitElement::GetValue() const
-{
-    return m_outputValue;
-}
-
-void CircuitElement::SetColor(const QColor &color)
-{
-    m_color = color;
-}
-
-QColor CircuitElement::GetColor() const
-{
-    return m_color;
-}
-
-void CircuitElement::SetNotation(bool isBinary)
-{
-    m_textField->setNotation(isBinary);
-    if (isBinary)
-    {
-        m_notationSwitchButton->setText("bin");
-    }
-    else
-    {
-        m_notationSwitchButton->setText("dec");
-    }
-}
-
-bool CircuitElement::IsNotationBinary() const
-{
-    return m_textField->IsNotationBinary();
-}
-
-void CircuitElement::setNumberParameter(int param)
-{
-    m_numberParam = param;
-}
-
-void CircuitElement::paintEvent(QPaintEvent *event)
-{
-    DrawToPixmap();
-
-    QPainter painter(this);
-    painter.drawPixmap(0, 0, m_pixmap);
 }
 
 void CircuitElement::SetInputsNumber(int size)
@@ -355,8 +284,6 @@ void CircuitElement::SetInputsNumber(int size)
 
             m_endingConnectors.push_back(endingConnector);
         }
-
-        update();
     }
     else if (number < m_endingConnectors.size())
     {
@@ -385,6 +312,8 @@ void CircuitElement::SetInputsNumber(int size)
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
+
+    update();
 }
 
 void CircuitElement::SetInputsNumberAndRebook(int size)
@@ -463,8 +392,6 @@ void CircuitElement::SetOutputsNumber(int size)
 
             m_startingConnectors.push_back(startingConnector);
         }
-
-        update();
     }
     else if (number < m_startingConnectors.size())
     {
@@ -488,6 +415,8 @@ void CircuitElement::SetOutputsNumber(int size)
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
+
+    update();
 }
 
 void CircuitElement::SetOutputsNumberAndRebook(int size)
@@ -614,4 +543,24 @@ int CircuitElement::GetOffsetBetweenConnectionPoints() const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
+}
+
+void CircuitElement::SetOrderId(int orderId)
+{
+    m_orderId = orderId;
+    update();
+}
+
+void CircuitElement::SetColor(const QColor& color)
+{
+    m_color = color;
+    update();
+}
+
+void CircuitElement::paintEvent(QPaintEvent *event)
+{
+    DrawToPixmap();
+
+    QPainter painter(this);
+    painter.drawPixmap(0, 0, m_pixmap);
 }

@@ -21,15 +21,9 @@ public:
     void SetSize(QSize size);
     QSize GetSize() const;
 
-    virtual void SetPixmap(const QPixmap&) { WarnNotImplemented();   }
-    virtual QPixmap GetPixmap() const      { WarnNotImplemented({}); }
     virtual void DrawToPixmap()            { WarnNotImplemented();   }
     virtual void SetOrderId(int)           { WarnNotImplemented();   }
-    virtual int GetOrderId() const         { WarnNotImplemented(-1); }
     virtual void SetValue(bool)            { WarnNotImplemented();   }
-    virtual bool GetValue() const          { WarnNotImplemented(0);  }
-    virtual void SetNumberParameter(int)   { WarnNotImplemented();   }
-    virtual int GetNumberParameter() const { WarnNotImplemented(-1); }
 
     virtual void RemoveConnectionId(quint64) {};
 

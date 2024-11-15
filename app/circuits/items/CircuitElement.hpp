@@ -21,22 +21,12 @@ public:
     inline ItemType GetItemType() const noexcept final
     { return ItemType::Element; }
 
-    virtual void SetPixmap(const QPixmap& pixmap) override;
-    virtual QPixmap GetPixmap() const override;
     virtual void DrawToPixmap() override;
 
-    virtual void SetOrderId(int orderId) override;
-    virtual int GetOrderId() const override;
-    virtual void SetNumberParameter(int numParam) override;
-    virtual int GetNumberParameter() const override;
+    void SetNumberParameter(int numParam);
+    // Warning: Not used
     virtual void SetValue(bool value) override;
-    virtual bool GetValue() const override;
 
-    void SetColor(const QColor& color);
-    QColor GetColor() const;
-
-    void SetNotation(bool isBinary);
-    bool IsNotationBinary() const;
     void SetInputsNumber(int size);
     void SetInputsNumberAndRebook(int size);
     void SetOutputsNumber(int size);
@@ -62,7 +52,8 @@ signals:
                          QRect area);
 
 public slots:
-    void setNumberParameter(int param);
+    virtual void SetOrderId(int orderId) override;
+    void SetColor(const QColor& color);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

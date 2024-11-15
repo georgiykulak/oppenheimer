@@ -587,7 +587,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                         {
                             QMessageBox::information(this,
                                 tr("Can't simulate on element #")
-                                    + QString::number(circuitElement->GetOrderId()),
+                                    + QString::number(circuitElement->GetMimeData().orderId),
                                 tr("Element has empty or invalid number parameter.\n"
                                    "Please use another one and try again."),
                                 QMessageBox::Ok
@@ -973,9 +973,10 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     }
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
     {
-        m_idHandler.RemoveElementOrderId(item->GetOrderId());
+        const auto mimeData = circuitElement->GetMimeData();
+        m_idHandler.RemoveElementOrderId(mimeData.orderId);
 
-        const auto& startPoints = circuitElement->GetStartPoints();
+        const auto& startPoints = mimeData.startingPointVector;
         for (const auto& startPoint : startPoints)
         {
             const auto& connIdSet = startPoint.connIds;
@@ -985,7 +986,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
             }
         }
 
-        const auto& endPoints = circuitElement->GetEndPoints();
+        const auto& endPoints = mimeData.endingPointVector;
         for (const auto& endPoint : endPoints)
         {
             const auto connId = endPoint.connId;

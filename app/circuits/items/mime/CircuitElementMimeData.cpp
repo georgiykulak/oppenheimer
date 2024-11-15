@@ -94,4 +94,6 @@ QDataStream& operator<<(QDataStream& oStream,
             oStream << connId;
         }
     }
+
+    return oStream;
 }

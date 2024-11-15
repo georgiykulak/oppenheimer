@@ -31,23 +31,15 @@ DialogCreateElementItem::DialogCreateElementItem(QPoint pos,
     InitElementItem(orderId);
 }
 
-void DialogCreateElementItem::SetOrderId(int orderId)
-{
-    m_newElement->SetOrderId(orderId);
-    m_newElement->update();
-}
-
 void DialogCreateElementItem::SetInputsNumber(int size)
 {
     m_newElement->SetInputsNumber(size);
-    m_newElement->update();
     ResizeWindow(size);
 }
 
 void DialogCreateElementItem::SetOutputsNumber(int size)
 {
     m_newElement->SetOutputsNumber(size);
-    m_newElement->update();
     ResizeWindow(size);
 }
 
@@ -154,9 +146,6 @@ void DialogCreateElementItem::InitLayout()
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateElementItem::SetOrderId);
-
     QLabel* inputsLabel = new QLabel("Inputs", this);
     inputsLabel->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -210,6 +199,9 @@ void DialogCreateElementItem::InitElementItem(int orderId)
 
     m_newElement = new CircuitElement(mimeData, this, false);
     m_newElement->move(offset);
+
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newElement, &CircuitElement::SetOrderId);
 
     connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
             this, &DialogCreateElementItem::SetInputsNumber);
