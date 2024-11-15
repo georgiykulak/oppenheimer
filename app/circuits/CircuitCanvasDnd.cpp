@@ -378,7 +378,9 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 {
     QWidget* child = childAt(event->pos());
     if (!child)
+    {
         return;
+    }
 
     CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
     if (circuitInput)
@@ -690,7 +692,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                                         circuitElement->SetNumberParameter(0);
                                         emit changeElementItemInputsSize(circuitElement->GetId(),
-                                                                         circuitElement->GetEndPoints().size());
+                                                                         circuitElement->GetEndingConnectors().size());
                                     }
                                     else
                                     {
@@ -1021,32 +1023,49 @@ void CircuitCanvas::InsertConnection(quint64 startId,
         return;
     }
 
+    const auto startPos = positions.p1();
+    const auto endPos = positions.p2();
     QObjectList childList = this->children();
 
-    bool startIsPresent = false;
+    std::size_t connectorsFound = 0;
     for (auto* obj : childList)
     {
-        auto* connector = qobject_cast<StartingConnector*>(obj);
-        if (connector && connector->GetItemId() == startId)
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (!item)
         {
-            connector->InsertConnectionId(connId);
-            startIsPresent = true;
-            break;
+            continue;
         }
-    }
 
-    if (!startIsPresent)
-    {
-        qDebug() << "InsertConnection: starting connector is not present, aborting";
-        return;
-    }
-
-    for (auto* obj : childList)
-    {
-        auto* connector = qobject_cast<EndingConnector*>(obj);
-        if (connector && connector->GetItemId() == endId)
+        if (item->GetId() == startId)
         {
-            connector->SetConnectionId(connId);
+            const auto connectors = item->GetStartingConnectors();
+            for (auto* connector : connectors)
+            {
+                if (connector && connector->GetStartPoint().connPos == startPos)
+                {
+                    connector->SetConnectionId(connId);
+                    ++connectorsFound;
+                    break;
+                }
+            }
+        }
+
+        if (item->GetId() == endId)
+        {
+            const auto connectors = item->GetEndingConnectors();
+            for (auto* connector : connectors)
+            {
+                if (connector && connector->GetEndPoint().connPos == endPos)
+                {
+                    connector->SetConnectionId(connId);
+                    ++connectorsFound;
+                    break;
+                }
+            }
+        }
+
+        if (connectorsFound == 2)
+        {
             break;
         }
     }

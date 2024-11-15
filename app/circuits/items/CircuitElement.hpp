@@ -60,8 +60,6 @@ protected:
 
 private:
     QPixmap m_pixmap;
-    std::vector<EndingConnector*> m_endingConnectors;
-    std::vector<StartingConnector*> m_startingConnectors;
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
 

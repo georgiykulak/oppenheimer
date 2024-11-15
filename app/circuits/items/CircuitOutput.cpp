@@ -14,15 +14,14 @@ CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
     m_pixmap = QPixmap(GetSize());
     m_pixmap.fill(QColor(Qt::transparent));
 
-    QPoint positionOffset(3, 9);
-    m_endingConnector = new EndingConnector(mimeData.endPoint,
-                                            positionOffset,
-                                            this);
+    m_endingConnectors.resize(1);
 
-    m_endingConnector->move(positionOffset);
-    m_endingConnector->update();
-    m_endingConnector->show();
-    m_endingConnector->setAttribute(Qt::WA_DeleteOnClose);
+    QPoint positionOffset(3, 9);
+    auto* endingConnector = new EndingConnector(mimeData.endPoint,
+                                                positionOffset,
+                                                this);
+    endingConnector->move(positionOffset);
+    m_endingConnectors[0] = endingConnector;
 
     SetId(mimeData.id);
     m_orderId = mimeData.orderId;
@@ -74,7 +73,7 @@ void CircuitOutput::DrawToPixmap()
     painter.drawText(30, 20, strId);
 
     EndingConnector::DrawConnectorToPixmap(painter,
-                                         m_endingConnector->GetPositionOffset());
+                                         m_endingConnectors[0]->GetPositionOffset());
 }
 
 void CircuitOutput::SetValue(bool value)
@@ -95,7 +94,7 @@ CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
     mimeData.color = m_color;
 
-    const auto endPoint = m_endingConnector->GetEndPoint();
+    const auto endPoint = m_endingConnectors[0]->GetEndPoint();
     mimeData.endPoint = endPoint;
     mimeData.oldEndPointPos = endPoint.connPos;
     mimeData.endOffset = QPoint(eventPos - endPoint.connPos);
@@ -109,7 +108,7 @@ CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
 
 void CircuitOutput::RemoveConnectionId(quint64 connId)
 {
-    m_endingConnector->RemoveConnectionId(connId);
+    m_endingConnectors[0]->RemoveConnectionId(connId);
 }
 
 void CircuitOutput::SetOrderId(int orderId)

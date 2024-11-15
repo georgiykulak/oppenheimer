@@ -26,7 +26,7 @@ public:
     static void DrawConnectorToPixmap(QPainter& painter, QPoint position_offset);
 
 public slots:
-    void InsertConnectionId(quint64 connId);
+    void SetConnectionId(quint64 connId);
     void RemoveConnectionId(quint64 connId);
 
 protected:

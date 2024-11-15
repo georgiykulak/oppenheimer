@@ -37,7 +37,6 @@ protected:
 
 private:
     QPixmap m_pixmap;
-    EndingConnector* m_endingConnector;
 
     int m_orderId = -1;
     bool m_outputValue = 0;

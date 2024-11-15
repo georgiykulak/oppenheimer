@@ -14,14 +14,14 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     m_pixmap = QPixmap(GetSize());
     m_pixmap.fill(QColor(Qt::transparent));
 
+    m_startingConnectors.resize(1);
+
     QPoint positionOffset(65, 9);
-    m_startingConnector = new StartingConnector(mimeData.startPoint,
-                                                positionOffset,
-                                                this);
-    m_startingConnector->move(positionOffset);
-    m_startingConnector->update();
-    m_startingConnector->show();
-    m_startingConnector->setAttribute(Qt::WA_DeleteOnClose);
+    auto* startingConnector = new StartingConnector(mimeData.startPoint,
+                                                    positionOffset,
+                                                    this);
+    startingConnector->move(positionOffset);
+    m_startingConnectors[0] = startingConnector;
 
     SetId(mimeData.id);
     m_orderId = mimeData.orderId;
@@ -73,7 +73,7 @@ void CircuitInput::DrawToPixmap()
     painter.drawText(25, 20, strId);
 
     StartingConnector::DrawConnectorToPixmap(painter,
-                            m_startingConnector->GetPositionOffset());
+                            m_startingConnectors[0]->GetPositionOffset());
 }
 
 void CircuitInput::SetValue(bool value)
@@ -94,7 +94,7 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
     mimeData.color = m_color;
 
-    const auto startPoint = m_startingConnector->GetStartPoint();
+    const auto startPoint = m_startingConnectors[0]->GetStartPoint();
     mimeData.startPoint = startPoint;
     mimeData.oldStartPointPos = startPoint.connPos;
     mimeData.startOffset = QPoint(eventPos - startPoint.connPos);
@@ -108,7 +108,7 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
 
 void CircuitInput::RemoveConnectionId(quint64 connId)
 {
-    m_startingConnector->RemoveConnectionId(connId);
+    m_startingConnectors[0]->RemoveConnectionId(connId);
 }
 
 void CircuitInput::SetOrderId(int orderId)

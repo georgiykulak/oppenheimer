@@ -19,6 +19,9 @@ StartingConnector::StartingConnector(const StartingPoint& startPoint,
     m_positionOffset = positionOffset;
 
     m_sourceItem = qobject_cast<BaseCircuitItem*>(parent);
+
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
 quint64 StartingConnector::GetItemId() const
@@ -65,9 +68,9 @@ void StartingConnector::DrawConnectorToPixmap(QPainter& painter, QPoint position
                         1 + positionOffset.y(), 10, 10);
 }
 
-void StartingConnector::InsertConnectionId(quint64 connId)
+void StartingConnector::SetConnectionId(quint64 connId)
 {
-    qDebug() << "StartingConnector::InsertConnectionId called, connections ="
+    qDebug() << "StartingConnector::SetConnectionId called, connections ="
              << m_startPoint.connIds.size() << "connId =" << connId;
     if (m_startPoint.connIds.contains(connId))
     {

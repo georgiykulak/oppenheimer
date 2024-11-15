@@ -19,6 +19,9 @@ EndingConnector::EndingConnector(const EndingPoint& endPoint,
     m_positionOffset = positionOffset;
 
     m_sourceItem = qobject_cast<BaseCircuitItem*>(parent);
+
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
 quint64 EndingConnector::GetItemId() const
@@ -77,7 +80,7 @@ void EndingConnector::DrawConnectorToPixmap(QPainter& painter, QPoint positionOf
 
 void EndingConnector::SetConnectionId(quint64 connId)
 {
-    qDebug() << "EndingConnector::InsertConnectionId called, connId =" << connId;
+    qDebug() << "EndingConnector::SetConnectionId called, connId =" << connId;
 
     if (!m_endPoint.connId)
     {

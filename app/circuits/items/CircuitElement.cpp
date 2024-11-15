@@ -318,7 +318,7 @@ void CircuitElement::SetInputsNumber(int size)
 
 void CircuitElement::SetInputsNumberAndRebook(int size)
 {
-    const int currentInputsNumber = static_cast<int>(GetEndPoints().size());
+    const int currentInputsNumber = static_cast<int>(m_endingConnectors.size());
     if (size == currentInputsNumber)
     {
         return;
@@ -343,7 +343,7 @@ void CircuitElement::SetInputsNumberAndRebook(int size)
     SetInputsNumber(size);
 
     emit tryToRebookArea(currentInputsNumber,
-                         GetStartPoints().size(),
+                         m_startingConnectors.size(),
                          currentEndingPointVector,
                          currentStartingPointVector,
                          currentArea);
@@ -421,7 +421,7 @@ void CircuitElement::SetOutputsNumber(int size)
 
 void CircuitElement::SetOutputsNumberAndRebook(int size)
 {
-    const int currentOutputsNumber = static_cast<int>(GetStartPoints().size());
+    const int currentOutputsNumber = static_cast<int>(m_startingConnectors.size());
     if (size == currentOutputsNumber)
     {
         return;
@@ -445,7 +445,7 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
     // Try upcoming changes
     SetOutputsNumber(size);
 
-    emit tryToRebookArea(GetEndPoints().size(),
+    emit tryToRebookArea(m_endingConnectors.size(),
                          currentOutputsNumber,
                          currentEndingPointVector,
                          currentStartingPointVector,
@@ -491,17 +491,17 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
-    const auto endPoints = GetEndPoints();
-    for (const auto& endPoint : endPoints)
+    for (const auto& endingConnector : m_endingConnectors)
     {
+        const auto endPoint = endingConnector->GetEndPoint();
         oldEndingPointVector.push_back(endPoint);
         mimeData.endingPointVector.push_back({endPoint.connPos,
                                               endPoint.connId});
     }
 
-    const auto startPoints = GetStartPoints();
-    for (const auto& startPoint : startPoints)
+    for (const auto* startingConnector : m_startingConnectors)
     {
+        const auto startPoint = startingConnector->GetStartPoint();
         oldStartingPointVector.push_back(startPoint);
         mimeData.startingPointVector.push_back({startPoint.connPos,
                                                 startPoint.connIds});

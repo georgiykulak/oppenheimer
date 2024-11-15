@@ -37,7 +37,6 @@ protected:
 
 private:
     QPixmap m_pixmap;
-    StartingConnector* m_startingConnector;
 
     int m_orderId = -1;
     bool m_inputValue = 0;

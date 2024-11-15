@@ -23,7 +23,7 @@ ElementSizeChanger::ElementSizeChanger(CircuitElement* element, QWidget *parent)
 
     m_inputsCount = new QSpinBox(this);
     m_inputsCount->setRange(1, 16);
-    m_inputsCount->setValue(element->GetEndPoints().size());
+    m_inputsCount->setValue(element->GetEndingConnectors().size());
     m_inputsCount->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
@@ -33,7 +33,7 @@ ElementSizeChanger::ElementSizeChanger(CircuitElement* element, QWidget *parent)
 
     m_outputsCount = new QSpinBox(this);
     m_outputsCount->setRange(1, 16);
-    m_outputsCount->setValue(element->GetStartPoints().size());
+    m_outputsCount->setValue(element->GetStartingConnectors().size());
     m_outputsCount->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(m_outputsCount, qOverload<int>(&QSpinBox::valueChanged),
