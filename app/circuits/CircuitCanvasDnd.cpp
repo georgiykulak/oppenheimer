@@ -1022,9 +1022,10 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     }
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
-        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
+        const auto mimeData = circuitOutput->GetMimeData();
+        m_idHandler.RemoveOutputOrderId(mimeData.orderId);
 
-        const auto connId = circuitOutput->GetEndPoint().connId;
+        const auto connId = mimeData.connId;
         RemoveConnectionById(connId);
     }
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
@@ -1113,7 +1114,7 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
     {
         const auto mimeData = circuitOutput->GetMimeData();
 
-        itemMeta["type"] = circuitInput->GetItemType();
+        itemMeta["type"] = circuitOutput->GetItemType();
         itemMeta["id"] = mimeData.id;
         itemMeta["orderId"] = mimeData.orderId;
         itemMeta["width"] = mimeData.itemSize.width();

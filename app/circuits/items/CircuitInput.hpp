@@ -18,7 +18,7 @@ public:
 
     virtual void DrawToPixmap() override;
 
-    // Unused
+    // Warning: Unused
     void SetValue(bool value) final;
 
     CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
