@@ -294,45 +294,33 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
         QPixmap pixmap;
-        QPoint endingPosition;
+        QPoint sourceItemPosition;
         QPoint offset;
-        quint64 itemId;
-        dataStream >> pixmap >> endingPosition >> offset
-            >> itemId;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
-        if (child)
+        StartingConnector* startingConnector =
+            qobject_cast<StartingConnector*>(child);
+        if (!child || !startingConnector)
         {
-            StartingConnector* startingConnector =
-                qobject_cast<StartingConnector*>(child);
-            if (startingConnector)
-            {
-                qDebug() << "Create new connection HERE (end -> start)";
-
-                const auto connId = m_areaManager.AddConnection(
-                    QLine(startingConnector->GetStartPoint().connPos,
-                          endingPosition + offset),
-                    startingConnector->GetItemId(),
-                    itemId
-                    );
-
-                if (connId)
-                {
-                    startingConnector->InsertConnectionId(connId);
-                    emit setEndingInitiatorConnectionId(connId);
-                }
-
-                update();
-                event->setDropAction(Qt::CopyAction);
-                event->accept();
-
-                return;
-            }
+            update();
+            event->ignore();
         }
 
+        qDebug() << "Create new connection, initiated by STARTING connector";
+
+        const auto startId = startingConnector->GetItemId();
+        const auto startPos = startingConnector->GetStartPoint().connPos;
+        const auto endPos = sourceItemPosition + offset;
+        const auto positions = QLine(startPos, endPos);
+
+        InsertConnection(startId, sourceItemId, positions);
+
         update();
-        event->ignore();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
     }
     else if (event->mimeData()->hasFormat(startingConnectorMime)
              && event->source() == this)
@@ -341,55 +329,43 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
         QPixmap pixmap;
-        QPoint startingPosition;
+        QPoint sourceItemPosition;
         QPoint offset;
-        quint64 itemId;
-        dataStream >> pixmap >> startingPosition >> offset
-            >> itemId;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
-        if (child)
+        EndingConnector* endingConnector =
+            qobject_cast<EndingConnector*>(child);
+        if (!child || !endingConnector)
         {
-            EndingConnector* endingConnector =
-                qobject_cast<EndingConnector*>(child);
-            if (endingConnector)
-            {
-                if (endingConnector->IsConnected())
-                {
-                    qDebug() << "Can't connect: busy by connection, id ="
-                             << endingConnector->GetConnectionId();
-
-                    update();
-                    event->ignore();
-                    return;
-                }
-
-                qDebug() << "Create new connection HERE (start -> end)";
-
-                const auto connId = m_areaManager.AddConnection(
-                    QLine(startingPosition + offset,
-                          endingConnector->GetEndPoint().connPos),
-                    itemId,
-                    endingConnector->GetItemId()
-                    );
-
-                if (connId)
-                {
-                    endingConnector->SetConnectionId(connId);
-                    emit insertStartingInitiatorConnectionId(connId);
-                }
-
-                update();
-                event->setDropAction(Qt::CopyAction);
-                event->accept();
-
-                return;
-            }
+            update();
+            event->ignore();
         }
 
+        qDebug() << "Create new connection, initiated by ENDING connector";
+
+        if (endingConnector->IsConnected())
+        {
+            qDebug() << "Can't connect: busy by connection, id ="
+                     << endingConnector->GetConnectionId();
+
+            update();
+            event->ignore();
+            return;
+        }
+
+        const auto endId = endingConnector->GetItemId();
+        const auto endPos = endingConnector->GetEndPoint().connPos;
+        const auto startPos = sourceItemPosition + offset;
+        const auto positions = QLine(startPos, endPos);
+
+        InsertConnection(sourceItemId, endId, positions);
+
         update();
-        event->ignore();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
     }
     else
     {
@@ -803,9 +779,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
             endingConnector->SetPixmap(tempPixmap);
 
-            connect(this, &CircuitCanvas::setEndingInitiatorConnectionId,
-                    endingConnector, &EndingConnector::SetConnectionId);
-
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
                 endingConnector->show();
@@ -867,9 +840,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             //!
 
             startingConnector->SetPixmap(tempPixmap);
-
-            connect(this, &CircuitCanvas::insertStartingInitiatorConnectionId,
-                    startingConnector, &StartingConnector::InsertConnectionId);
 
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
@@ -1026,7 +996,63 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
     }
 }
 
-void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
+void CircuitCanvas::InsertConnection(quint64 startId,
+                                     quint64 endId,
+                                     QLine positions)
+{
+    qDebug() << "InsertConnection: Trying to add connection"
+                " between (starting) item ID =" << startId
+             << "and (ending) item ID =" << endId
+             << "--> line from" << positions.p1() << "to" << positions.p2();
+
+    if (!startId || !endId)
+    {
+        qDebug() << "InsertConnection: zero id detected, aborting";
+        return;
+    }
+
+    const auto connId =
+        m_areaManager.AddConnection(positions, startId, endId);
+
+    if (!connId)
+    {
+        qDebug() << "InsertConnection: Can't create connection with ID"
+                 << connId;
+        return;
+    }
+
+    QObjectList childList = this->children();
+
+    bool startIsPresent = false;
+    for (auto* obj : childList)
+    {
+        auto* connector = qobject_cast<StartingConnector*>(obj);
+        if (connector && connector->GetItemId() == startId)
+        {
+            connector->InsertConnectionId(connId);
+            startIsPresent = true;
+            break;
+        }
+    }
+
+    if (!startIsPresent)
+    {
+        qDebug() << "InsertConnection: starting connector is not present, aborting";
+        return;
+    }
+
+    for (auto* obj : childList)
+    {
+        auto* connector = qobject_cast<EndingConnector*>(obj);
+        if (connector && connector->GetItemId() == endId)
+        {
+            connector->SetConnectionId(connId);
+            break;
+        }
+    }
+}
+
+void CircuitCanvas::SaveCircuitItem(BaseCircuitItem* item, json& metaItems)
 {
     if (!item)
     {
@@ -1122,7 +1148,25 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
     metaItems.push_back(itemMeta);
 }
 
-void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
+void CircuitCanvas::SaveItemConnections(json& metaConnections)
+{
+    for (auto&& [_, conn] : m_areaManager.GetConnections())
+    {
+        auto&& [startId, endId, line] = conn;
+        json connection;
+
+        connection["startId"] = startId;
+        connection["endId"] = endId;
+        connection["startPos"]["x"] = line.p1().x();
+        connection["startPos"]["y"] = line.p1().y();
+        connection["endPos"]["x"] = line.p2().x();
+        connection["endPos"]["y"] = line.p2().y();
+
+        metaConnections.push_back(connection);
+    }
+}
+
+void CircuitCanvas::ConstructItemsFromJson(const json& metaRoot)
 {
     qDebug() << "ConstructItemsFromJson";
 
@@ -1166,10 +1210,14 @@ void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
     {
         qDebug() << "Connections array is not empty, size ="
                  << connectionsArray.size();
+        for (const auto& connection : connectionsArray)
+        {
+            ConstructConnectionFromJson(connection);
+        }
     }
 }
 
-void CircuitCanvas::ConstructInputItemFromJson(const json &item)
+void CircuitCanvas::ConstructInputItemFromJson(const json& item)
 {
     const auto& pos = item.at("pos");
     auto itemX = pos.at("x").template get<int>();
@@ -1216,7 +1264,7 @@ void CircuitCanvas::ConstructInputItemFromJson(const json &item)
     circuitItem->move(itemPosition);
 }
 
-void CircuitCanvas::ConstructOutputItemFromJson(const json &item)
+void CircuitCanvas::ConstructOutputItemFromJson(const json& item)
 {
     const auto& pos = item.at("pos");
     auto itemX = pos.at("x").template get<int>();
@@ -1263,7 +1311,7 @@ void CircuitCanvas::ConstructOutputItemFromJson(const json &item)
     circuitItem->move(itemPosition);
 }
 
-void CircuitCanvas::ConstructElementItemFromJson(const json &item)
+void CircuitCanvas::ConstructElementItemFromJson(const json& item)
 {
     const auto& pos = item.at("pos");
     auto itemX = pos.at("x").template get<int>();
@@ -1336,4 +1384,24 @@ void CircuitCanvas::ConstructElementItemFromJson(const json &item)
 
     auto* circuitItem = new CircuitElement(mimeData, this);
     circuitItem->move(itemPosition);
+}
+
+void CircuitCanvas::ConstructConnectionFromJson(const json& connection)
+{
+    const auto startId = connection.at("startId").template get<quint64>();
+    const auto endId = connection.at("endId").template get<quint64>();
+
+    const auto startPos = connection.at("startPos");
+    auto startX = startPos.at("x").template get<int>();
+    auto startY = startPos.at("y").template get<int>();
+    QPoint startPosPoint = {startX, startY};
+
+    const auto endPos = connection.at("endPos");
+    auto endX = endPos.at("x").template get<int>();
+    auto endY = endPos.at("y").template get<int>();
+    QPoint endPosPoint = {endX, endY};
+
+    const auto positions = QLine(startPosPoint, endPosPoint);
+
+    InsertConnection(startId, endId, positions);
 }

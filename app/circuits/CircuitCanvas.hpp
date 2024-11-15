@@ -36,8 +36,6 @@ signals:
     void setInputOrderIdHint(int orderId);
     void setOutputOrderIdHint(int orderId);
     void setElementOrderIdHint(int orderId);
-    void setEndingInitiatorConnectionId(quint64 connId);
-    void insertStartingInitiatorConnectionId(quint64 connId);
     void startFunctionalFaultSimulation(quint64 elementId);
 
 public slots:
@@ -69,11 +67,16 @@ private:
     void ClearAll();
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
+    void InsertConnection(quint64 startId,
+                          quint64 endId,
+                          QLine positions);
     void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
+    void SaveItemConnections(json& metaConnections);
     void ConstructItemsFromJson(const json& metaRoot);
     void ConstructInputItemFromJson(const json& item);
     void ConstructOutputItemFromJson(const json& item);
     void ConstructElementItemFromJson(const json& item);
+    void ConstructConnectionFromJson(const json& connection);
 };
 
 #endif // DRAGANDDROPFRAME_H

@@ -14,6 +14,13 @@ class AreaManager : public QObject
 {
     Q_OBJECT
 public:
+    struct Connection
+    {
+        quint64 startId;
+        quint64 endId;
+        QLine line;
+    };
+
     explicit AreaManager(QObject *parent = nullptr);
 
     void SetMatrixSize(QSize windowSize);
@@ -28,18 +35,17 @@ public:
                           quint64 startId,
                           quint64 endId);
     void RemoveConnection(quint64 connId);
-    std::vector<QPolygon> GetConnections() const;
+    std::vector<QPolygon> GetConnectionPolygons() const;
     void RemoveAllConnections();
-    std::unordered_map<quint64, std::pair<quint64, quint64>>
-    GetConnectedItemIds() const { return m_connectedItemIds; }
+    std::unordered_map<quint64, Connection>
+    GetConnections() const { return m_connections; }
 
 private:
     StatusMatrix m_matrix;
 
     std::unordered_map<quint64, IndexVector> m_edges;
-    std::unordered_map<quint64, QLine> m_connectedPoints;
+    std::unordered_map<quint64, Connection> m_connections;
     std::unordered_map<quint64, std::pair<QPoint, QPoint>> m_curvePoints;
-    std::unordered_map<quint64, std::pair<quint64, quint64>> m_connectedItemIds;
 
     const int m_cellSize;
 
@@ -51,7 +57,7 @@ private:
                           QPoint& srcCurvePoint,
                           QPoint& dstCurvePoint);
     bool UpdateConnections(
-        std::unordered_map<quint64, QLine>& updConnPoints,
+        std::unordered_map<quint64, Connection>& updConnPoints,
         std::unordered_map<quint64, IndexVector>& updatedEdges,
         std::unordered_map<quint64, std::pair<QPoint, QPoint>>& updatedCurvePoints,
         QPoint oldPoint,

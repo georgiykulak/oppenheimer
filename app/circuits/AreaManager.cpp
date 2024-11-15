@@ -70,10 +70,14 @@ bool AreaManager::TryBookArea(
 
     // On this stage the are book can be done
     for (std::size_t i = idxReg.startI; i <= idxReg.endI; ++i)
+    {
         for (std::size_t j = idxReg.startJ; j <= idxReg.endJ; ++j)
+        {
             m_matrix[i][j] = BookStatus::Item;
+        }
+    }
 
-    std::unordered_map<quint64, QLine> updConnPoints;
+    std::unordered_map<quint64, Connection> updConnPoints;
     std::unordered_map<quint64, IndexVector> updatedEdges;
     std::unordered_map<quint64, std::pair<QPoint, QPoint>> updatedCurvePoints;
 
@@ -90,7 +94,9 @@ bool AreaManager::TryBookArea(
     for (const auto& [id, edge] : m_edges)
     {
         if (updatedEdges.contains(id))
+        {
             continue;
+        }
 
         for (const auto ip: edge)
         {
@@ -101,8 +107,8 @@ bool AreaManager::TryBookArea(
                 if (ip.i == isp.i && ip.j == isp.j)
                 {
                     qDebug() << "Found intersecting edge: -> { start ="
-                             << m_connectedPoints[id].p1() << "end ="
-                             << m_connectedPoints[id].p2() << "}";
+                             << m_connections[id].line.p1() << "end ="
+                             << m_connections[id].line.p2() << "}";
 
                     IndexVector newEdge;
                     QPoint srcCurvePoint;
@@ -113,7 +119,7 @@ bool AreaManager::TryBookArea(
                         return false;
                     }
 
-                    updConnPoints.insert({id, m_connectedPoints[id]});
+                    updConnPoints.insert({id, m_connections[id]});
                     updatedEdges.insert({id, newEdge});
                     updatedCurvePoints.insert({id, {srcCurvePoint, dstCurvePoint}});
                     flagBreak = true;
@@ -122,13 +128,15 @@ bool AreaManager::TryBookArea(
             }
 
             if (flagBreak)
+            {
                 break;
+            }
         }
     }
 
     for (auto& [id, edge] : updatedEdges)
     {
-        m_connectedPoints[id] = updConnPoints[id];
+        m_connections[id] = updConnPoints[id];
         m_edges[id] = std::move(edge);
         m_curvePoints[id] = updatedCurvePoints[id];
     }
@@ -214,17 +222,16 @@ quint64 AreaManager::AddConnection(const QLine& line,
              << ": Connection was added successfully { start =" << start
              << "end =" << end << '}';
 
-    m_connectedPoints.insert({connId, line});
+    m_connections.insert({connId, Connection{startId, endId, line}});
     m_edges.insert({connId, std::move(edge)});
     m_curvePoints.insert({connId, {srcCurvePoint, dstCurvePoint}});
-    m_connectedItemIds.insert({connId, {startId, endId}});
 
     return connId++;
 }
 
 void AreaManager::RemoveConnection(quint64 connId)
 {
-    if (!m_connectedPoints.contains(connId)
+    if (!m_connections.contains(connId)
      || !m_edges.contains(connId)
      || !m_curvePoints.contains(connId))
     {
@@ -244,38 +251,41 @@ void AreaManager::RemoveConnection(quint64 connId)
         m_matrix[idxPoint.i][idxPoint.j] = BookStatus::Free;
     }
 
-    m_connectedPoints.erase(connId);
+    m_connections.erase(connId);
     m_edges.erase(connId);
     m_curvePoints.erase(connId);
-    m_connectedItemIds.erase(connId);
 }
 
-std::vector<QPolygon> AreaManager::GetConnections() const
+std::vector<QPolygon> AreaManager::GetConnectionPolygons() const
 {
     std::vector<QPolygon> connections;
 
     for (const auto& [id, edge] : m_edges)
     {
-        QPolygon line;
+        QPolygon polygon;
 
-        const auto iter = m_connectedPoints.find(id);
-        if (iter == m_connectedPoints.end())
+        const auto iter = m_connections.find(id);
+        if (iter == m_connections.end())
+        {
             continue;
+        }
 
-        const auto& points = iter->second;
-        const auto start = points.p1();
-        const auto end = points.p2();
+        const auto& line = iter->second.line;
+        const auto start = line.p1();
+        const auto end = line.p2();
 
         const auto iter2 = m_curvePoints.find(id);
         if (iter2 == m_curvePoints.end())
+        {
             continue;
+        }
 
         const auto& curvePoints = iter2->second;
         const auto srcCurvePoint = curvePoints.first;
         const auto dstCurvePoint = curvePoints.second;
 
-        line.append(start);
-        line.append(srcCurvePoint);
+        polygon.append(start);
+        polygon.append(srcCurvePoint);
 
         const int yOffset = srcCurvePoint.y() - edge.at(0).i * m_cellSize;
         std::size_t idx = 0;
@@ -284,19 +294,19 @@ std::vector<QPolygon> AreaManager::GetConnections() const
             const auto& ip = edge[idx];
             const auto x = ip.j * m_cellSize;
             const auto y = ip.i * m_cellSize + yOffset;
-            line.append(QPoint(x, y));
+            polygon.append(QPoint(x, y));
         }
 
-        line.append(QPoint(edge.at(idx).j * m_cellSize, dstCurvePoint.y()));
+        polygon.append(QPoint(edge.at(idx).j * m_cellSize, dstCurvePoint.y()));
         const auto& ip = edge[idx];
         const int x = ip.j * m_cellSize;
         const int y = dstCurvePoint.y();
-        line.append(QPoint(x, y));
+        polygon.append(QPoint(x, y));
 
-        line.append(dstCurvePoint);
-        line.append(end);
+        polygon.append(dstCurvePoint);
+        polygon.append(end);
 
-        connections.emplace_back(line);
+        connections.emplace_back(polygon);
     }
 
     return connections;
@@ -304,7 +314,8 @@ std::vector<QPolygon> AreaManager::GetConnections() const
 
 void AreaManager::RemoveAllConnections()
 {
-    m_connectedPoints.clear();
+    m_connections.clear();
+    m_curvePoints.clear();
     m_edges.clear();
 }
 
@@ -313,12 +324,14 @@ bool AreaManager::UpdateConnection(quint64 connId,
                                    QPoint& srcCurvePoint,
                                    QPoint& dstCurvePoint)
 {
-    const auto iter = m_connectedPoints.find(connId);
-    if (iter == m_connectedPoints.end())
+    const auto iter = m_connections.find(connId);
+    if (iter == m_connections.end())
+    {
         return false;
+    }
 
-    const auto start = iter->second.p1();
-    const auto end = iter->second.p2();
+    const auto start = iter->second.line.p1();
+    const auto end = iter->second.line.p2();
 
     qDebug() << __FUNCTION__ << ": Updating connection { start ="
              << start << "end =" << end << '}';
@@ -351,7 +364,7 @@ bool AreaManager::UpdateConnection(quint64 connId,
 }
 
 bool AreaManager::UpdateConnections(
-    std::unordered_map<quint64, QLine>& updConnPoints,
+    std::unordered_map<quint64, Connection>& updConnPoints,
     std::unordered_map<quint64, IndexVector>& updatedEdges,
     std::unordered_map<quint64, std::pair<QPoint, QPoint>>& updatedCurvePoints,
     QPoint oldPoint,
@@ -367,16 +380,22 @@ bool AreaManager::UpdateConnections(
         return false;
     }
 
-    for (const auto& [id, connectedPoints] : m_connectedPoints)
+    for (auto&& [id, conn] : m_connections)
     {
-        auto line = connectedPoints;
+        auto line = conn.line;
 
         if (line.p1() == oldPoint)
+        {
             line.setP1(newPoint);
+        }
         else if (line.p2() == oldPoint)
+        {
             line.setP2(newPoint);
+        }
         else
+        {
             continue;
+        }
 
         const auto start = line.p1();
         const auto end = line.p2();
@@ -386,8 +405,8 @@ bool AreaManager::UpdateConnections(
         QPoint dstCurvePoint;
 
         qDebug() << __FUNCTION__<< ": Updating old connection -> { start ="
-                 << connectedPoints.p1() << "end ="
-                 << connectedPoints.p2() << "} with new one -> { start ="
+                 << conn.line.p1() << "end ="
+                 << conn.line.p2() << "} with new one -> { start ="
                  << start << "end =" << end << '}';
 
         m_dndBackup->BackupConnection(id, m_edges[id]);
@@ -412,7 +431,7 @@ bool AreaManager::UpdateConnections(
         qDebug() << __FUNCTION__<< ": Old connection was updated succesfully with -> {start ="
                  << start << "end =" << end << '}';
 
-        updConnPoints.insert({id, QLine(start, end)});
+        updConnPoints.insert({id, Connection{conn.startId, conn.endId, line}});
         updatedEdges.insert({id, newEdge});
         updatedCurvePoints.insert({id, {srcCurvePoint, dstCurvePoint}});
     }

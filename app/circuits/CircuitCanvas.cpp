@@ -119,11 +119,7 @@ void CircuitCanvas::SaveCircuitToFile()
         }
     }
 
-    for (auto&& [_, connPair] : m_areaManager.GetConnectedItemIds())
-    {
-        auto&& [startId, endId] = connPair;
-        metaConnections.push_back({startId, endId});
-    }
+    SaveItemConnections(metaConnections);
 
     QTextStream out(&file);
     out << metaRoot.dump(4).c_str();
@@ -177,7 +173,7 @@ void CircuitCanvas::paintEvent(QPaintEvent *event)
     mPen.setWidth(2);
     painter.setPen(mPen);
     painter.drawLine(m_currentConnectingLine);
-    for (const auto& line : m_areaManager.GetConnections())
+    for (const auto& line : m_areaManager.GetConnectionPolygons())
     {
         //qDebug() << "Drawing line -> { start =" << line.front()
         //         << "end =" << line.back() << '}';
