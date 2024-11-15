@@ -72,6 +72,7 @@ private:
     void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
     void ConstructItemsFromJson(const json& metaRoot);
     void ConstructInputItemFromJson(const json& item);
+    void ConstructOutputItemFromJson(const json& item);
 };
 
 #endif // DRAGANDDROPFRAME_H

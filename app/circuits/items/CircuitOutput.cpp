@@ -4,7 +4,8 @@
 
 #include <QPainter>
 
-CircuitOutput::CircuitOutput(const EndingPoint& endPoint, QWidget *parent)
+CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
+                             QWidget *parent)
     : BaseCircuitItem{parent}
 {
     setMinimumSize(80, 30);
@@ -14,12 +15,26 @@ CircuitOutput::CircuitOutput(const EndingPoint& endPoint, QWidget *parent)
     m_pixmap.fill(QColor(Qt::transparent));
 
     QPoint positionOffset(3, 9);
-    m_endingConnector = new EndingConnector(endPoint, positionOffset, this);
+    m_endingConnector = new EndingConnector(mimeData.endPoint,
+                                            positionOffset,
+                                            this);
 
     m_endingConnector->move(positionOffset);
     m_endingConnector->update();
     m_endingConnector->show();
     m_endingConnector->setAttribute(Qt::WA_DeleteOnClose);
+
+    SetId(mimeData.id);
+    m_orderId = mimeData.orderId;
+    m_outputValue = mimeData.value;
+    if (mimeData.color.isValid())
+    {
+        m_color = mimeData.color;
+    }
+
+    CircuitOutput::DrawToPixmap();
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
 void CircuitOutput::SetPixmap(const QPixmap &pixmap)
@@ -75,6 +90,7 @@ void CircuitOutput::DrawToPixmap()
 void CircuitOutput::SetOrderId(int orderId)
 {
     m_orderId = orderId;
+    update();
 }
 
 int CircuitOutput::GetOrderId() const
@@ -105,6 +121,31 @@ QColor CircuitOutput::GetColor() const
 const EndingPoint& CircuitOutput::GetEndPoint() const
 {
     return m_endingConnector->GetEndPoint();
+}
+
+CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
+{
+    CircuitOutputMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+    mimeData.itemSize = GetSize();
+    mimeData.value = m_outputValue;
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.color = m_color;
+
+    const auto endPoint = m_endingConnector->GetEndPoint();
+    mimeData.endPoint = endPoint;
+    mimeData.oldEndPointPos = endPoint.connPos;
+    mimeData.endOffset = QPoint(eventPos - endPoint.connPos);
+    mimeData.connId = endPoint.connId;
+
+    mimeData.oldNewPoints.emplace_back(mimeData.oldEndPointPos,
+                                       mimeData.endPoint.connPos);
+
+    return mimeData;
 }
 
 void CircuitOutput::RemoveConnectionId(quint64 connId)

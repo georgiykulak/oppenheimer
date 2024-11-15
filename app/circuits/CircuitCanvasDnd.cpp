@@ -129,16 +129,16 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
     {
         QByteArray itemData = event->mimeData()->data(inputMime);
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitInputMimeData mimeDataHolder(event->pos());
-        dataStream >> mimeDataHolder;
+        CircuitInputMimeData mimeData(event->pos());
+        dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsInputOrderId(mimeDataHolder.orderId))
+            && m_idHandler.ContainsInputOrderId(mimeData.orderId))
         {
             event->ignore();
 
             QString text = "Input item with such order id '"
-                           + QString::number(mimeDataHolder.orderId) + "' already exists";
+                           + QString::number(mimeData.orderId) + "' already exists";
             QMessageBox::information(this, "Can't place item", text);
 
             // TODO: apply backup
@@ -146,27 +146,27 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             return;
         }
 
-        if (m_areaManager.TryBookArea(mimeDataHolder.area, mimeDataHolder.oldNewPoints))
+        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
         {
             if (event->source() != this)
             {
                 qDebug() << "Placing new input item";
 
-                if (!m_idHandler.NewInputOrderId(mimeDataHolder.orderId))
+                if (!m_idHandler.NewInputOrderId(mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
                     return;
                 }
 
-                mimeDataHolder.id = m_idHandler.NewUid();
-                emit addNewInputItem(mimeDataHolder.id);
+                mimeData.id = m_idHandler.NewUid();
+                emit addNewInputItem(mimeData.id);
 
                 emit setInputOrderIdHint(m_idHandler.GetLastInputOrderId());
             }
 
-            auto circuitInput = new CircuitInput(mimeDataHolder, this);
-            circuitInput->move(mimeDataHolder.itemPosition);
+            auto circuitInput = new CircuitInput(mimeData, this);
+            circuitInput->move(mimeData.itemPosition);
 
             // To redraw connections
             update();
@@ -218,17 +218,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 emit setOutputOrderIdHint(m_idHandler.GetLastOutputOrderId());
             }
 
-            CircuitOutput *cOutput = new CircuitOutput(mimeData.endPoint, this);
-            cOutput->SetId(mimeData.id);
-            cOutput->SetOrderId(mimeData.orderId);
-            cOutput->SetValue(mimeData.value);
-            cOutput->SetPixmap(mimeData.pixmap);
-            cOutput->SetSize(mimeData.itemSize);
-            cOutput->SetColor(mimeData.color);
+            CircuitOutput *cOutput = new CircuitOutput(mimeData, this);
             cOutput->move(mimeData.itemPosition);
-            cOutput->update();
-            cOutput->show();
-            cOutput->setAttribute(Qt::WA_DeleteOnClose);
 
             // To redraw connections
             update();
@@ -436,10 +427,10 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
             dataStream << mimeData;
 
-            QMimeData *mime = new QMimeData;
+            QMimeData* mime = new QMimeData;
             mime->setData(inputMime, itemData);
 
-            QDrag *drag = new QDrag(this);
+            QDrag* drag = new QDrag(this);
             drag->setMimeData(mime);
             drag->setPixmap(mimeData.pixmap);
             drag->setHotSpot(event->pos() - circuitInput->pos());
@@ -499,38 +490,20 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
     {
         if (event->button() == Qt::LeftButton)
         {
-            QPixmap pixmap = circuitOutput->GetPixmap();
-            quint64 id = circuitOutput->GetId();
-            int orderId = circuitOutput->GetOrderId();
-            bool value = circuitOutput->GetValue();
-            QSize itemSize = circuitOutput->GetSize();
-            QColor color = circuitOutput->GetColor();
-            const EndingPoint& endPoint = circuitOutput->GetEndPoint();
-
+            const auto mimeData = circuitOutput->GetMimeData(event->pos());
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream
-                << pixmap
-                << QPoint(event->pos() - circuitOutput->pos())
-                << id
-                << orderId
-                << itemSize
-                << value
-                << endPoint.connPos
-                << QPoint(event->pos() - endPoint.connPos)
-                << color
-                << endPoint.connId;
+            dataStream << mimeData;
 
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData(outputMime, itemData);
+            QMimeData* mime = new QMimeData;
+            mime->setData(outputMime, itemData);
 
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime);
+            drag->setPixmap(mimeData.pixmap);
             drag->setHotSpot(event->pos() - circuitOutput->pos());
 
-            QRect previousArea(circuitOutput->pos(), itemSize);
-            m_areaManager.ClearAndBackupArea(previousArea);
+            m_areaManager.ClearAndBackupArea(mimeData.area);
 
             if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
             {
@@ -539,7 +512,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             else
             {
                 circuitOutput->show();
-                circuitOutput->SetPixmap(pixmap);
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
@@ -1129,8 +1101,8 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
         itemMeta["height"] = mimeData.itemSize.height();
         itemMeta["pos"]["x"] = mimeData.itemPosition.x();
         itemMeta["pos"]["y"] = mimeData.itemPosition.y();
-        itemMeta["color"]
-            = static_cast<quint64>(mimeData.color.rgba64());
+        itemMeta["color"] =
+            static_cast<quint64>(mimeData.color.rgba64());
 
         auto& metaStartPoint = itemMeta["startPoint"];
         const auto& startPoint = mimeData.startPoint;
@@ -1139,19 +1111,22 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem *item, json& metaItems)
     }
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
-        itemMeta["type"] = circuitOutput->GetItemType();
-        itemMeta["id"] = circuitOutput->GetId();
-        itemMeta["orderId"] = circuitOutput->GetOrderId();
-        itemMeta["pos"]["x"] = circuitOutput->pos().x();
-        itemMeta["pos"]["y"] = circuitOutput->pos().y();
-        itemMeta["color"] = static_cast<quint64>(
-            circuitOutput->GetColor().rgba64());
+        const auto mimeData = circuitOutput->GetMimeData();
+
+        itemMeta["type"] = circuitInput->GetItemType();
+        itemMeta["id"] = mimeData.id;
+        itemMeta["orderId"] = mimeData.orderId;
+        itemMeta["width"] = mimeData.itemSize.width();
+        itemMeta["height"] = mimeData.itemSize.height();
+        itemMeta["pos"]["x"] = mimeData.itemPosition.x();
+        itemMeta["pos"]["y"] = mimeData.itemPosition.y();
+        itemMeta["color"] =
+            static_cast<quint64>(mimeData.color.rgba64());
 
         auto& metaEndPoint = itemMeta["endPoint"];
-        const auto& endPoint = circuitOutput->GetEndPoint();
+        const auto& endPoint = mimeData.endPoint;
         metaEndPoint["connPos"]["x"] = endPoint.connPos.x();
         metaEndPoint["connPos"]["y"] = endPoint.connPos.y();
-        //metaEndPoint["connId"] = endPoint.connId;
     }
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
     {
@@ -1200,6 +1175,8 @@ void CircuitCanvas::ConstructItemsFromJson(const json &metaRoot)
                 }
                 case ItemType::Output:
                 {
+                    ConstructOutputItemFromJson(item);
+
                     break;
                 }
                 case ItemType::Element:
@@ -1242,29 +1219,76 @@ void CircuitCanvas::ConstructInputItemFromJson(const json &item)
         return;
     }
 
-    CircuitInputMimeData mimeDataHolder;
+    CircuitInputMimeData mimeData;
 
-    mimeDataHolder.id = item.at("id").template get<quint64>();
-    mimeDataHolder.orderId = item.at("orderId").template get<int>();
+    mimeData.id = item.at("id").template get<quint64>();
+    mimeData.orderId = item.at("orderId").template get<int>();
 
-    auto orderIdInserted = m_idHandler.NewInputOrderId(mimeDataHolder.orderId);
-    auto uidInserted = m_idHandler.InsertUid(mimeDataHolder.id);
+    auto orderIdInserted = m_idHandler.NewInputOrderId(mimeData.orderId);
+    auto uidInserted = m_idHandler.InsertUid(mimeData.id);
 
     if (!orderIdInserted || !uidInserted)
     {
         return;
     }
 
-    emit addNewInputItem(mimeDataHolder.id);
+    emit addNewInputItem(mimeData.id);
 
     quint64 rgba64Color = item.at("color").template get<quint64>();
-    mimeDataHolder.color = QRgba64::fromRgba64(rgba64Color);
+    mimeData.color = QRgba64::fromRgba64(rgba64Color);
 
     const auto& connPos = item.at("startPoint").at("connPos");
     auto connX = connPos.at("x").template get<int>();
     auto connY = connPos.at("y").template get<int>();
-    mimeDataHolder.startPoint.connPos = {connX, connY};
+    mimeData.startPoint.connPos = {connX, connY};
 
-    auto* cInput = new CircuitInput(mimeDataHolder, this);
-    cInput->move(itemPosition);
+    auto* circuitItem = new CircuitInput(mimeData, this);
+    circuitItem->move(itemPosition);
+}
+
+void CircuitCanvas::ConstructOutputItemFromJson(const json &item)
+{
+    const auto& pos = item.at("pos");
+    auto itemX = pos.at("x").template get<int>();
+    auto itemY = pos.at("y").template get<int>();
+    QPoint itemPosition(itemX, itemY);
+
+    auto width = item.at("width").template get<int>();
+    auto height = item.at("height").template get<int>();
+    QSize itemSize(width, height);
+
+    QRect area(itemPosition, itemSize);
+
+    std::vector<std::pair<QPoint, QPoint>> emptyVector;
+
+    if (!m_areaManager.TryBookArea(area, emptyVector))
+    {
+        return;
+    }
+
+    CircuitOutputMimeData mimeData;
+
+    mimeData.id = item.at("id").template get<quint64>();
+    mimeData.orderId = item.at("orderId").template get<int>();
+
+    auto orderIdInserted = m_idHandler.NewOutputOrderId(mimeData.orderId);
+    auto uidInserted = m_idHandler.InsertUid(mimeData.id);
+
+    if (!orderIdInserted || !uidInserted)
+    {
+        return;
+    }
+
+    emit addNewOutputItem(mimeData.id);
+
+    quint64 rgba64Color = item.at("color").template get<quint64>();
+    mimeData.color = QRgba64::fromRgba64(rgba64Color);
+
+    const auto& connPos = item.at("endPoint").at("connPos");
+    auto connX = connPos.at("x").template get<int>();
+    auto connY = connPos.at("y").template get<int>();
+    mimeData.endPoint.connPos = {connX, connY};
+
+    auto* circuitItem = new CircuitOutput(mimeData, this);
+    circuitItem->move(itemPosition);
 }

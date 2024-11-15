@@ -4,21 +4,35 @@ CircuitOutputMimeData::CircuitOutputMimeData(QPoint eventPos)
     : BaseCircuitItemMimeData{eventPos}
 {}
 
-QDataStream& operator>>(QDataStream& iStream, CircuitOutputMimeData& oData)
+QDataStream& operator>>(QDataStream& iStream, CircuitOutputMimeData& data)
 {
-    oData.readBasicMimeData(iStream);
+    data.readBasicMimeData(iStream);
 
     iStream
-        >> oData.oldEndPointPos
-        >> oData.endOffset
-        >> oData.color
-        >> oData.connId;
+        >> data.oldEndPointPos
+        >> data.endOffset
+        >> data.color
+        >> data.connId;
 
-    oData.endPoint.connId = oData.connId;
-    oData.endPoint.connPos = oData.eventPos - oData.endOffset;
+    data.endPoint.connId = data.connId;
+    data.endPoint.connPos = data.eventPos - data.endOffset;
 
-    oData.oldNewPoints.emplace_back(oData.oldEndPointPos,
-                                    oData.endPoint.connPos);
+    data.oldNewPoints.emplace_back(data.oldEndPointPos,
+                                    data.endPoint.connPos);
 
     return iStream;
+}
+
+QDataStream& operator<<(QDataStream& oStream,
+                        const CircuitOutputMimeData& data)
+{
+    data.writeBasicMimeData(oStream);
+
+    oStream
+        << data.oldEndPointPos
+        << data.endOffset
+        << data.color
+        << data.connId;
+
+    return oStream;
 }

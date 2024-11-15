@@ -2,6 +2,7 @@
 #define CIRCUITOUTPUT_HPP
 
 #include "BaseCircuitItem.hpp"
+#include "mime/CircuitOutputMimeData.hpp"
 
 class EndingConnector;
 
@@ -9,7 +10,8 @@ class CircuitOutput : public BaseCircuitItem
 {
     Q_OBJECT
 public:
-    explicit CircuitOutput(const EndingPoint& endPoint, QWidget *parent = nullptr);
+    explicit CircuitOutput(const CircuitOutputMimeData& mimeData,
+                           QWidget *parent = nullptr);
 
     inline ItemType GetItemType() const noexcept final
     { return ItemType::Output; }
@@ -27,6 +29,9 @@ public:
     QColor GetColor() const;
 
     const EndingPoint& GetEndPoint() const;
+
+    CircuitOutputMimeData GetMimeData(QPoint eventPos = {}) const;
+
     void RemoveConnectionId(quint64 connId) override;
 
 signals:

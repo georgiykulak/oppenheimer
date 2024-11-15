@@ -92,12 +92,14 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     mimeData.value = m_inputValue;
     mimeData.itemPosition = pos();
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.color = m_color;
+
     const auto startPoint = m_startingConnector->GetStartPoint();
+    mimeData.startPoint = startPoint;
     mimeData.oldStartPointPos = startPoint.connPos;
     mimeData.startOffset = QPoint(eventPos - startPoint.connPos);
     mimeData.connIdsNumber = (unsigned int)(startPoint.connIds.size());
-    mimeData.color = m_color;
-    mimeData.startPoint = startPoint;
+
     mimeData.oldNewPoints.emplace_back(mimeData.oldStartPointPos,
                                        mimeData.startPoint.connPos);
 

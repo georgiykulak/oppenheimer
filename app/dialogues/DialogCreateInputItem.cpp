@@ -77,33 +77,39 @@ void DialogCreateInputItem::dragEnterEvent(QDragEnterEvent *event)
 
 void DialogCreateInputItem::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton)
+    {
+        return;
+    }
+
     QWidget* child = childAt(event->pos());
     if (!child)
-        return;
-
-    CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
-    if (!circuitInput)
-        return;
-
-    if (event->button() == Qt::LeftButton)
     {
-        const auto mimeData = circuitInput->GetMimeData(event->pos());
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream << mimeData;
+        return;
+    }
 
-        QMimeData *mime = new QMimeData;
-        mime->setData(inputMime, itemData);
+    auto* item = qobject_cast<CircuitInput*>(child);
+    if (!item)
+    {
+        return;
+    }
 
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mime);
-        drag->setPixmap(mimeData.pixmap);
-        drag->setHotSpot(event->pos() - circuitInput->pos());
+    const auto mimeData = item->GetMimeData(event->pos());
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << mimeData;
 
-        if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-        {
-            circuitInput->show();
-        }
+    QMimeData* mime = new QMimeData;
+    mime->setData(inputMime, itemData);
+
+    QDrag* drag = new QDrag(this);
+    drag->setMimeData(mime);
+    drag->setPixmap(mimeData.pixmap);
+    drag->setHotSpot(event->pos() - item->pos());
+
+    if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
+    {
+        item->show();
     }
 }
 
@@ -146,11 +152,11 @@ void DialogCreateInputItem::InitLayout()
 void DialogCreateInputItem::InitInputItem(int orderId)
 {
     const QPoint offset(20, 20);
-    CircuitInputMimeData mimeDataHolder;
-    mimeDataHolder.startPoint.connPos = QPoint(70, 15) + offset;
-    mimeDataHolder.orderId = orderId;
+    CircuitInputMimeData mimeData;
+    mimeData.startPoint.connPos = QPoint(70, 15) + offset;
+    mimeData.orderId = orderId;
 
-    m_newInput = new CircuitInput(mimeDataHolder, this);
+    m_newInput = new CircuitInput(mimeData, this);
     m_newInput->move(offset);
 
     connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),

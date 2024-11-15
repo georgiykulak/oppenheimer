@@ -15,8 +15,8 @@ struct CircuitInputMimeData : public BaseCircuitItemMimeData
 };
 
 QDataStream& operator>>(QDataStream& iStream,
-                        CircuitInputMimeData& iData);
+                        CircuitInputMimeData& data);
 QDataStream& operator<<(QDataStream& oStream,
-                        const CircuitInputMimeData& oData);
+                        const CircuitInputMimeData& data);
 
 #endif // CIRCUITINPUTMIMEDATA_HPP
