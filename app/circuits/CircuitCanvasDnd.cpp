@@ -671,7 +671,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                                     m_areaManager.ClearAndBackupArea(previousArea);
 
-                                    QRect area(circuitElement->pos(), circuitElement->GetSize());
+                                    QRect area(circuitElement->pos(), circuitElement->size());
                                     if (m_areaManager.TryBookArea(area, oldNewPoints))
                                     {
                                         // Successfully booked new area
@@ -971,7 +971,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
                                  + std::to_string(item->GetItemType()));
     }
 
-    QRect area(item->pos(), item->GetSize());
+    QRect area(item->pos(), item->size());
     m_areaManager.ClearArea(area);
 
     item->close();

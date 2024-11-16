@@ -8,10 +8,8 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
                            QWidget* parent)
     : BaseCircuitItem{parent}
 {
-    setMinimumSize(80, 30);
-    setMaximumSize(80, 30);
-    SetSize(QSize(80, 30));
-    m_pixmap = QPixmap(GetSize());
+    setFixedSize(80, 30);
+    m_pixmap = QPixmap(this->size());
     m_pixmap.fill(QColor(Qt::transparent));
 
     m_startingConnectors.resize(1);
@@ -88,7 +86,7 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     mimeData.offset = QPoint(eventPos - pos());
     mimeData.id = GetId();
     mimeData.orderId = m_orderId;
-    mimeData.itemSize = GetSize();
+    mimeData.itemSize = this->size();
     mimeData.value = m_inputValue;
     mimeData.itemPosition = pos();
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);

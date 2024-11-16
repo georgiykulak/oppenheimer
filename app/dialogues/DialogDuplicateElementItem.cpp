@@ -17,7 +17,7 @@ DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
 {
     setWindowTitle("Duplicate");
     setAcceptDrops(false);
-    setMinimumSize(150, original->GetSize().height() + m_offset.y() * 2);
+    setMinimumSize(150, original->height() + m_offset.y() * 2);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 

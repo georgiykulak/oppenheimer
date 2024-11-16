@@ -21,8 +21,6 @@ public:
 
     void SetId(quint64 id);
     quint64 GetId() const;
-    void SetSize(QSize size);
-    QSize GetSize() const;
 
     virtual void DrawToPixmap()              { WarnNotImplemented(); }
     virtual void SetOrderId(int)             { WarnNotImplemented(); }
@@ -38,7 +36,6 @@ signals:
 
 protected:
     quint64 m_id = 0;
-    QSize m_size;
     std::vector<EndingConnector*> m_endingConnectors;
     std::vector<StartingConnector*> m_startingConnectors;
 };

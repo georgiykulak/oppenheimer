@@ -27,10 +27,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                      mimeData.startingPointVector.size()) - 1);
         size = QSize(110, realHeight);
     }
-    setMinimumSize(size);
-    setMaximumSize(size);
-    SetSize(QSize(size));
-    m_pixmap = QPixmap(GetSize());
+    setFixedSize(size);
+    m_pixmap = QPixmap(this->size());
     m_pixmap.fill(QColor(Qt::transparent));
 
     QPixmap pixmap(QSize(12, 12)); // Connector size
@@ -165,7 +163,7 @@ void CircuitElement::DrawToPixmap()
     painter.setPen(mPen);
     painter.setBrush(m_color);
     int wBig = 90;
-    int hBig = GetSize().height();
+    int hBig = height();
     const int borderWidth = 2;
     painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
 
@@ -254,11 +252,9 @@ void CircuitElement::SetInputsNumber(int size)
         if (newHeight > height())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
 
-            m_pixmap = QPixmap(GetSize());
+            m_pixmap = QPixmap(this->size());
             m_pixmap.fill(QColor(Qt::transparent));
             DrawToPixmap();
         }
@@ -303,12 +299,10 @@ void CircuitElement::SetInputsNumber(int size)
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
         }
 
-        m_pixmap = QPixmap(GetSize());
+        m_pixmap = QPixmap(this->size());
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
@@ -337,7 +331,7 @@ void CircuitElement::SetInputsNumberAndRebook(int size)
         currentStartingPointVector.push_back(startingConnector->GetStartPoint());
     }
 
-    QRect currentArea(pos(), GetSize());
+    QRect currentArea(pos(), this->size());
 
     // Try upcoming changes
     SetInputsNumber(size);
@@ -362,11 +356,9 @@ void CircuitElement::SetOutputsNumber(int size)
         if (newHeight > height())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
 
-            m_pixmap = QPixmap(GetSize());
+            m_pixmap = QPixmap(this->size());
             m_pixmap.fill(QColor(Qt::transparent));
             DrawToPixmap();
         }
@@ -406,12 +398,10 @@ void CircuitElement::SetOutputsNumber(int size)
         if (newHeight < height() && number >= m_endingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
         }
 
-        m_pixmap = QPixmap(GetSize());
+        m_pixmap = QPixmap(this->size());
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
@@ -440,7 +430,7 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
         currentStartingPointVector.push_back(startingConnector->GetStartPoint());
     }
 
-    QRect currentArea(pos(), GetSize());
+    QRect currentArea(pos(), this->size());
 
     // Try upcoming changes
     SetOutputsNumber(size);
@@ -483,7 +473,7 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     mimeData.offset = QPoint(eventPos - pos());
     mimeData.id = GetId();
     mimeData.orderId = m_orderId;
-    mimeData.itemSize = GetSize();
+    mimeData.itemSize = this->size();
     mimeData.value = m_outputValue;
     mimeData.itemPosition = pos();
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
