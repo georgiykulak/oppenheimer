@@ -307,6 +307,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         {
             update();
             event->ignore();
+            return;
         }
 
         qDebug() << "Create new connection, initiated by STARTING connector";
@@ -342,6 +343,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         {
             update();
             event->ignore();
+            return;
         }
 
         qDebug() << "Create new connection, initiated by ENDING connector";
