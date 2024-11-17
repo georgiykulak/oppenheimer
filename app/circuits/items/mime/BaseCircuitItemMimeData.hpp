@@ -9,19 +9,25 @@ struct BaseCircuitItemMimeData
 {
     BaseCircuitItemMimeData(QPoint eventPos);
 
-    QPoint eventPos;
+    EndingPointVector endingPoints;
+    StartingPointVector startingPoints;
+    std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
     QPixmap pixmap;
+    QRect area;
+    QSize itemSize;
+    QPoint itemPosition;
+    QPoint eventPos;
     QPoint offset = {};
     quint64 id = 0;
-    QSize itemSize;
     int orderId = -1;
     bool value = false;
-    QPoint itemPosition;
-    QRect area;
-    std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
 
     QDataStream& readBasicMimeData(QDataStream& iStream);
     QDataStream& writeBasicMimeData(QDataStream& oStream) const;
+
+private:
+    QDataStream& readConnectors(QDataStream& iStream);
+    QDataStream& writeConnectors(QDataStream& oStream) const;
 };
 
 #endif // BASECIRCUITITEMMIMEDATA_HPP

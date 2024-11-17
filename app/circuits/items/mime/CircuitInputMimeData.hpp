@@ -7,10 +7,6 @@ struct CircuitInputMimeData : public BaseCircuitItemMimeData
 {
     CircuitInputMimeData(QPoint eventPos = {});
 
-    QPoint oldStartPointPos;
-    QPoint startOffset;
-    unsigned int connIdsNumber;
-    StartingPoint startPoint;
     QColor color;
 };
 

@@ -47,8 +47,8 @@ signals:
     void outputsNumber(int value);
     void tryToRebookArea(int inputsNumber,
                          int outputsNumber,
-                         EndingPointVector endingPointVector,
-                         StartingPointVector startingPointVector,
+                         EndingPointVector endingPoints,
+                         StartingPointVector startingPoints,
                          QRect area);
 
 public slots:

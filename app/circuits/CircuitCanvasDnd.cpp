@@ -266,7 +266,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewElementItem(mimeData.id, mimeData.endingPointVector.size());
+                emit addNewElementItem(mimeData.id, mimeData.endingPoints.size());
 
                 emit setElementOrderIdHint(m_idHandler.GetLastElementOrderId());
             }
@@ -931,26 +931,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
         const auto mimeData = circuitInput->GetMimeData();
         m_idHandler.RemoveInputOrderId(mimeData.orderId);
 
-        const auto& connIdSet = mimeData.startPoint.connIds;
-        for (const auto& connId : connIdSet)
-        {
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
-    {
-        const auto mimeData = circuitOutput->GetMimeData();
-        m_idHandler.RemoveOutputOrderId(mimeData.orderId);
-
-        const auto connId = mimeData.connId;
-        RemoveConnectionById(connId);
-    }
-    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
-    {
-        const auto mimeData = circuitElement->GetMimeData();
-        m_idHandler.RemoveElementOrderId(mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPointVector;
+        const auto& startPoints = mimeData.startingPoints;
         for (const auto& startPoint : startPoints)
         {
             const auto& connIdSet = startPoint.connIds;
@@ -960,7 +941,51 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
             }
         }
 
-        const auto& endPoints = mimeData.endingPointVector;
+        const auto& endPoints = mimeData.endingPoints;
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
+    {
+        const auto mimeData = circuitOutput->GetMimeData();
+        m_idHandler.RemoveOutputOrderId(mimeData.orderId);
+
+        const auto& startPoints = mimeData.startingPoints;
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = mimeData.endingPoints;
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
+    {
+        const auto mimeData = circuitElement->GetMimeData();
+        m_idHandler.RemoveElementOrderId(mimeData.orderId);
+
+        const auto& startPoints = mimeData.startingPoints;
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = mimeData.endingPoints;
         for (const auto& endPoint : endPoints)
         {
             const auto connId = endPoint.connId;
@@ -1096,10 +1121,25 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem* item, json& metaItems)
         itemMeta["color"] =
             static_cast<quint64>(mimeData.color.rgba64());
 
-        auto& metaStartPoint = itemMeta["startPoint"];
-        const auto& startPoint = mimeData.startPoint;
-        metaStartPoint["connPos"]["x"] = startPoint.connPos.x();
-        metaStartPoint["connPos"]["y"] = startPoint.connPos.y();
+        auto& metaEndPoints = itemMeta["endPoints"];
+        for (const auto& [connPos, _] : mimeData.endingPoints)
+        {
+            json endPoint;
+            endPoint["connPos"]["x"] = connPos.x();
+            endPoint["connPos"]["y"] = connPos.y();
+
+            metaEndPoints.push_back(endPoint);
+        }
+
+        auto& metaStartPoints = itemMeta["startPoints"];
+        for (const auto& [connPos, _] : mimeData.startingPoints)
+        {
+            json startPoint;
+            startPoint["connPos"]["x"] = connPos.x();
+            startPoint["connPos"]["y"] = connPos.y();
+
+            metaStartPoints.push_back(startPoint);
+        }
     }
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
@@ -1115,10 +1155,25 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem* item, json& metaItems)
         itemMeta["color"] =
             static_cast<quint64>(mimeData.color.rgba64());
 
-        auto& metaEndPoint = itemMeta["endPoint"];
-        const auto& endPoint = mimeData.endPoint;
-        metaEndPoint["connPos"]["x"] = endPoint.connPos.x();
-        metaEndPoint["connPos"]["y"] = endPoint.connPos.y();
+        auto& metaEndPoints = itemMeta["endPoints"];
+        for (const auto& [connPos, _] : mimeData.endingPoints)
+        {
+            json endPoint;
+            endPoint["connPos"]["x"] = connPos.x();
+            endPoint["connPos"]["y"] = connPos.y();
+
+            metaEndPoints.push_back(endPoint);
+        }
+
+        auto& metaStartPoints = itemMeta["startPoints"];
+        for (const auto& [connPos, _] : mimeData.startingPoints)
+        {
+            json startPoint;
+            startPoint["connPos"]["x"] = connPos.x();
+            startPoint["connPos"]["y"] = connPos.y();
+
+            metaStartPoints.push_back(startPoint);
+        }
     }
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
     {
@@ -1138,7 +1193,7 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem* item, json& metaItems)
         itemMeta["isNotationBinary"] = mimeData.isNotationBinary;
 
         auto& metaEndPoints = itemMeta["endPoints"];
-        for (const auto& [connPos, _] : mimeData.endingPointVector)
+        for (const auto& [connPos, _] : mimeData.endingPoints)
         {
             json endPoint;
             endPoint["connPos"]["x"] = connPos.x();
@@ -1148,7 +1203,7 @@ void CircuitCanvas::SaveCircuitItem(BaseCircuitItem* item, json& metaItems)
         }
 
         auto& metaStartPoints = itemMeta["startPoints"];
-        for (const auto& [connPos, _] : mimeData.startingPointVector)
+        for (const auto& [connPos, _] : mimeData.startingPoints)
         {
             json startPoint;
             startPoint["connPos"]["x"] = connPos.x();
@@ -1276,10 +1331,35 @@ void CircuitCanvas::ConstructInputItemFromJson(const json& item)
     quint64 rgba64Color = item.at("color").template get<quint64>();
     mimeData.color = QRgba64::fromRgba64(rgba64Color);
 
-    const auto& connPos = item.at("startPoint").at("connPos");
-    auto connX = connPos.at("x").template get<int>();
-    auto connY = connPos.at("y").template get<int>();
-    mimeData.startPoint.connPos = {connX, connY};
+    const auto& endPoints = item.at("endPoints");
+    if (!endPoints.is_null() && endPoints.is_array())
+    {
+        for (const auto& endPoint : endPoints)
+        {
+            const auto& connPos = endPoint.at("connPos");
+            auto connX = connPos.at("x").template get<int>();
+            auto connY = connPos.at("y").template get<int>();
+
+            EndingPoint point;
+            point.connPos = {connX, connY};
+            mimeData.endingPoints.push_back(point);
+        }
+    }
+
+    const auto& startPoints = item.at("startPoints");
+    if (!startPoints.is_null() && startPoints.is_array())
+    {
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connPos = startPoint.at("connPos");
+            auto connX = connPos.at("x").template get<int>();
+            auto connY = connPos.at("y").template get<int>();
+
+            StartingPoint point;
+            point.connPos = {connX, connY};
+            mimeData.startingPoints.push_back(point);
+        }
+    }
 
     auto* circuitItem = new CircuitInput(mimeData, this);
     circuitItem->move(itemPosition);
@@ -1323,10 +1403,35 @@ void CircuitCanvas::ConstructOutputItemFromJson(const json& item)
     quint64 rgba64Color = item.at("color").template get<quint64>();
     mimeData.color = QRgba64::fromRgba64(rgba64Color);
 
-    const auto& connPos = item.at("endPoint").at("connPos");
-    auto connX = connPos.at("x").template get<int>();
-    auto connY = connPos.at("y").template get<int>();
-    mimeData.endPoint.connPos = {connX, connY};
+    const auto& endPoints = item.at("endPoints");
+    if (!endPoints.is_null() && endPoints.is_array())
+    {
+        for (const auto& endPoint : endPoints)
+        {
+            const auto& connPos = endPoint.at("connPos");
+            auto connX = connPos.at("x").template get<int>();
+            auto connY = connPos.at("y").template get<int>();
+
+            EndingPoint point;
+            point.connPos = {connX, connY};
+            mimeData.endingPoints.push_back(point);
+        }
+    }
+
+    const auto& startPoints = item.at("startPoints");
+    if (!startPoints.is_null() && startPoints.is_array())
+    {
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connPos = startPoint.at("connPos");
+            auto connX = connPos.at("x").template get<int>();
+            auto connY = connPos.at("y").template get<int>();
+
+            StartingPoint point;
+            point.connPos = {connX, connY};
+            mimeData.startingPoints.push_back(point);
+        }
+    }
 
     auto* circuitItem = new CircuitOutput(mimeData, this);
     circuitItem->move(itemPosition);
@@ -1365,7 +1470,7 @@ void CircuitCanvas::ConstructElementItemFromJson(const json& item)
         return;
     }
 
-    emit addNewElementItem(mimeData.id, mimeData.endingPointVector.size());
+    emit addNewElementItem(mimeData.id, mimeData.endingPoints.size());
 
     quint64 rgba64Color = item.at("color").template get<quint64>();
     mimeData.color = QRgba64::fromRgba64(rgba64Color);
@@ -1384,7 +1489,7 @@ void CircuitCanvas::ConstructElementItemFromJson(const json& item)
 
             EndingPoint point;
             point.connPos = {connX, connY};
-            mimeData.endingPointVector.push_back(point);
+            mimeData.endingPoints.push_back(point);
         }
     }
 
@@ -1399,7 +1504,7 @@ void CircuitCanvas::ConstructElementItemFromJson(const json& item)
 
             StartingPoint point;
             point.connPos = {connX, connY};
-            mimeData.startingPointVector.push_back(point);
+            mimeData.startingPoints.push_back(point);
         }
     }
 

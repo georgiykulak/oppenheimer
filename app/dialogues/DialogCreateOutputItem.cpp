@@ -153,7 +153,8 @@ void DialogCreateOutputItem::InitOutputItem(int orderId)
 {
     QPoint offset(20, 20);
     CircuitOutputMimeData mimeData;
-    mimeData.endPoint.connPos = QPoint(5, 15) + offset;
+    mimeData.endingPoints.resize(1);
+    mimeData.endingPoints.at(0).connPos = QPoint(5, 15) + offset;
     mimeData.orderId = orderId;
 
     m_newOutput = new CircuitOutput(mimeData, this);

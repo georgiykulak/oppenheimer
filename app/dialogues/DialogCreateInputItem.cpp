@@ -153,7 +153,8 @@ void DialogCreateInputItem::InitInputItem(int orderId)
 {
     const QPoint offset(20, 20);
     CircuitInputMimeData mimeData;
-    mimeData.startPoint.connPos = QPoint(70, 15) + offset;
+    mimeData.startingPoints.resize(1);
+    mimeData.startingPoints.at(0).connPos = QPoint(70, 15) + offset;
     mimeData.orderId = orderId;
 
     m_newInput = new CircuitInput(mimeData, this);

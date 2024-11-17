@@ -7,10 +7,6 @@ struct CircuitOutputMimeData : public BaseCircuitItemMimeData
 {
     CircuitOutputMimeData(QPoint eventPos = {});
 
-    QPoint oldEndPointPos;
-    QPoint endOffset;
-    quint64 connId;
-    EndingPoint endPoint;
     QColor color;
 };
 

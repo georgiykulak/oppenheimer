@@ -1,4 +1,5 @@
 #include "CircuitInput.hpp"
+#include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
 #include "Config.hpp"
 
@@ -15,11 +16,11 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     m_startingConnectors.resize(1);
 
     QPoint positionOffset(65, 9);
-    auto* startingConnector = new StartingConnector(mimeData.startPoint,
+    auto* startingConnector = new StartingConnector(mimeData.startingPoints.at(0),
                                                     positionOffset,
                                                     this);
     startingConnector->move(positionOffset);
-    m_startingConnectors[0] = startingConnector;
+    m_startingConnectors.at(0) = startingConnector;
 
     SetId(mimeData.id);
     m_orderId = mimeData.orderId;
@@ -71,7 +72,7 @@ void CircuitInput::DrawToPixmap()
     painter.drawText(25, 20, strId);
 
     StartingConnector::DrawConnectorToPixmap(painter,
-                            m_startingConnectors[0]->GetPositionOffset());
+                            m_startingConnectors.at(0)->GetPositionOffset());
 }
 
 void CircuitInput::SetValue(bool value)
@@ -92,21 +93,42 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
     mimeData.color = m_color;
 
-    const auto startPoint = m_startingConnectors[0]->GetStartPoint();
-    mimeData.startPoint = startPoint;
-    mimeData.oldStartPointPos = startPoint.connPos;
-    mimeData.startOffset = QPoint(eventPos - startPoint.connPos);
-    mimeData.connIdsNumber = (unsigned int)(startPoint.connIds.size());
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    for (const auto& endingConnector : m_endingConnectors)
+    {
+        const auto endPoint = endingConnector->GetEndPoint();
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPoints.push_back({endPoint.connPos,
+                                         endPoint.connId});
+    }
 
-    mimeData.oldNewPoints.emplace_back(mimeData.oldStartPointPos,
-                                       mimeData.startPoint.connPos);
+    for (const auto* startingConnector : m_startingConnectors)
+    {
+        const auto startPoint = startingConnector->GetStartPoint();
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPoints.push_back({startPoint.connPos,
+                                           startPoint.connIds});
+    }
+
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPoints[i].connPos});
+    }
+
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPoints[i].connPos});
+    }
 
     return mimeData;
 }
 
 void CircuitInput::RemoveConnectionId(quint64 connId)
 {
-    m_startingConnectors[0]->RemoveConnectionId(connId);
+    m_startingConnectors.at(0)->RemoveConnectionId(connId);
 }
 
 void CircuitInput::SetOrderId(int orderId)

@@ -23,8 +23,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     else
     {
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
-                           (std::max(mimeData.endingPointVector.size(),
-                                     mimeData.startingPointVector.size()) - 1);
+                           (std::max(mimeData.endingPoints.size(),
+                                     mimeData.startingPoints.size()) - 1);
         size = QSize(110, realHeight);
     }
     setFixedSize(size);
@@ -38,7 +38,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     int i = 0;
-    for (const auto& endPoint : mimeData.endingPointVector)
+    for (const auto& endPoint : mimeData.endingPoints)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(3, yShift - 4);
@@ -54,7 +54,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     }
 
     i = 0;
-    for (const auto& startPoint : mimeData.startingPointVector)
+    for (const auto& startPoint : mimeData.startingPoints)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(95, yShift - 4);
@@ -78,7 +78,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     m_textField->show();
     m_textField->setEnabled(numParamEnabled);
 
-    const auto vectorSize = 1 << mimeData.endingPointVector.size(); // 2 ^ N
+    const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -444,26 +444,26 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
 
 EndingPointVector CircuitElement::GetEndPoints() const
 {
-    EndingPointVector endingPointVector;
+    EndingPointVector endingPoints;
 
     for (const auto* endingConnector : m_endingConnectors)
     {
-        endingPointVector.push_back(endingConnector->GetEndPoint());
+        endingPoints.push_back(endingConnector->GetEndPoint());
     }
 
-    return endingPointVector;
+    return endingPoints;
 }
 
 StartingPointVector CircuitElement::GetStartPoints() const
 {
-    StartingPointVector startingPointVector;
+    StartingPointVector startingPoints;
 
     for (const auto* startingConnector : m_startingConnectors)
     {
-        startingPointVector.push_back(startingConnector->GetStartPoint());
+        startingPoints.push_back(startingConnector->GetStartPoint());
     }
 
-    return startingPointVector;
+    return startingPoints;
 }
 
 CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
@@ -485,7 +485,7 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     {
         const auto endPoint = endingConnector->GetEndPoint();
         oldEndingPointVector.push_back(endPoint);
-        mimeData.endingPointVector.push_back({endPoint.connPos,
+        mimeData.endingPoints.push_back({endPoint.connPos,
                                               endPoint.connId});
     }
 
@@ -493,20 +493,20 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     {
         const auto startPoint = startingConnector->GetStartPoint();
         oldStartingPointVector.push_back(startPoint);
-        mimeData.startingPointVector.push_back({startPoint.connPos,
+        mimeData.startingPoints.push_back({startPoint.connPos,
                                                 startPoint.connIds});
     }
 
-    for (unsigned int i = 0; i < mimeData.endingPointVector.size(); ++i)
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
     {
         mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
-                                         mimeData.endingPointVector[i].connPos});
+                                         mimeData.endingPoints[i].connPos});
     }
 
-    for (unsigned int i = 0; i < mimeData.startingPointVector.size(); ++i)
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
     {
         mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
-                                         mimeData.startingPointVector[i].connPos});
+                                         mimeData.startingPoints[i].connPos});
     }
 
     return mimeData;
