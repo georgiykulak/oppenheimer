@@ -1,5 +1,7 @@
 #include "BaseCircuitItemMimeData.hpp"
 
+#include <QDebug>
+
 BaseCircuitItemMimeData::BaseCircuitItemMimeData(QPoint eventPos)
     : eventPos{eventPos}
 {}
@@ -43,11 +45,11 @@ QDataStream &BaseCircuitItemMimeData::readConnectors(QDataStream& iStream)
 {
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
-    unsigned int endingPointVectorSize;
-    unsigned int startingPointVectorSize;
+    quint64 endingPointVectorSize;
+    quint64 startingPointVectorSize;
 
     iStream >> endingPointVectorSize;
-    for (unsigned int i = 0; i < endingPointVectorSize; ++i)
+    for (quint64 i = 0; i < endingPointVectorSize; ++i)
     {
         EndingPoint endPoint;
         QPoint endOffset;
@@ -60,15 +62,15 @@ QDataStream &BaseCircuitItemMimeData::readConnectors(QDataStream& iStream)
     }
 
     iStream >> startingPointVectorSize;
-    for (unsigned int i = 0; i < startingPointVectorSize; ++i)
+    for (quint64 i = 0; i < startingPointVectorSize; ++i)
     {
         StartingPoint startPoint;
         QPoint startOffset;
-        unsigned int connIdsSize;
+        quint64 connIdsSize;
 
         iStream >> startPoint.connPos >> startOffset >> connIdsSize;
 
-        for (unsigned int j = 0; j < connIdsSize; ++j)
+        for (quint64 j = 0; j < connIdsSize; ++j)
         {
             quint64 connId;
             iStream >> connId;
@@ -80,13 +82,13 @@ QDataStream &BaseCircuitItemMimeData::readConnectors(QDataStream& iStream)
                                             startPoint.connIds});
     }
 
-    for (unsigned int i = 0; i < endingPointVectorSize; ++i)
+    for (quint64 i = 0; i < endingPointVectorSize; ++i)
     {
         oldNewPoints.push_back({oldEndingPointVector[i].connPos,
                                      endingPoints[i].connPos});
     }
 
-    for (unsigned int i = 0; i < startingPointVectorSize; ++i)
+    for (quint64 i = 0; i < startingPointVectorSize; ++i)
     {
         oldNewPoints.push_back({oldStartingPointVector[i].connPos,
                                      startingPoints[i].connPos});
@@ -97,7 +99,7 @@ QDataStream &BaseCircuitItemMimeData::readConnectors(QDataStream& iStream)
 
 QDataStream &BaseCircuitItemMimeData::writeConnectors(QDataStream& oStream) const
 {
-    oStream << (unsigned int)(endingPoints.size());
+    oStream << static_cast<quint64>(endingPoints.size());
     for (const auto& endPoint : endingPoints)
     {
         oStream
@@ -106,14 +108,14 @@ QDataStream &BaseCircuitItemMimeData::writeConnectors(QDataStream& oStream) cons
             << endPoint.connId;
     }
 
-    oStream << (unsigned int)(startingPoints.size());
+    oStream << static_cast<quint64>(startingPoints.size());
     for (const auto& startPoint : startingPoints)
     {
         oStream
             << startPoint.connPos
             << QPoint(eventPos - startPoint.connPos);
 
-        oStream << (unsigned int)(startPoint.connIds.size());
+        oStream << static_cast<quint64>(startPoint.connIds.size());
         for (const quint64 connId : startPoint.connIds)
         {
             oStream << connId;
