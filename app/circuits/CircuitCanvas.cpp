@@ -33,19 +33,9 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
             this, &CircuitCanvas::ClearAll);
 }
 
-int CircuitCanvas::GetInputOrderIdHint()
+int CircuitCanvas::GetOrderIdHint(quint64 itemType)
 {
-    return m_idHandler.GetLastInputOrderId();
-}
-
-int CircuitCanvas::GetOutputOrderIdHint()
-{
-    return m_idHandler.GetLastOutputOrderId();
-}
-
-int CircuitCanvas::GetElementOrderIdHint()
-{
-    return m_idHandler.GetLastElementOrderId();
+    return m_idHandler.GetLastOrderId(itemType);
 }
 
 void CircuitCanvas::CreateNewCircuit()

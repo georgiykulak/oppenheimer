@@ -43,8 +43,13 @@ void DialogCreateElementItem::SetOutputsNumber(int size)
     ResizeWindow();
 }
 
-void DialogCreateElementItem::SetElementOrderIdHint(int orderId)
+void DialogCreateElementItem::SetOrderIdHint(quint64 itemType, int orderId)
 {
+    if (itemType != ItemType::Element)
+    {
+        return;
+    }
+
     m_spinBox->setValue(orderId);
 }
 

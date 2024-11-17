@@ -133,7 +133,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsInputOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Input, mimeData.orderId))
         {
             event->ignore();
 
@@ -152,7 +152,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new input item";
 
-                if (!m_idHandler.NewInputOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Input, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -162,7 +162,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 mimeData.id = m_idHandler.NewUid();
                 emit addNewInputItem(mimeData.id);
 
-                emit setInputOrderIdHint(m_idHandler.GetLastInputOrderId());
+                emit setOrderIdHint(ItemType::Input,
+                                    m_idHandler.GetLastOrderId(ItemType::Input));
             }
 
             auto circuitInput = new CircuitInput(mimeData, this);
@@ -186,7 +187,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsOutputOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Output, mimeData.orderId))
         {
             event->ignore();
 
@@ -205,7 +206,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new output item";
 
-                if (!m_idHandler.NewOutputOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Output, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -215,7 +216,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 mimeData.id = m_idHandler.NewUid();
                 emit addNewOutputItem(mimeData.id);
 
-                emit setOutputOrderIdHint(m_idHandler.GetLastOutputOrderId());
+                emit setOrderIdHint(ItemType::Output,
+                                    m_idHandler.GetLastOrderId(ItemType::Output));
             }
 
             CircuitOutput *cOutput = new CircuitOutput(mimeData, this);
@@ -239,7 +241,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsElementOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Element, mimeData.orderId))
         {
             event->ignore();
 
@@ -258,7 +260,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new output item";
 
-                if (!m_idHandler.NewElementOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Element, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -268,7 +270,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 mimeData.id = m_idHandler.NewUid();
                 emit addNewElementItem(mimeData.id, mimeData.endingPoints.size());
 
-                emit setElementOrderIdHint(m_idHandler.GetLastElementOrderId());
+                emit setOrderIdHint(ItemType::Element,
+                                    m_idHandler.GetLastOrderId(ItemType::Element));
             }
 
             CircuitElement *cElement = new CircuitElement(mimeData, this);
@@ -715,13 +718,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                     this, [this, circuitElement, eventPos] (bool) {
                         emit circuitElement->closeDialogs();
 
-                        const auto orderId = GetElementOrderIdHint();
+                        const auto orderId = GetOrderIdHint(ItemType::Element);
                         auto* dialogDuplicate = new DialogDuplicateElementItem(
                                                 circuitElement, orderId, this);
                         dialogDuplicate->move(mapToGlobal(eventPos));
 
-                        connect(this, &CircuitCanvas::setElementOrderIdHint,
-                                dialogDuplicate, &DialogDuplicateElementItem::SetElementOrderIdHint);
+                        connect(this, &CircuitCanvas::setOrderIdHint,
+                                dialogDuplicate, &DialogDuplicateElementItem::SetOrderIdHint);
                         connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 dialogDuplicate, &DialogDuplicateElementItem::close);
 
@@ -907,7 +910,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
     {
         const auto mimeData = circuitInput->GetMimeData();
-        m_idHandler.RemoveInputOrderId(mimeData.orderId);
+        m_idHandler.RemoveOrderId(ItemType::Input, mimeData.orderId);
 
         const auto& startPoints = mimeData.startingPoints;
         for (const auto& startPoint : startPoints)
@@ -929,7 +932,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
     {
         const auto mimeData = circuitOutput->GetMimeData();
-        m_idHandler.RemoveOutputOrderId(mimeData.orderId);
+        m_idHandler.RemoveOrderId(ItemType::Output, mimeData.orderId);
 
         const auto& startPoints = mimeData.startingPoints;
         for (const auto& startPoint : startPoints)
@@ -951,7 +954,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
     {
         const auto mimeData = circuitElement->GetMimeData();
-        m_idHandler.RemoveElementOrderId(mimeData.orderId);
+        m_idHandler.RemoveOrderId(ItemType::Element, mimeData.orderId);
 
         const auto& startPoints = mimeData.startingPoints;
         for (const auto& startPoint : startPoints)

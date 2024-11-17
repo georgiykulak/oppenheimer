@@ -222,7 +222,7 @@ void ProjectConfigurationManager::ConstructItemFromJson(const json& itemMeta)
     meta.id = itemMeta.at("id").template get<quint64>();
     meta.orderId = itemMeta.at("orderId").template get<int>();
 
-    auto orderIdInserted = true;// m_idHandler.NewInputOrderId(meta.orderId);
+    auto orderIdInserted = m_idHandler.NewOrderId(meta.type, meta.orderId);
     auto uidInserted = m_idHandler.InsertUid(meta.id);
 
     if (!orderIdInserted || !uidInserted)

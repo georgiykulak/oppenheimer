@@ -14,9 +14,7 @@ class CircuitCanvas : public QWidget
     Q_OBJECT
 public:
     explicit CircuitCanvas(QWidget *parent = nullptr);
-    int GetInputOrderIdHint();
-    int GetOutputOrderIdHint();
-    int GetElementOrderIdHint();
+    int GetOrderIdHint(quint64 itemType);
 
 signals:
     // incoming signals
@@ -29,9 +27,7 @@ signals:
     void removeItem(quint64 id);
     void changeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void clearAllItems();
-    void setInputOrderIdHint(int orderId);
-    void setOutputOrderIdHint(int orderId);
-    void setElementOrderIdHint(int orderId);
+    void setOrderIdHint(quint64 itemType, int orderId);
     void startFunctionalFaultSimulation(quint64 elementId);
 
 public slots:

@@ -27,11 +27,7 @@ public:
                                 const json& itemMeta,
                                 QWidget* canvas)>;
 
-    static std::map<quint64, JsonProcessor>& GetJsonProcessors()
-    {
-        static std::map<quint64, JsonProcessor> kJsonProcessors;
-        return kJsonProcessors;
-    }
+    static std::map<quint64, JsonProcessor>& GetJsonProcessors();
     static void RegisterJsonProcessor(quint64 type,
                                       JsonProcessor processor);
     static void ConstructItemFromJson(RequiredItemMeta reqMeta,

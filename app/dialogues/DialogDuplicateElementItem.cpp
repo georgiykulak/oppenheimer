@@ -25,9 +25,10 @@ DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
     InitElementItem(original, orderId);
 }
 
-void DialogDuplicateElementItem::SetElementOrderIdHint(int orderId)
+void DialogDuplicateElementItem::SetOrderIdHint(quint64 itemType,
+                                                int orderId)
 {
-    if (m_newElement)
+    if (m_newElement && itemType == ItemType::Element)
     {
         m_newElement->SetOrderId(orderId);
     }

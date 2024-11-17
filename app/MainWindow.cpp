@@ -5,6 +5,7 @@
 #include "dialogues/DialogCreateOutputItem.hpp"
 #include "dialogues/DialogCreateElementItem.hpp"
 #include "presenters/SimulationPresenter.hpp"
+#include "ItemUtils.hpp"
 #include "ui_MainWindow.h"
 
 #include <QDebug>
@@ -72,7 +73,7 @@ void MainWindow::on_actionNew_Input_triggered()
 {
     qDebug() << "Main window action: New Input triggered";
 
-    auto orderId = m_canvas->GetInputOrderIdHint();
+    auto orderId = m_canvas->GetOrderIdHint(ItemType::Input);
 
     const auto pos = QCursor::pos();
 
@@ -80,15 +81,15 @@ void MainWindow::on_actionNew_Input_triggered()
                                                     orderId,
                                                     this);
 
-    connect(m_canvas, &CircuitCanvas::setInputOrderIdHint,
-            m_createInputDialog, &DialogCreateInputItem::SetInputOrderIdHint);
+    connect(m_canvas, &CircuitCanvas::setOrderIdHint,
+            m_createInputDialog, &DialogCreateInputItem::SetOrderIdHint);
 }
 
 void MainWindow::on_actionNew_Output_triggered()
 {
     qDebug() << "Main window action: New Output triggered";
 
-    auto orderId = m_canvas->GetOutputOrderIdHint();
+    auto orderId = m_canvas->GetOrderIdHint(ItemType::Output);
 
     const auto pos = QCursor::pos();
 
@@ -96,15 +97,15 @@ void MainWindow::on_actionNew_Output_triggered()
                                                       orderId,
                                                       this);
 
-    connect(m_canvas, &CircuitCanvas::setOutputOrderIdHint,
-            m_createOutputDialog, &DialogCreateOutputItem::SetOutputOrderIdHint);
+    connect(m_canvas, &CircuitCanvas::setOrderIdHint,
+            m_createOutputDialog, &DialogCreateOutputItem::SetOrderIdHint);
 }
 
 void MainWindow::on_actionNew_Element_triggered()
 {
     qDebug() << "Main window action: New Element triggered";
 
-    auto orderId = m_canvas->GetElementOrderIdHint();
+    auto orderId = m_canvas->GetOrderIdHint(ItemType::Element);
 
     const auto pos = QCursor::pos();
 
@@ -112,8 +113,8 @@ void MainWindow::on_actionNew_Element_triggered()
                                                         orderId,
                                                         this);
 
-    connect(m_canvas, &CircuitCanvas::setElementOrderIdHint,
-            m_createElementDialog, &DialogCreateElementItem::SetElementOrderIdHint);
+    connect(m_canvas, &CircuitCanvas::setOrderIdHint,
+            m_createElementDialog, &DialogCreateElementItem::SetOrderIdHint);
 }
 
 void MainWindow::on_actionNew_Circuit_triggered()

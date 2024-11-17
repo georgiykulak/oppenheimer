@@ -16,7 +16,7 @@ public:
                                    QWidget *parent = nullptr);
 
 public slots:
-    void SetInputOrderIdHint(int orderId);
+    void SetOrderIdHint(quint64 itemType, int orderId);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

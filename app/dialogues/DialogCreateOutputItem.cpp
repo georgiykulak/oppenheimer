@@ -30,8 +30,13 @@ DialogCreateOutputItem::DialogCreateOutputItem(QPoint pos,
     InitOutputItem(orderId);
 }
 
-void DialogCreateOutputItem::SetOutputOrderIdHint(int orderId)
+void DialogCreateOutputItem::SetOrderIdHint(quint64 itemType, int orderId)
 {
+    if (itemType != ItemType::Output)
+    {
+        return;
+    }
+
     m_spinBox->setValue(orderId);
 }
 
