@@ -37,7 +37,6 @@ public:
     CircuitElementMimeData GetMimeData(QPoint eventPos = {}) const;
 
     void RemoveConnectionId(quint64 connId) override;
-    int GetOffsetBetweenConnectionPoints() const;
     bool IsNumberParameterValid() const;
 
 signals:
@@ -59,13 +58,14 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
+    static constexpr int m_offsetBetweenConnection = 30;
+
     QPixmap m_pixmap;
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
 
     int m_minimumHeight;
     int m_minimumYShift;
-    int m_offsetBetweenConnection = 0;
 
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;

@@ -12,7 +12,6 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                bool numParamEnabled)
     : BaseCircuitItem{parent}
 {
-    m_offsetBetweenConnection = 30;
     m_minimumHeight = 110;
     m_minimumYShift = 55;
     QSize size;
@@ -523,11 +522,6 @@ void CircuitElement::RemoveConnectionId(quint64 connId)
     {
         endingConnector->RemoveConnectionId(connId);
     }
-}
-
-int CircuitElement::GetOffsetBetweenConnectionPoints() const
-{
-    return m_offsetBetweenConnection;
 }
 
 bool CircuitElement::IsNumberParameterValid() const

@@ -35,7 +35,7 @@ private:
 
     void InitLayout();
     void InitElementItem(int orderId);
-    void ResizeWindow(int connectionsOnSideNumber);
+    void ResizeWindow();
 };
 
 #endif // DIALOGCREATEELEMENTITEM_HPP

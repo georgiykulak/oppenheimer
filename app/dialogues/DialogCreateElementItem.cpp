@@ -34,13 +34,13 @@ DialogCreateElementItem::DialogCreateElementItem(QPoint pos,
 void DialogCreateElementItem::SetInputsNumber(int size)
 {
     m_newElement->SetInputsNumber(size);
-    ResizeWindow(size);
+    ResizeWindow();
 }
 
 void DialogCreateElementItem::SetOutputsNumber(int size)
 {
     m_newElement->SetOutputsNumber(size);
-    ResizeWindow(size);
+    ResizeWindow();
 }
 
 void DialogCreateElementItem::SetElementOrderIdHint(int orderId)
@@ -210,20 +210,9 @@ void DialogCreateElementItem::InitElementItem(int orderId)
             this, &DialogCreateElementItem::SetOutputsNumber);
 }
 
-void DialogCreateElementItem::ResizeWindow(int connectionsOnSideNumber)
+void DialogCreateElementItem::ResizeWindow()
 {
-    const auto hOffset = m_newElement->GetOffsetBetweenConnectionPoints();
-    auto newHeight = m_minimumHeight + (connectionsOnSideNumber - 1) * hOffset;
     // 40 == (CircuitElement()->height() - m_minimumHeight)
     const auto itemHeight = m_newElement->height() + 40;
-
-    if (itemHeight > newHeight)
-    {
-        newHeight = itemHeight;
-    }
-
-    if (newHeight > height())
-    {
-        resize(QSize(width(), newHeight));
-    }
+    resize(width(), itemHeight);
 }
