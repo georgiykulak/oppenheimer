@@ -7,31 +7,29 @@
 #include <QPainter>
 #include <QPushButton>
 
-CircuitElement::CircuitElement(const EndingPointVector& endPoints,
-                               const StartingPointVector& startPoints,
+CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
-                               QSize itemSize,
                                bool numParamEnabled)
     : BaseCircuitItem{parent}
 {
-    m_offsetBetweenConnection = 30;
+    m_color = Qt::lightGray;
+
     m_minimumHeight = 110;
     m_minimumYShift = 55;
     QSize size;
-    if (itemSize.isValid())
+    if (mimeData.itemSize.isValid())
     {
-        size = itemSize;
+        size = mimeData.itemSize;
     }
     else
     {
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
-                           (std::max(endPoints.size(), startPoints.size()) - 1);
+                           (std::max(mimeData.endingPoints.size(),
+                                     mimeData.startingPoints.size()) - 1);
         size = QSize(110, realHeight);
     }
-    setMinimumSize(size);
-    setMaximumSize(size);
-    SetSize(QSize(size));
-    m_pixmap = QPixmap(GetSize());
+    setFixedSize(size);
+    m_pixmap = QPixmap(this->size());
     m_pixmap.fill(QColor(Qt::transparent));
 
     QPixmap pixmap(QSize(12, 12)); // Connector size
@@ -41,7 +39,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     int i = 0;
-    for (const auto& endPoint : endPoints)
+    for (const auto& endPoint : mimeData.endingPoints)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(3, yShift - 4);
@@ -57,7 +55,7 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     }
 
     i = 0;
-    for (const auto& startPoint : startPoints)
+    for (const auto& startPoint : mimeData.startingPoints)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
         QPoint positionOffset(95, yShift - 4);
@@ -81,16 +79,16 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
     m_textField->show();
     m_textField->setEnabled(numParamEnabled);
 
-    const auto vectorSize = 1 << endPoints.size(); // 2 ^ N
+    const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(m_textField, &LogicVectorEdit::numberChangedAndValid,
             this, [this](int number)
             {
-                setNumberParameter(number);
+                m_numberParam = number;
                 emit setNumberParameterToElementItem(
-                    GetId(), GetNumberParameter()
+                    GetId(), m_numberParam
                 );
             });
     connect(m_textField, &LogicVectorEdit::setNumberValidity,
@@ -129,22 +127,47 @@ CircuitElement::CircuitElement(const EndingPointVector& endPoints,
                     m_textField->setNotation(true);
                 }
             });
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    m_id = mimeData.id;
+    m_orderId = mimeData.orderId;
+    m_outputValue = mimeData.value;
+    if (mimeData.color.isValid())
+    {
+        m_color = mimeData.color;
+    }
+
+    m_numberParam = mimeData.numberParam;
+    m_textField->setNumber(m_numberParam);
+    m_notationSwitchButton->setText(mimeData.isNotationBinary ? "bin" : "dec");
+    m_textField->setNotation(mimeData.isNotationBinary);
+
+    CircuitElement::DrawToPixmap();
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
-CircuitElement::~CircuitElement()
+void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& reqMeta,
+                                                     const json& itemMeta,
+                                                     QWidget* canvas)
 {
-    m_endingConnectors.clear();
-    m_startingConnectors.clear();
-}
+    CircuitElementMimeData mimeData;
+    mimeData.endingPoints = reqMeta.endingPoints;
+    mimeData.startingPoints = reqMeta.startingPoints;
+    mimeData.color = reqMeta.color;
+    mimeData.itemSize = reqMeta.itemSize;
+    mimeData.itemPosition = reqMeta.itemPosition;
+    mimeData.id = reqMeta.id;
+    mimeData.orderId = reqMeta.orderId;
 
-void CircuitElement::SetPixmap(const QPixmap& pixmap)
-{
-    m_pixmap = pixmap;
-}
+    mimeData.numberParam = itemMeta.at("numberParam").template get<int>();
+    mimeData.isNotationBinary =
+        itemMeta.at("isNotationBinary").template get<bool>();
 
-QPixmap CircuitElement::GetPixmap() const
-{
-    return m_pixmap;
+    auto* item = new CircuitElement(mimeData, canvas);
+    item->move(mimeData.itemPosition);
 }
 
 void CircuitElement::DrawToPixmap()
@@ -156,7 +179,7 @@ void CircuitElement::DrawToPixmap()
     painter.setPen(mPen);
     painter.setBrush(m_color);
     int wBig = 90;
-    int hBig = GetSize().height();
+    int hBig = height();
     const int borderWidth = 2;
     painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
 
@@ -210,25 +233,10 @@ void CircuitElement::DrawToPixmap()
     }
 }
 
-void CircuitElement::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-}
-
-int CircuitElement::GetOrderId() const
-{
-    return m_orderId;
-}
-
 void CircuitElement::SetNumberParameter(int numberParam)
 {
     m_numberParam = numberParam;
     m_textField->setNumber(numberParam);
-}
-
-int CircuitElement::GetNumberParameter() const
-{
-    return m_numberParam;
 }
 
 void CircuitElement::SetValue(bool value)
@@ -236,50 +244,14 @@ void CircuitElement::SetValue(bool value)
     m_outputValue = value;
 }
 
-bool CircuitElement::GetValue() const
+json CircuitElement::GetJsonMeta() const
 {
-    return m_outputValue;
-}
+    auto elementMeta = BaseCircuitItem::GetJsonMeta();
 
-void CircuitElement::SetColor(const QColor &color)
-{
-    m_color = color;
-}
+    elementMeta["numberParam"] = m_numberParam;
+    elementMeta["isNotationBinary"] = m_textField->IsNotationBinary();
 
-QColor CircuitElement::GetColor() const
-{
-    return m_color;
-}
-
-void CircuitElement::SetNotation(bool isBinary)
-{
-    m_textField->setNotation(isBinary);
-    if (isBinary)
-    {
-        m_notationSwitchButton->setText("bin");
-    }
-    else
-    {
-        m_notationSwitchButton->setText("dec");
-    }
-}
-
-bool CircuitElement::IsNotationBinary() const
-{
-    return m_textField->IsNotationBinary();
-}
-
-void CircuitElement::setNumberParameter(int param)
-{
-    m_numberParam = param;
-}
-
-void CircuitElement::paintEvent(QPaintEvent *event)
-{
-    DrawToPixmap();
-
-    QPainter painter(this);
-    painter.drawPixmap(0, 0, m_pixmap);
+    return elementMeta;
 }
 
 void CircuitElement::SetInputsNumber(int size)
@@ -306,11 +278,9 @@ void CircuitElement::SetInputsNumber(int size)
         if (newHeight > height())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
 
-            m_pixmap = QPixmap(GetSize());
+            m_pixmap = QPixmap(this->size());
             m_pixmap.fill(QColor(Qt::transparent));
             DrawToPixmap();
         }
@@ -336,8 +306,6 @@ void CircuitElement::SetInputsNumber(int size)
 
             m_endingConnectors.push_back(endingConnector);
         }
-
-        update();
     }
     else if (number < m_endingConnectors.size())
     {
@@ -357,20 +325,20 @@ void CircuitElement::SetInputsNumber(int size)
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
         }
 
-        m_pixmap = QPixmap(GetSize());
+        m_pixmap = QPixmap(this->size());
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
+
+    update();
 }
 
 void CircuitElement::SetInputsNumberAndRebook(int size)
 {
-    const int currentInputsNumber = static_cast<int>(GetEndPoints().size());
+    const int currentInputsNumber = static_cast<int>(m_endingConnectors.size());
     if (size == currentInputsNumber)
     {
         return;
@@ -389,13 +357,13 @@ void CircuitElement::SetInputsNumberAndRebook(int size)
         currentStartingPointVector.push_back(startingConnector->GetStartPoint());
     }
 
-    QRect currentArea(pos(), GetSize());
+    QRect currentArea(pos(), this->size());
 
     // Try upcoming changes
     SetInputsNumber(size);
 
     emit tryToRebookArea(currentInputsNumber,
-                         GetStartPoints().size(),
+                         m_startingConnectors.size(),
                          currentEndingPointVector,
                          currentStartingPointVector,
                          currentArea);
@@ -414,11 +382,9 @@ void CircuitElement::SetOutputsNumber(int size)
         if (newHeight > height())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
 
-            m_pixmap = QPixmap(GetSize());
+            m_pixmap = QPixmap(this->size());
             m_pixmap.fill(QColor(Qt::transparent));
             DrawToPixmap();
         }
@@ -444,8 +410,6 @@ void CircuitElement::SetOutputsNumber(int size)
 
             m_startingConnectors.push_back(startingConnector);
         }
-
-        update();
     }
     else if (number < m_startingConnectors.size())
     {
@@ -460,20 +424,20 @@ void CircuitElement::SetOutputsNumber(int size)
         if (newHeight < height() && number >= m_endingConnectors.size())
         {
             QSize newWidgetSize(width(), newHeight);
-            setMinimumSize(newWidgetSize);
-            setMaximumSize(newWidgetSize);
-            SetSize(newWidgetSize);
+            setFixedSize(newWidgetSize);
         }
 
-        m_pixmap = QPixmap(GetSize());
+        m_pixmap = QPixmap(this->size());
         m_pixmap.fill(QColor(Qt::transparent));
         DrawToPixmap();
     }
+
+    update();
 }
 
 void CircuitElement::SetOutputsNumberAndRebook(int size)
 {
-    const int currentOutputsNumber = static_cast<int>(GetStartPoints().size());
+    const int currentOutputsNumber = static_cast<int>(m_startingConnectors.size());
     if (size == currentOutputsNumber)
     {
         return;
@@ -492,12 +456,12 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
         currentStartingPointVector.push_back(startingConnector->GetStartPoint());
     }
 
-    QRect currentArea(pos(), GetSize());
+    QRect currentArea(pos(), this->size());
 
     // Try upcoming changes
     SetOutputsNumber(size);
 
-    emit tryToRebookArea(GetEndPoints().size(),
+    emit tryToRebookArea(m_endingConnectors.size(),
                          currentOutputsNumber,
                          currentEndingPointVector,
                          currentStartingPointVector,
@@ -506,44 +470,72 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
 
 EndingPointVector CircuitElement::GetEndPoints() const
 {
-    EndingPointVector endingPointVector;
+    EndingPointVector endingPoints;
 
     for (const auto* endingConnector : m_endingConnectors)
     {
-        endingPointVector.push_back(endingConnector->GetEndPoint());
+        endingPoints.push_back(endingConnector->GetEndPoint());
     }
 
-    return endingPointVector;
+    return endingPoints;
 }
 
 StartingPointVector CircuitElement::GetStartPoints() const
 {
-    StartingPointVector startingPointVector;
+    StartingPointVector startingPoints;
 
     for (const auto* startingConnector : m_startingConnectors)
     {
-        startingPointVector.push_back(startingConnector->GetStartPoint());
+        startingPoints.push_back(startingConnector->GetStartPoint());
     }
 
-    return startingPointVector;
+    return startingPoints;
 }
 
-void CircuitElement::RemoveConnectionId(quint64 connId)
+CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 {
-    for (auto* startingConnector : m_startingConnectors)
+    CircuitElementMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+    mimeData.itemSize = this->size();
+    mimeData.value = m_outputValue;
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.color = m_color;
+
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    for (const auto& endingConnector : m_endingConnectors)
     {
-        startingConnector->RemoveConnectionId(connId);
+        const auto endPoint = endingConnector->GetEndPoint();
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPoints.push_back({endPoint.connPos,
+                                              endPoint.connId});
     }
 
-    for (auto* endingConnector : m_endingConnectors)
+    for (const auto* startingConnector : m_startingConnectors)
     {
-        endingConnector->RemoveConnectionId(connId);
+        const auto startPoint = startingConnector->GetStartPoint();
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPoints.push_back({startPoint.connPos,
+                                                startPoint.connIds});
     }
-}
 
-int CircuitElement::GetOffsetBetweenConnectionPoints() const
-{
-    return m_offsetBetweenConnection;
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPoints[i].connPos});
+    }
+
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPoints[i].connPos});
+    }
+
+    return mimeData;
 }
 
 bool CircuitElement::IsNumberParameterValid() const

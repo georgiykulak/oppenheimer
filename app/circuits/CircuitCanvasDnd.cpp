@@ -38,7 +38,9 @@ void CircuitCanvas::ProcessDragEnterEvent(QDragEnterEvent *event)
         QPixmap pixmap;
         QPoint endingPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> endingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = QLine(endingPosition + offset, event->pos());
         update();
@@ -87,7 +89,9 @@ void CircuitCanvas::ProcessDragMoveEvent(QDragMoveEvent *event)
         QPixmap pixmap;
         QPoint endingPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 itemId;
+        dataStream >> pixmap >> endingPosition >> offset
+            >> itemId;
 
         m_currentConnectingLine = QLine(endingPosition + offset, event->pos());
         update();
@@ -129,7 +133,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsInputOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Input, mimeData.orderId))
         {
             event->ignore();
 
@@ -148,7 +152,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new input item";
 
-                if (!m_idHandler.NewInputOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Input, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -156,23 +160,14 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewInputItem(mimeData.id);
+                emit addNewItem(ItemType::Input, mimeData.id, 0);
 
-                emit setInputOrderIdHint(m_idHandler.GetLastInputOrderId());
+                emit setOrderIdHint(ItemType::Input,
+                                    m_idHandler.GetLastOrderId(ItemType::Input));
             }
 
-            // TODO: Add constructor for CircuitInputMimeData
-            CircuitInput *cInput = new CircuitInput(mimeData.startPoint, this);
-            cInput->SetId(mimeData.id);
-            cInput->SetOrderId(mimeData.orderId);
-            cInput->SetValue(mimeData.value);
-            cInput->SetPixmap(mimeData.pixmap);
-            cInput->SetSize(mimeData.itemSize);
-            cInput->SetColor(mimeData.color);
-            cInput->move(mimeData.itemPosition);
-            cInput->update();
-            cInput->show();
-            cInput->setAttribute(Qt::WA_DeleteOnClose);
+            auto circuitInput = new CircuitInput(mimeData, this);
+            circuitInput->move(mimeData.itemPosition);
 
             // To redraw connections
             update();
@@ -192,7 +187,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsOutputOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Output, mimeData.orderId))
         {
             event->ignore();
 
@@ -211,7 +206,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new output item";
 
-                if (!m_idHandler.NewOutputOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Output, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -219,22 +214,14 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewOutputItem(mimeData.id);
+                emit addNewItem(ItemType::Output, mimeData.id, 1);
 
-                emit setOutputOrderIdHint(m_idHandler.GetLastOutputOrderId());
+                emit setOrderIdHint(ItemType::Output,
+                                    m_idHandler.GetLastOrderId(ItemType::Output));
             }
 
-            CircuitOutput *cOutput = new CircuitOutput(mimeData.endPoint, this);
-            cOutput->SetId(mimeData.id);
-            cOutput->SetOrderId(mimeData.orderId);
-            cOutput->SetValue(mimeData.value);
-            cOutput->SetPixmap(mimeData.pixmap);
-            cOutput->SetSize(mimeData.itemSize);
-            cOutput->SetColor(mimeData.color);
+            CircuitOutput *cOutput = new CircuitOutput(mimeData, this);
             cOutput->move(mimeData.itemPosition);
-            cOutput->update();
-            cOutput->show();
-            cOutput->setAttribute(Qt::WA_DeleteOnClose);
 
             // To redraw connections
             update();
@@ -254,7 +241,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         dataStream >> mimeData;
 
         if (event->source() != this
-            && m_idHandler.ContainsElementOrderId(mimeData.orderId))
+            && m_idHandler.ContainsOrderId(ItemType::Element, mimeData.orderId))
         {
             event->ignore();
 
@@ -273,7 +260,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             {
                 qDebug() << "Placing new output item";
 
-                if (!m_idHandler.NewElementOrderId(mimeData.orderId))
+                if (!m_idHandler.NewOrderId(ItemType::Element, mimeData.orderId))
                 {
                     event->ignore();
                     // TODO: apply backup
@@ -281,26 +268,15 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewElementItem(mimeData.id, mimeData.endingPointVectorSize);
+                emit addNewItem(ItemType::Element, mimeData.id,
+                                mimeData.endingPoints.size());
 
-                emit setElementOrderIdHint(m_idHandler.GetLastElementOrderId());
+                emit setOrderIdHint(ItemType::Element,
+                                    m_idHandler.GetLastOrderId(ItemType::Element));
             }
 
-            CircuitElement *cElement = new CircuitElement(mimeData.endingPointVector,
-                                                          mimeData.startingPointVector,
-                                                          this,
-                                                          mimeData.itemSize,
-                                                          true);
-            cElement->SetId(mimeData.id);
-            cElement->SetOrderId(mimeData.orderId);
-            cElement->SetNotation(mimeData.isNotationBinary);
-            cElement->SetValue(mimeData.value);
-            cElement->SetNumberParameter(mimeData.numberParam);
-            cElement->SetColor(mimeData.color);
+            CircuitElement *cElement = new CircuitElement(mimeData, this);
             cElement->move(mimeData.itemPosition);
-            cElement->update();
-            cElement->show();
-            cElement->setAttribute(Qt::WA_DeleteOnClose);
 
             connect(cElement, &CircuitElement::setNumberParameterToElementItem,
                     this, &CircuitCanvas::setNumberParameterToElementItem);
@@ -322,41 +298,34 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
         QPixmap pixmap;
-        QPoint endingPosition;
+        QPoint sourceItemPosition;
         QPoint offset;
-        dataStream >> pixmap >> endingPosition >> offset;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
-        if (child)
+        StartingConnector* startingConnector =
+            qobject_cast<StartingConnector*>(child);
+        if (!child || !startingConnector)
         {
-            StartingConnector* startingConnector =
-                qobject_cast<StartingConnector*>(child);
-            if (startingConnector)
-            {
-                qDebug() << "Create new connection HERE (end -> start)";
-
-                const auto connId = m_areaManager.AddConnection(
-                    QLine(startingConnector->GetStartPoint().connPos,
-                          endingPosition + offset)
-                    );
-
-                if (connId)
-                {
-                    startingConnector->InsertConnectionId(connId);
-                    emit setEndingInitiatorConnectionId(connId);
-                }
-
-                update();
-                event->setDropAction(Qt::CopyAction);
-                event->accept();
-
-                return;
-            }
+            update();
+            event->ignore();
+            return;
         }
 
+        qDebug() << "Create new connection, initiated by STARTING connector";
+
+        const auto startId = startingConnector->GetItemId();
+        const auto startPos = startingConnector->GetStartPoint().connPos;
+        const auto endPos = sourceItemPosition + offset;
+        const auto positions = QLine(startPos, endPos);
+
+        InsertConnection(startId, sourceItemId, positions);
+
         update();
-        event->ignore();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
     }
     else if (event->mimeData()->hasFormat(startingConnectorMime)
              && event->source() == this)
@@ -365,51 +334,44 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
         QPixmap pixmap;
-        QPoint startingPosition;
+        QPoint sourceItemPosition;
         QPoint offset;
-        dataStream >> pixmap >> startingPosition >> offset;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
-        if (child)
+        EndingConnector* endingConnector =
+            qobject_cast<EndingConnector*>(child);
+        if (!child || !endingConnector)
         {
-            EndingConnector* endingConnector =
-                qobject_cast<EndingConnector*>(child);
-            if (endingConnector)
-            {
-                if (endingConnector->IsConnected())
-                {
-                    qDebug() << "Can't connect: busy by connection, id ="
-                             << endingConnector->GetConnectionId();
-
-                    update();
-                    event->ignore();
-                    return;
-                }
-
-                qDebug() << "Create new connection HERE (start -> end)";
-
-                const auto connId = m_areaManager.AddConnection(
-                    QLine(startingPosition + offset,
-                          endingConnector->GetEndPoint().connPos)
-                    );
-
-                if (connId)
-                {
-                    endingConnector->SetConnectionId(connId);
-                    emit insertStartingInitiatorConnectionId(connId);
-                }
-
-                update();
-                event->setDropAction(Qt::CopyAction);
-                event->accept();
-
-                return;
-            }
+            update();
+            event->ignore();
+            return;
         }
 
+        qDebug() << "Create new connection, initiated by ENDING connector";
+
+        if (endingConnector->IsConnected())
+        {
+            qDebug() << "Can't connect: busy by connection, id ="
+                     << endingConnector->GetConnectionId();
+
+            update();
+            event->ignore();
+            return;
+        }
+
+        const auto endId = endingConnector->GetItemId();
+        const auto endPos = endingConnector->GetEndPoint().connPos;
+        const auto startPos = sourceItemPosition + offset;
+        const auto positions = QLine(startPos, endPos);
+
+        InsertConnection(sourceItemId, endId, positions);
+
         update();
-        event->ignore();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
     }
     else
     {
@@ -422,50 +384,29 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 {
     QWidget* child = childAt(event->pos());
     if (!child)
+    {
         return;
+    }
 
     CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
     if (circuitInput)
     {
         if (event->button() == Qt::LeftButton)
         {
-            QPixmap pixmap = circuitInput->GetPixmap();
-            quint64 id = circuitInput->GetId();
-            int orderId = circuitInput->GetOrderId();
-            bool value = circuitInput->GetValue();
-            QSize itemSize = circuitInput->GetSize();
-            QColor color = circuitInput->GetColor();
-            const StartingPoint& startPoint = circuitInput->GetStartPoint();
-
+            const auto mimeData = circuitInput->GetMimeData(event->pos());
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream
-                << pixmap
-                << QPoint(event->pos() - circuitInput->pos())
-                << id
-                << orderId
-                << itemSize
-                << value
-                << startPoint.connPos
-                << QPoint(event->pos() - startPoint.connPos)
-                << (unsigned int)(startPoint.connIds.size())
-                << color;
+            dataStream << mimeData;
 
-            for (const quint64 connId : startPoint.connIds)
-            {
-                dataStream << connId;
-            }
+            QMimeData* mime = new QMimeData;
+            mime->setData(inputMime, itemData);
 
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData(inputMime, itemData);
-
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime);
+            drag->setPixmap(mimeData.pixmap);
             drag->setHotSpot(event->pos() - circuitInput->pos());
 
-            QRect previousArea(circuitInput->pos(), itemSize);
-            m_areaManager.ClearAndBackupArea(previousArea);
+            m_areaManager.ClearAndBackupArea(mimeData.area);
 
             if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
             {
@@ -474,7 +415,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             else
             {
                 circuitInput->show();
-                circuitInput->SetPixmap(pixmap);
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
@@ -492,7 +432,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitInput, &CircuitInput::SetColor);
-                        connect(circuitInput, &CircuitInput::closeDialogs,
+                        connect(circuitInput, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -521,38 +461,20 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
     {
         if (event->button() == Qt::LeftButton)
         {
-            QPixmap pixmap = circuitOutput->GetPixmap();
-            quint64 id = circuitOutput->GetId();
-            int orderId = circuitOutput->GetOrderId();
-            bool value = circuitOutput->GetValue();
-            QSize itemSize = circuitOutput->GetSize();
-            QColor color = circuitOutput->GetColor();
-            const EndingPoint& endPoint = circuitOutput->GetEndPoint();
-
+            const auto mimeData = circuitOutput->GetMimeData(event->pos());
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream
-                << pixmap
-                << QPoint(event->pos() - circuitOutput->pos())
-                << id
-                << orderId
-                << itemSize
-                << value
-                << endPoint.connPos
-                << QPoint(event->pos() - endPoint.connPos)
-                << color
-                << endPoint.connId;
+            dataStream << mimeData;
 
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData(outputMime, itemData);
+            QMimeData* mime = new QMimeData;
+            mime->setData(outputMime, itemData);
 
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime);
+            drag->setPixmap(mimeData.pixmap);
             drag->setHotSpot(event->pos() - circuitOutput->pos());
 
-            QRect previousArea(circuitOutput->pos(), itemSize);
-            m_areaManager.ClearAndBackupArea(previousArea);
+            m_areaManager.ClearAndBackupArea(mimeData.area);
 
             if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
             {
@@ -561,7 +483,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             else
             {
                 circuitOutput->show();
-                circuitOutput->SetPixmap(pixmap);
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
@@ -579,7 +500,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitOutput, &CircuitOutput::SetColor);
-                        connect(circuitOutput, &CircuitOutput::closeDialogs,
+                        connect(circuitOutput, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -610,63 +531,20 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             emit circuitElement->closeDialogs();
 
-            QPixmap pixmap = circuitElement->GetPixmap();
-            quint64 id = circuitElement->GetId();
-            int orderId = circuitElement->GetOrderId();
-            int numberParam = circuitElement->GetNumberParameter();
-            bool value = circuitElement->GetValue();
-            QSize itemSize = circuitElement->GetSize();
-            QColor color = circuitElement->GetColor();
-            bool isNotationBinary = circuitElement->IsNotationBinary();
-            EndingPointVector endPoints = circuitElement->GetEndPoints();
-            StartingPointVector startPoints = circuitElement->GetStartPoints();
-
+            const auto mimeData = circuitElement->GetMimeData(event->pos());
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream
-                << pixmap
-                << QPoint(event->pos() - circuitElement->pos())
-                << id
-                << orderId
-                << itemSize
-                << value
-                << numberParam
-                << color
-                << isNotationBinary;
+            dataStream << mimeData;
 
-            dataStream << (unsigned int)(endPoints.size());
-            for (const auto& endPoint : endPoints)
-            {
-                dataStream
-                    << endPoint.connPos
-                    << QPoint(event->pos() - endPoint.connPos)
-                    << endPoint.connId;
-            }
+            QMimeData* mime = new QMimeData;
+            mime->setData(elementMime, itemData);
 
-            dataStream << (unsigned int)(startPoints.size());
-            for (const auto& startPoint : startPoints)
-            {
-                dataStream
-                    << startPoint.connPos
-                    << QPoint(event->pos() - startPoint.connPos);
-
-                dataStream << (unsigned int)(startPoint.connIds.size());
-                for (const quint64 connId : startPoint.connIds)
-                {
-                    dataStream << connId;
-                }
-            }
-
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData(elementMime, itemData);
-
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime);
+            drag->setPixmap(mimeData.pixmap);
             drag->setHotSpot(event->pos() - circuitElement->pos());
 
-            QRect previousArea(circuitElement->pos(), itemSize);
-            m_areaManager.ClearAndBackupArea(previousArea);
+            m_areaManager.ClearAndBackupArea(mimeData.area);
 
             if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
             {
@@ -675,7 +553,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             else
             {
                 circuitElement->show();
-                circuitElement->SetPixmap(pixmap);
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
@@ -694,7 +571,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                         {
                             QMessageBox::information(this,
                                 tr("Can't simulate on element #")
-                                    + QString::number(circuitElement->GetOrderId()),
+                                    + QString::number(circuitElement->GetMimeData().orderId),
                                 tr("Element has empty or invalid number parameter.\n"
                                    "Please use another one and try again."),
                                 QMessageBox::Ok
@@ -714,7 +591,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitElement, &CircuitElement::SetColor);
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -725,7 +602,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         auto* elementSizeChanger = new ElementSizeChanger(circuitElement, this);
                         elementSizeChanger->move(mapToGlobal(eventPos));
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 elementSizeChanger, &ElementSizeChanger::close);
                         // Magic connect: elementSizeChanger passed as 3rd argument
                         // to ensure signal tryToRebookArea will work only while
@@ -800,7 +677,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                                     m_areaManager.ClearAndBackupArea(previousArea);
 
-                                    QRect area(circuitElement->pos(), circuitElement->GetSize());
+                                    QRect area(circuitElement->pos(), circuitElement->size());
                                     if (m_areaManager.TryBookArea(area, oldNewPoints))
                                     {
                                         // Successfully booked new area
@@ -821,7 +698,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                                         circuitElement->SetNumberParameter(0);
                                         emit changeElementItemInputsSize(circuitElement->GetId(),
-                                                                         circuitElement->GetEndPoints().size());
+                                                                         circuitElement->GetEndingConnectors().size());
                                     }
                                     else
                                     {
@@ -842,14 +719,14 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                     this, [this, circuitElement, eventPos] (bool) {
                         emit circuitElement->closeDialogs();
 
-                        const auto orderId = GetElementOrderIdHint();
+                        const auto orderId = GetOrderIdHint(ItemType::Element);
                         auto* dialogDuplicate = new DialogDuplicateElementItem(
                                                 circuitElement, orderId, this);
                         dialogDuplicate->move(mapToGlobal(eventPos));
 
-                        connect(this, &CircuitCanvas::setElementOrderIdHint,
-                                dialogDuplicate, &DialogDuplicateElementItem::SetElementOrderIdHint);
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(this, &CircuitCanvas::setOrderIdHint,
+                                dialogDuplicate, &DialogDuplicateElementItem::SetOrderIdHint);
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 dialogDuplicate, &DialogDuplicateElementItem::close);
 
             });
@@ -884,11 +761,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             QPixmap pixmap = endingConnector->GetPixmap();
             QPoint endingPosition = endingConnector->GetEndPoint().connPos;
+            quint64 itemId = endingConnector->GetItemId();
             QPoint offset = {};
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << endingPosition << offset;
+            dataStream << pixmap << endingPosition << offset
+                       << itemId;
 
             QMimeData *mimeData = new QMimeData;
             mimeData->setData("application/x-oph-endingconnector", itemData);
@@ -907,9 +786,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             //!
 
             endingConnector->SetPixmap(tempPixmap);
-
-            connect(this, &CircuitCanvas::setEndingInitiatorConnectionId,
-                    endingConnector, &EndingConnector::SetConnectionId);
 
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
@@ -947,11 +823,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             QPixmap pixmap = startingConnector->GetPixmap();
             QPoint startingPosition = startingConnector->GetStartPoint().connPos;
+            quint64 itemId = startingConnector->GetItemId();
             QPoint offset = {};
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << startingPosition << offset;
+            dataStream << pixmap << startingPosition << offset
+                       << itemId;
 
             QMimeData *mimeData = new QMimeData;
             mimeData->setData("application/x-oph-startingconnector", itemData);
@@ -970,9 +848,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             //!
 
             startingConnector->SetPixmap(tempPixmap);
-
-            connect(this, &CircuitCanvas::insertStartingInitiatorConnectionId,
-                    startingConnector, &StartingConnector::InsertConnectionId);
 
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
@@ -1035,26 +910,10 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
 
     if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
     {
-        m_idHandler.RemoveInputOrderId(circuitInput->GetOrderId());
+        const auto mimeData = circuitInput->GetMimeData();
+        m_idHandler.RemoveOrderId(ItemType::Input, mimeData.orderId);
 
-        const auto& connIdSet = circuitInput->GetStartPoint().connIds;
-        for (const auto& connId : connIdSet)
-        {
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
-    {
-        m_idHandler.RemoveOutputOrderId(circuitOutput->GetOrderId());
-
-        const auto connId = circuitOutput->GetEndPoint().connId;
-        RemoveConnectionById(connId);
-    }
-    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
-    {
-        m_idHandler.RemoveElementOrderId(item->GetOrderId());
-
-        const auto& startPoints = circuitElement->GetStartPoints();
+        const auto& startPoints = mimeData.startingPoints;
         for (const auto& startPoint : startPoints)
         {
             const auto& connIdSet = startPoint.connIds;
@@ -1064,7 +923,51 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
             }
         }
 
-        const auto& endPoints = circuitElement->GetEndPoints();
+        const auto& endPoints = mimeData.endingPoints;
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
+    {
+        const auto mimeData = circuitOutput->GetMimeData();
+        m_idHandler.RemoveOrderId(ItemType::Output, mimeData.orderId);
+
+        const auto& startPoints = mimeData.startingPoints;
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = mimeData.endingPoints;
+        for (const auto& endPoint : endPoints)
+        {
+            const auto connId = endPoint.connId;
+            RemoveConnectionById(connId);
+        }
+    }
+    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
+    {
+        const auto mimeData = circuitElement->GetMimeData();
+        m_idHandler.RemoveOrderId(ItemType::Element, mimeData.orderId);
+
+        const auto& startPoints = mimeData.startingPoints;
+        for (const auto& startPoint : startPoints)
+        {
+            const auto& connIdSet = startPoint.connIds;
+            for (const auto& connId : connIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        const auto& endPoints = mimeData.endingPoints;
         for (const auto& endPoint : endPoints)
         {
             const auto connId = endPoint.connId;
@@ -1077,7 +980,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
                                  + std::to_string(item->GetItemType()));
     }
 
-    QRect area(item->pos(), item->GetSize());
+    QRect area(item->pos(), item->size());
     m_areaManager.ClearArea(area);
 
     item->close();
@@ -1096,61 +999,105 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
 
     for (auto* obj : childList)
     {
-        CircuitInput* circuitInput = qobject_cast<CircuitInput*>(obj);
-        if (circuitInput)
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
         {
-            const auto& connIdSet = circuitInput->GetStartPoint().connIds;
-            if (connIdSet.contains(connId))
-            {
-                qDebug() << "Found input item containing connection ID =" << connId
-                         << "item ID =" << circuitInput->GetId();
-                circuitInput->RemoveConnectionId(connId);
-            }
-
-            continue;
-        }
-
-        CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(obj);
-        if (circuitOutput)
-        {
-            if (circuitOutput->GetEndPoint().connId == connId)
-            {
-                qDebug() << "Found output item containing connection ID =" << connId
-                         << "item ID =" << circuitOutput->GetId();
-                circuitOutput->RemoveConnectionId(connId);
-            }
-
-            continue;
-        }
-
-        CircuitElement* circuitElement = qobject_cast<CircuitElement*>(obj);
-        if (circuitElement)
-        {
-            const auto& startPoints = circuitElement->GetStartPoints();
-            for (const auto& startPoint : startPoints)
-            {
-                if (startPoint.connIds.contains(connId))
-                {
-                    qDebug() << "Found element item (starting side) containing connection ID ="
-                             << connId << "item ID =" << circuitElement->GetId();
-                    circuitElement->RemoveConnectionId(connId);
-                    break;
-                }
-            }
-
-            const auto& endPoints = circuitElement->GetEndPoints();
-            for (const auto& endPoint : endPoints)
-            {
-                if (endPoint.connId == connId)
-                {
-                    qDebug() << "Found element item (ending side) containing connection ID ="
-                             << connId << "item ID =" << circuitElement->GetId();
-                    circuitElement->RemoveConnectionId(connId);
-                    break;
-                }
-            }
-
-            continue;
+            item->RemoveConnectionId(connId);
         }
     }
+}
+
+void CircuitCanvas::InsertConnection(quint64 startId,
+                                     quint64 endId,
+                                     QLine positions)
+{
+    qDebug() << "InsertConnection: Trying to add connection"
+                " between (starting) item ID =" << startId
+             << "and (ending) item ID =" << endId
+             << "--> line from" << positions.p1() << "to" << positions.p2();
+
+    if (!startId || !endId)
+    {
+        qDebug() << "InsertConnection: zero id detected, aborting";
+        return;
+    }
+
+    const auto connId =
+        m_areaManager.AddConnection(positions, startId, endId);
+
+    if (!connId)
+    {
+        qDebug() << "InsertConnection: Can't create connection with ID"
+                 << connId;
+        return;
+    }
+
+    const auto startPos = positions.p1();
+    const auto endPos = positions.p2();
+    QObjectList childList = this->children();
+
+    std::size_t connectorsFound = 0;
+    for (auto* obj : childList)
+    {
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (!item)
+        {
+            continue;
+        }
+
+        if (item->GetId() == startId)
+        {
+            const auto connectors = item->GetStartingConnectors();
+            for (auto* connector : connectors)
+            {
+                if (connector && connector->GetStartPoint().connPos == startPos)
+                {
+                    connector->SetConnectionId(connId);
+                    ++connectorsFound;
+                    break;
+                }
+            }
+        }
+
+        if (item->GetId() == endId)
+        {
+            const auto connectors = item->GetEndingConnectors();
+            for (auto* connector : connectors)
+            {
+                if (connector && connector->GetEndPoint().connPos == endPos)
+                {
+                    connector->SetConnectionId(connId);
+                    ++connectorsFound;
+                    break;
+                }
+            }
+        }
+
+        if (connectorsFound == 2)
+        {
+            break;
+        }
+    }
+}
+
+void CircuitCanvas::ClearAll()
+{
+    QObjectList childList = this->children();
+    for (auto* obj : childList)
+    {
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
+        {
+            RemoveCircuitItem(item);
+        }
+    }
+
+    m_idHandler.Clear();
+
+    m_areaManager.RemoveAllConnections();
+    m_areaManager.ClearMatrix();
+
+    emit clearAllItems();
+
+    update();
 }

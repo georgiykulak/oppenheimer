@@ -30,14 +30,13 @@ DialogCreateOutputItem::DialogCreateOutputItem(QPoint pos,
     InitOutputItem(orderId);
 }
 
-void DialogCreateOutputItem::SetOrderId(int orderId)
+void DialogCreateOutputItem::SetOrderIdHint(quint64 itemType, int orderId)
 {
-    m_newOutput->SetOrderId(orderId);
-    m_newOutput->update();
-}
+    if (itemType != ItemType::Output)
+    {
+        return;
+    }
 
-void DialogCreateOutputItem::SetOutputOrderIdHint(int orderId)
-{
     m_spinBox->setValue(orderId);
 }
 
@@ -83,51 +82,39 @@ void DialogCreateOutputItem::dragEnterEvent(QDragEnterEvent *event)
 
 void DialogCreateOutputItem::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton)
+    {
+        return;
+    }
+
     QWidget* child = childAt(event->pos());
     if (!child)
-        return;
-
-    CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(child);
-    if (!circuitOutput)
-        return;
-
-    if (event->button() == Qt::LeftButton)
     {
-        QPixmap pixmap = circuitOutput->GetPixmap();
-        quint64 id = circuitOutput->GetId();
-        int orderId = circuitOutput->GetOrderId();
-        bool value = circuitOutput->GetValue();
-        QSize itemSize = circuitOutput->GetSize();
-        QColor color = circuitOutput->GetColor();
-        const EndingPoint& endPoint = circuitOutput->GetEndPoint();
+        return;
+    }
 
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream
-            << pixmap
-            << QPoint(event->pos() - circuitOutput->pos())
-            << id
-            << orderId
-            << itemSize
-            << value
-            << endPoint.connPos
-            << QPoint(event->pos() - endPoint.connPos)
-            << color
-            << endPoint.connId;
+    auto* item = qobject_cast<CircuitOutput*>(child);
+    if (!item)
+    {
+        return;
+    }
 
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData(outputMime, itemData);
+    const auto mimeData = item->GetMimeData(event->pos());
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << mimeData;
 
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos() - circuitOutput->pos());
+    QMimeData* mime = new QMimeData;
+    mime->setData(outputMime, itemData);
 
-        if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-        {
-            circuitOutput->show();
-            circuitOutput->SetPixmap(pixmap);
-        }
+    QDrag* drag = new QDrag(this);
+    drag->setMimeData(mime);
+    drag->setPixmap(mimeData.pixmap);
+    drag->setHotSpot(event->pos() - item->pos());
+
+    if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
+    {
+        item->show();
     }
 }
 
@@ -151,9 +138,6 @@ void DialogCreateOutputItem::InitLayout()
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateOutputItem::SetOrderId);
-
     QSpacerItem* spacer = new QSpacerItem(120, 90,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
@@ -173,16 +157,14 @@ void DialogCreateOutputItem::InitLayout()
 void DialogCreateOutputItem::InitOutputItem(int orderId)
 {
     QPoint offset(20, 20);
-    EndingPoint endPoint;
-    endPoint.connPos = QPoint(5, 15) + offset;
+    CircuitOutputMimeData mimeData;
+    mimeData.endingPoints.resize(1);
+    mimeData.endingPoints.at(0).connPos = QPoint(5, 15) + offset;
+    mimeData.orderId = orderId;
 
-    m_newOutput = new CircuitOutput(endPoint, this);
-
-    m_newOutput->SetId(0);
-    m_newOutput->SetOrderId(orderId);
-    m_newOutput->SetValue(orderId % 2);
+    m_newOutput = new CircuitOutput(mimeData, this);
     m_newOutput->move(offset);
-    m_newOutput->update();
-    m_newOutput->show();
-    m_newOutput->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newOutput, &BaseCircuitItem::SetOrderId);
 }

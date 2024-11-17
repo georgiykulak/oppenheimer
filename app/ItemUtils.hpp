@@ -9,9 +9,10 @@
 #define WarnNotImplemented(val) \
     qWarning() << __PRETTY_FUNCTION__ << ": not implemented"; return val;
 
-enum ItemType
+enum ItemType : quint64
 {
-    Input = 0,
+    Invalid = 0,
+    Input,
     Output,
     Element
 };

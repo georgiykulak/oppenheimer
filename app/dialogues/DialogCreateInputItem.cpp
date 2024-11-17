@@ -30,14 +30,13 @@ DialogCreateInputItem::DialogCreateInputItem(QPoint pos,
     InitInputItem(orderId);
 }
 
-void DialogCreateInputItem::SetOrderId(int orderId)
+void DialogCreateInputItem::SetOrderIdHint(quint64 itemType, int orderId)
 {
-    m_newInput->SetOrderId(orderId);
-    m_newInput->update();
-}
+    if (itemType != ItemType::Input)
+    {
+        return;
+    }
 
-void DialogCreateInputItem::SetInputOrderIdHint(int orderId)
-{
     m_spinBox->setValue(orderId);
 }
 
@@ -83,56 +82,39 @@ void DialogCreateInputItem::dragEnterEvent(QDragEnterEvent *event)
 
 void DialogCreateInputItem::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton)
+    {
+        return;
+    }
+
     QWidget* child = childAt(event->pos());
     if (!child)
-        return;
-
-    CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
-    if (!circuitInput)
-        return;
-
-    if (event->button() == Qt::LeftButton)
     {
-        QPixmap pixmap = circuitInput->GetPixmap();
-        quint64 id = circuitInput->GetId();
-        int orderId = circuitInput->GetOrderId();
-        bool value = circuitInput->GetValue();
-        QSize itemSize = circuitInput->GetSize();
-        QColor color = circuitInput->GetColor();
-        const StartingPoint& startPoint = circuitInput->GetStartPoint();
+        return;
+    }
 
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream
-            << pixmap
-            << QPoint(event->pos() - circuitInput->pos())
-            << id
-            << orderId
-            << itemSize
-            << value
-            << startPoint.connPos
-            << QPoint(event->pos() - startPoint.connPos)
-            << (unsigned int)(startPoint.connIds.size())
-            << color;
+    auto* item = qobject_cast<CircuitInput*>(child);
+    if (!item)
+    {
+        return;
+    }
 
-        for (const quint64 connId : startPoint.connIds)
-        {
-            dataStream << connId;
-        }
+    const auto mimeData = item->GetMimeData(event->pos());
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << mimeData;
 
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData(inputMime, itemData);
+    QMimeData* mime = new QMimeData;
+    mime->setData(inputMime, itemData);
 
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-        drag->setPixmap(pixmap);
-        drag->setHotSpot(event->pos() - circuitInput->pos());
+    QDrag* drag = new QDrag(this);
+    drag->setMimeData(mime);
+    drag->setPixmap(mimeData.pixmap);
+    drag->setHotSpot(event->pos() - item->pos());
 
-        if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-        {
-            circuitInput->show();
-            circuitInput->SetPixmap(pixmap);
-        }
+    if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
+    {
+        item->show();
     }
 }
 
@@ -156,9 +138,6 @@ void DialogCreateInputItem::InitLayout()
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateInputItem::SetOrderId);
-
     QSpacerItem* spacer = new QSpacerItem(120, 90,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
@@ -177,17 +156,15 @@ void DialogCreateInputItem::InitLayout()
 
 void DialogCreateInputItem::InitInputItem(int orderId)
 {
-    QPoint offset(20, 20);
-    StartingPoint startPoint;
-    startPoint.connPos = QPoint(70, 15) + offset;
+    const QPoint offset(20, 20);
+    CircuitInputMimeData mimeData;
+    mimeData.startingPoints.resize(1);
+    mimeData.startingPoints.at(0).connPos = QPoint(70, 15) + offset;
+    mimeData.orderId = orderId;
 
-    m_newInput = new CircuitInput(startPoint, this);
-
-    m_newInput->SetId(0);
-    m_newInput->SetOrderId(orderId);
-    m_newInput->SetValue(0);
+    m_newInput = new CircuitInput(mimeData, this);
     m_newInput->move(offset);
-    m_newInput->update();
-    m_newInput->show();
-    m_newInput->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newInput, &BaseCircuitItem::SetOrderId);
 }

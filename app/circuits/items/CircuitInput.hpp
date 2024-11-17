@@ -2,6 +2,7 @@
 #define CIRCUITINPUT_HPP
 
 #include "BaseCircuitItem.hpp"
+#include "mime/CircuitInputMimeData.hpp"
 
 class StartingConnector;
 
@@ -9,41 +10,24 @@ class CircuitInput : public BaseCircuitItem
 {
     Q_OBJECT
 public:
-    explicit CircuitInput(const StartingPoint& startPoint, QWidget *parent = nullptr);
+    explicit CircuitInput(const CircuitInputMimeData& mimeData,
+                          QWidget *parent = nullptr);
 
-    inline ItemType GetItemType() const noexcept final
-    { return ItemType::Input; }
+    static void ConstructCircuitInputFromJson(const RequiredItemMeta& reqMeta,
+                                              const json& itemMeta,
+                                              QWidget* canvas);
 
-    virtual void SetPixmap(const QPixmap& pixmap) override;
-    virtual QPixmap GetPixmap() const override;
+    virtual ItemType GetItemType() const noexcept override { return Input; }
+
     virtual void DrawToPixmap() override;
 
-    void SetOrderId(int orderId) final;
-    int GetOrderId() const final;
+    // Warning: Unused
     void SetValue(bool value) final;
-    bool GetValue() const final;
 
-    void SetColor(const QColor& color);
-    QColor GetColor() const;
-
-    const StartingPoint& GetStartPoint() const;
-    void RemoveConnectionId(quint64 connId);
-
-signals:
-    bool closeDialogs() override;
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
+    CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
 
 private:
-    QPixmap m_pixmap;
-    StartingConnector* m_startingConnector;
-
-    quint64 m_id = 0;
-    int m_orderId = -1;
     bool m_inputValue = 0;
-
-    QColor m_color = Qt::gray;
 };
 
 #endif // CIRCUITINPUT_HPP

@@ -24,12 +24,19 @@ public:
 
 signals:
     void newCircuitTriggered();
+    void openCircuitTriggered();
+    void saveTriggered();
+    void saveAsTriggered();
 
 private slots:
     void on_actionNew_Input_triggered();
     void on_actionNew_Output_triggered();
     void on_actionNew_Element_triggered();
     void on_actionNew_Circuit_triggered();
+    void on_actionOpen_Circuit_triggered();
+    void on_actionSave_triggered();
+    void on_actionSave_As_triggered();
+    void on_actionExit_triggered();
 
 private:
     Ui::MainWindow* ui;

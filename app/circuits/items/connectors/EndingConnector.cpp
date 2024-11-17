@@ -1,11 +1,12 @@
 #include "EndingConnector.hpp"
+#include "circuits/items/BaseCircuitItem.hpp"
 
 #include <QDebug>
 #include <QPainter>
 
 EndingConnector::EndingConnector(const EndingPoint& endPoint,
                                  QPoint positionOffset,
-                                 QWidget *parent)
+                                 QWidget* parent)
     : QWidget{parent}
 {
     auto size = QSize(12, 12);
@@ -16,6 +17,16 @@ EndingConnector::EndingConnector(const EndingPoint& endPoint,
 
     m_endPoint = endPoint;
     m_positionOffset = positionOffset;
+
+    m_sourceItem = qobject_cast<BaseCircuitItem*>(parent);
+
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
+}
+
+quint64 EndingConnector::GetItemId() const
+{
+    return m_sourceItem ? m_sourceItem->GetId() : 0;
 }
 
 const EndingPoint& EndingConnector::GetEndPoint() const
@@ -69,7 +80,7 @@ void EndingConnector::DrawConnectorToPixmap(QPainter& painter, QPoint positionOf
 
 void EndingConnector::SetConnectionId(quint64 connId)
 {
-    qDebug() << "EndingConnector::InsertConnectionId called, connId =" << connId;
+    qDebug() << "EndingConnector::SetConnectionId called, connId =" << connId;
 
     if (!m_endPoint.connId)
     {
@@ -80,7 +91,6 @@ void EndingConnector::SetConnectionId(quint64 connId)
 
 void EndingConnector::RemoveConnectionId(quint64 connId)
 {
-    qDebug() << "EndingConnector::RemoveConnectionId called, connId =" << connId;
     if (m_endPoint.connId != connId)
     {
         return;

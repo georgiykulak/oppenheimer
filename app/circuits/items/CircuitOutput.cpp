@@ -1,35 +1,57 @@
 #include "CircuitOutput.hpp"
 #include "connectors/EndingConnector.hpp"
+#include "connectors/StartingConnector.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
 
-CircuitOutput::CircuitOutput(const EndingPoint& endPoint, QWidget *parent)
+CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
+                             QWidget *parent)
     : BaseCircuitItem{parent}
 {
-    setMinimumSize(80, 30);
-    setMaximumSize(80, 30);
-    SetSize(QSize(80, 30));
-    m_pixmap = QPixmap(GetSize());
+    m_color = Qt::darkGray;
+
+    setFixedSize(80, 30);
+    m_pixmap = QPixmap(this->size());
     m_pixmap.fill(QColor(Qt::transparent));
 
+    m_endingConnectors.resize(1);
+
     QPoint positionOffset(3, 9);
-    m_endingConnector = new EndingConnector(endPoint, positionOffset, this);
+    auto* endingConnector = new EndingConnector(mimeData.endingPoints.at(0),
+                                                positionOffset,
+                                                this);
+    endingConnector->move(positionOffset);
+    m_endingConnectors.at(0) = endingConnector;
 
-    m_endingConnector->move(positionOffset);
-    m_endingConnector->update();
-    m_endingConnector->show();
-    m_endingConnector->setAttribute(Qt::WA_DeleteOnClose);
+    m_id = mimeData.id;
+    m_orderId = mimeData.orderId;
+    m_outputValue = mimeData.value;
+    if (mimeData.color.isValid())
+    {
+        m_color = mimeData.color;
+    }
+
+    CircuitOutput::DrawToPixmap();
+    show();
+    setAttribute(Qt::WA_DeleteOnClose);
 }
 
-void CircuitOutput::SetPixmap(const QPixmap &pixmap)
+void CircuitOutput::ConstructCircuitOutputFromJson(const RequiredItemMeta& reqMeta,
+                                                   const json& /*itemMeta*/,
+                                                   QWidget* canvas)
 {
-    m_pixmap = pixmap;
-}
+    CircuitOutputMimeData mimeData;
+    mimeData.endingPoints = reqMeta.endingPoints;
+    mimeData.startingPoints = reqMeta.startingPoints;
+    mimeData.color = reqMeta.color;
+    mimeData.itemSize = reqMeta.itemSize;
+    mimeData.itemPosition = reqMeta.itemPosition;
+    mimeData.id = reqMeta.id;
+    mimeData.orderId = reqMeta.orderId;
 
-QPixmap CircuitOutput::GetPixmap() const
-{
-    return m_pixmap;
+    auto* item = new CircuitOutput(mimeData, canvas);
+    item->move(mimeData.itemPosition);
 }
 
 void CircuitOutput::DrawToPixmap()
@@ -38,6 +60,7 @@ void CircuitOutput::DrawToPixmap()
 
     int arr[10] = {10,15, 30,0, 60,0, 60,30, 30,30};
     QPen mPen;
+    mPen.setColor(m_color);
     painter.setPen(mPen);
     painter.setBrush(m_color);
     QPolygon poly;
@@ -68,17 +91,7 @@ void CircuitOutput::DrawToPixmap()
     painter.drawText(30, 20, strId);
 
     EndingConnector::DrawConnectorToPixmap(painter,
-                                         m_endingConnector->GetPositionOffset());
-}
-
-void CircuitOutput::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-}
-
-int CircuitOutput::GetOrderId() const
-{
-    return m_orderId;
+                                         m_endingConnectors.at(0)->GetPositionOffset());
 }
 
 void CircuitOutput::SetValue(bool value)
@@ -86,35 +99,48 @@ void CircuitOutput::SetValue(bool value)
     m_outputValue = value;
 }
 
-bool CircuitOutput::GetValue() const
+CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
 {
-    return m_outputValue;
-}
+    CircuitOutputMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+    mimeData.itemSize = this->size();
+    mimeData.value = m_outputValue;
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.color = m_color;
 
-void CircuitOutput::SetColor(const QColor& color)
-{
-    m_color = color;
-}
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    for (const auto& endingConnector : m_endingConnectors)
+    {
+        const auto endPoint = endingConnector->GetEndPoint();
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPoints.push_back({endPoint.connPos,
+                                         endPoint.connId});
+    }
 
-QColor CircuitOutput::GetColor() const
-{
-    return m_color;
-}
+    for (const auto* startingConnector : m_startingConnectors)
+    {
+        const auto startPoint = startingConnector->GetStartPoint();
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPoints.push_back({startPoint.connPos,
+                                           startPoint.connIds});
+    }
 
-const EndingPoint& CircuitOutput::GetEndPoint() const
-{
-    return m_endingConnector->GetEndPoint();
-}
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPoints[i].connPos});
+    }
 
-void CircuitOutput::RemoveConnectionId(quint64 connId)
-{
-    m_endingConnector->RemoveConnectionId(connId);
-}
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPoints[i].connPos});
+    }
 
-void CircuitOutput::paintEvent(QPaintEvent *event)
-{
-    DrawToPixmap();
-
-    QPainter painter(this);
-    painter.drawPixmap(0, 0, m_pixmap);
+    return mimeData;
 }

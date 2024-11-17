@@ -2,6 +2,7 @@
 #define CIRCUITELEMENT_HPP
 
 #include "BaseCircuitItem.hpp"
+#include "mime/CircuitElementMimeData.hpp"
 
 class EndingConnector;
 class StartingConnector;
@@ -12,77 +13,56 @@ class CircuitElement : public BaseCircuitItem
 {
     Q_OBJECT
 public:
-    explicit CircuitElement(const EndingPointVector& endPoints,
-                            const StartingPointVector& startPoints,
+    explicit CircuitElement(const CircuitElementMimeData& mimeData,
                             QWidget *parent = nullptr,
-                            QSize itemSize = {},
-                            bool numParamEnabled = false);
-    ~CircuitElement();
+                            bool numParamEnabled = true);
 
-    inline ItemType GetItemType() const noexcept final
-    { return ItemType::Element; }
+    static void ConstructCircuitElementFromJson(const RequiredItemMeta& reqMeta,
+                                                const json& itemMeta,
+                                                QWidget* canvas);
 
-    virtual void SetPixmap(const QPixmap& pixmap) override;
-    virtual QPixmap GetPixmap() const override;
+    virtual ItemType GetItemType() const noexcept override { return Element; }
+
     virtual void DrawToPixmap() override;
 
-    virtual void SetOrderId(int orderId) override;
-    virtual int GetOrderId() const override;
-    virtual void SetNumberParameter(int numParam) override;
-    virtual int GetNumberParameter() const override;
+    void SetNumberParameter(int numParam);
+    // Warning: Not used
     virtual void SetValue(bool value) override;
-    virtual bool GetValue() const override;
+    virtual json GetJsonMeta() const override;
 
-    void SetColor(const QColor& color);
-    QColor GetColor() const;
-
-    void SetNotation(bool isBinary);
-    bool IsNotationBinary() const;
     void SetInputsNumber(int size);
     void SetInputsNumberAndRebook(int size);
     void SetOutputsNumber(int size);
     void SetOutputsNumberAndRebook(int size);
     EndingPointVector GetEndPoints() const;
     StartingPointVector GetStartPoints() const;
-    void RemoveConnectionId(quint64 connId);
-    int GetOffsetBetweenConnectionPoints() const;
+
+    CircuitElementMimeData GetMimeData(QPoint eventPos = {}) const;
+
     bool IsNumberParameterValid() const;
 
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
-    bool closeDialogs() override;
     void inputsNumber(int value);
     void outputsNumber(int value);
     void tryToRebookArea(int inputsNumber,
                          int outputsNumber,
-                         EndingPointVector endingPointVector,
-                         StartingPointVector startingPointVector,
+                         EndingPointVector endingPoints,
+                         StartingPointVector startingPoints,
                          QRect area);
 
-public slots:
-    void setNumberParameter(int param);
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
 private:
-    QPixmap m_pixmap;
-    std::vector<EndingConnector*> m_endingConnectors;
-    std::vector<StartingConnector*> m_startingConnectors;
+    static constexpr int m_offsetBetweenConnection = 30;
+
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
 
     int m_minimumHeight;
     int m_minimumYShift;
-    int m_offsetBetweenConnection = 0;
 
-    quint64 m_id = 0;
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;
-    int m_orderId = -1;
     bool m_outputValue = 0;
-
-    QColor m_color = Qt::lightGray;
 };
 
 #endif // CIRCUITELEMENT_HPP

@@ -28,6 +28,7 @@ SOURCES += \
     circuits/items/mime/CircuitInputMimeData.cpp \
     circuits/items/mime/CircuitOutputMimeData.cpp \
     circuits/items/widgets/MultilineNumberEdit.cpp \
+    config/ProjectConfigurationManager.cpp \
     dialogues/DialogCreateElementItem.cpp \
     dialogues/DialogCreateInputItem.cpp \
     dialogues/DialogCreateOutputItem.cpp \
@@ -67,6 +68,7 @@ HEADERS += \
     circuits/items/mime/CircuitInputMimeData.hpp \
     circuits/items/mime/CircuitOutputMimeData.hpp \
     circuits/items/widgets/MultilineNumberEdit.hpp \
+    config/ProjectConfigurationManager.hpp \
     dialogues/DialogCreateElementItem.hpp \
     dialogues/DialogCreateInputItem.hpp \
     dialogues/DialogCreateOutputItem.hpp \
@@ -89,6 +91,9 @@ HEADERS += \
 
 FORMS += \
     MainWindow.ui
+
+INCLUDEPATH += \
+    json/single_include/
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

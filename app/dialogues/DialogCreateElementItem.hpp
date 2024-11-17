@@ -14,12 +14,11 @@ public:
     explicit DialogCreateElementItem(QPoint pos,
                                      int orderId,
                                      QWidget *parent = nullptr);
-    void SetOrderId(int orderId);
     void SetInputsNumber(int size);
     void SetOutputsNumber(int size);
 
 public slots:
-    void SetElementOrderIdHint(int orderId);
+    void SetOrderIdHint(quint64 itemType, int orderId);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -36,7 +35,7 @@ private:
 
     void InitLayout();
     void InitElementItem(int orderId);
-    void ResizeWindow(int connectionsOnSideNumber);
+    void ResizeWindow();
 };
 
 #endif // DIALOGCREATEELEMENTITEM_HPP
