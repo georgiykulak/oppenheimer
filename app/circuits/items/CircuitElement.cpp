@@ -507,19 +507,6 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     return mimeData;
 }
 
-void CircuitElement::RemoveConnectionId(quint64 connId)
-{
-    for (auto* startingConnector : m_startingConnectors)
-    {
-        startingConnector->RemoveConnectionId(connId);
-    }
-
-    for (auto* endingConnector : m_endingConnectors)
-    {
-        endingConnector->RemoveConnectionId(connId);
-    }
-}
-
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;

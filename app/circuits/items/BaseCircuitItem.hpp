@@ -26,8 +26,7 @@ public:
 
     virtual std::vector<EndingConnector*> GetEndingConnectors() const;
     virtual std::vector<StartingConnector*> GetStartingConnectors() const;
-
-    virtual void RemoveConnectionId(quint64) { WarnNotImplemented(); }
+    virtual void RemoveConnectionId(quint64 connId);
 
 signals:
     bool closeDialogs();

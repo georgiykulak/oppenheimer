@@ -127,8 +127,3 @@ CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
 
     return mimeData;
 }
-
-void CircuitOutput::RemoveConnectionId(quint64 connId)
-{
-    m_endingConnectors.at(0)->RemoveConnectionId(connId);
-}

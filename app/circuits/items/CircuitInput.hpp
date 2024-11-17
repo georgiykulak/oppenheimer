@@ -22,8 +22,6 @@ public:
 
     CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
 
-    void RemoveConnectionId(quint64 connId) override;
-
 private:
     bool m_inputValue = 0;
 };

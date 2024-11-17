@@ -34,7 +34,6 @@ public:
 
     CircuitElementMimeData GetMimeData(QPoint eventPos = {}) const;
 
-    void RemoveConnectionId(quint64 connId) override;
     bool IsNumberParameterValid() const;
 
 signals:

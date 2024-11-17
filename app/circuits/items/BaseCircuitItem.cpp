@@ -1,4 +1,6 @@
 #include "BaseCircuitItem.hpp"
+#include "connectors/EndingConnector.hpp"
+#include "connectors/StartingConnector.hpp"
 
 #include <QPainter>
 
@@ -27,6 +29,19 @@ std::vector<EndingConnector*> BaseCircuitItem::GetEndingConnectors() const
 std::vector<StartingConnector*> BaseCircuitItem::GetStartingConnectors() const
 {
     return m_startingConnectors;
+}
+
+void BaseCircuitItem::RemoveConnectionId(quint64 connId)
+{
+    for (auto* startingConnector : m_startingConnectors)
+    {
+        startingConnector->RemoveConnectionId(connId);
+    }
+
+    for (auto* endingConnector : m_endingConnectors)
+    {
+        endingConnector->RemoveConnectionId(connId);
+    }
 }
 
 void BaseCircuitItem::SetOrderId(int orderId)
