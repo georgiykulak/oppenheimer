@@ -6,11 +6,6 @@ BaseCircuitItem::BaseCircuitItem(QWidget *parent)
 
 }
 
-void BaseCircuitItem::SetId(quint64 id)
-{
-    m_id = id;
-}
-
 quint64 BaseCircuitItem::GetId() const
 {
     return m_id;
@@ -24,4 +19,10 @@ std::vector<EndingConnector*> BaseCircuitItem::GetEndingConnectors() const
 std::vector<StartingConnector*> BaseCircuitItem::GetStartingConnectors() const
 {
     return m_startingConnectors;
+}
+
+void BaseCircuitItem::SetOrderId(int orderId)
+{
+    m_orderId = orderId;
+    update();
 }

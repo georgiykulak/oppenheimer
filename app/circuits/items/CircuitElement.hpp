@@ -51,7 +51,6 @@ signals:
                          QRect area);
 
 public slots:
-    virtual void SetOrderId(int orderId) override;
     void SetColor(const QColor& color);
 
 protected:
@@ -60,7 +59,6 @@ protected:
 private:
     static constexpr int m_offsetBetweenConnection = 30;
 
-    QPixmap m_pixmap;
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
 
@@ -69,7 +67,6 @@ private:
 
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;
-    int m_orderId = -1;
     bool m_outputValue = 0;
 
     QColor m_color = Qt::lightGray;

@@ -201,7 +201,7 @@ void DialogCreateElementItem::InitElementItem(int orderId)
     m_newElement->move(offset);
 
     connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            m_newElement, &CircuitElement::SetOrderId);
+            m_newElement, &BaseCircuitItem::SetOrderId);
 
     connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
             this, &DialogCreateElementItem::SetInputsNumber);

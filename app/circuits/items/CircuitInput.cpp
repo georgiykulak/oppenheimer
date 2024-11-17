@@ -22,7 +22,7 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     startingConnector->move(positionOffset);
     m_startingConnectors.at(0) = startingConnector;
 
-    SetId(mimeData.id);
+    m_id = mimeData.id;
     m_orderId = mimeData.orderId;
     m_inputValue = mimeData.value;
     if (mimeData.color.isValid())
@@ -129,12 +129,6 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
 void CircuitInput::RemoveConnectionId(quint64 connId)
 {
     m_startingConnectors.at(0)->RemoveConnectionId(connId);
-}
-
-void CircuitInput::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-    update();
 }
 
 void CircuitInput::SetColor(const QColor& color)

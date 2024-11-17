@@ -129,7 +129,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    SetId(mimeData.id);
+    m_id = mimeData.id;
     m_orderId = mimeData.orderId;
     m_outputValue = mimeData.value;
     if (mimeData.color.isValid())
@@ -527,12 +527,6 @@ void CircuitElement::RemoveConnectionId(quint64 connId)
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
-}
-
-void CircuitElement::SetOrderId(int orderId)
-{
-    m_orderId = orderId;
-    update();
 }
 
 void CircuitElement::SetColor(const QColor& color)

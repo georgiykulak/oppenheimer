@@ -29,16 +29,12 @@ signals:
     bool closeDialogs() override;
 
 public slots:
-    void SetOrderId(int orderId) final;
     void SetColor(const QColor& color);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    QPixmap m_pixmap;
-
-    int m_orderId = -1;
     bool m_outputValue = 0;
 
     QColor m_color = Qt::darkGray;

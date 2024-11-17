@@ -161,5 +161,5 @@ void DialogCreateInputItem::InitInputItem(int orderId)
     m_newInput->move(offset);
 
     connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            m_newInput, &CircuitInput::SetOrderId);
+            m_newInput, &BaseCircuitItem::SetOrderId);
 }

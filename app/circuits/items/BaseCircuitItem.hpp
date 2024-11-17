@@ -18,12 +18,9 @@ public:
 
     virtual inline ItemType GetItemType() const noexcept
     { WarnNotImplemented(ItemType(-1)); }
-
-    void SetId(quint64 id);
     quint64 GetId() const;
 
     virtual void DrawToPixmap()              { WarnNotImplemented(); }
-    virtual void SetOrderId(int)             { WarnNotImplemented(); }
     virtual void SetValue(bool)              { WarnNotImplemented(); }
 
     virtual std::vector<EndingConnector*> GetEndingConnectors() const;
@@ -34,10 +31,15 @@ public:
 signals:
     virtual bool closeDialogs();
 
+public slots:
+    void SetOrderId(int orderId);
+
 protected:
-    quint64 m_id = 0;
     std::vector<EndingConnector*> m_endingConnectors;
     std::vector<StartingConnector*> m_startingConnectors;
+    QPixmap m_pixmap;
+    quint64 m_id = 0;
+    int m_orderId = -1;
 };
 
 #endif // BASECIRCUITITEM_HPP
