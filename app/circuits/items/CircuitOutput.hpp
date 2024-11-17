@@ -13,8 +13,7 @@ public:
     explicit CircuitOutput(const CircuitOutputMimeData& mimeData,
                            QWidget *parent = nullptr);
 
-    inline ItemType GetItemType() const noexcept final
-    { return ItemType::Output; }
+    inline ItemType GetItemType() const noexcept override { return Output; }
 
     virtual void DrawToPixmap() override;
 

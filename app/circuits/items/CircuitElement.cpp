@@ -147,12 +147,6 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
-CircuitElement::~CircuitElement()
-{
-    m_endingConnectors.clear();
-    m_startingConnectors.clear();
-}
-
 void CircuitElement::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);

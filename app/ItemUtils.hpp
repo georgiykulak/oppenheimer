@@ -11,7 +11,8 @@
 
 enum ItemType
 {
-    Input = 0,
+    Invalid = 0,
+    Input,
     Output,
     Element
 };

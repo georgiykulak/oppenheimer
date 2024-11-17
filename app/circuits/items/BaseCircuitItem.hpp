@@ -15,9 +15,10 @@ class BaseCircuitItem : public QWidget
     Q_OBJECT
 public:
     explicit BaseCircuitItem(QWidget *parent = nullptr);
+    virtual ~BaseCircuitItem();
 
     virtual inline ItemType GetItemType() const noexcept
-    { WarnNotImplemented(ItemType(-1)); }
+    { WarnNotImplemented(ItemType(Invalid)); }
     quint64 GetId() const;
 
     virtual void DrawToPixmap()              { WarnNotImplemented(); }

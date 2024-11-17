@@ -16,10 +16,8 @@ public:
     explicit CircuitElement(const CircuitElementMimeData& mimeData,
                             QWidget *parent = nullptr,
                             bool numParamEnabled = true);
-    ~CircuitElement();
 
-    inline ItemType GetItemType() const noexcept final
-    { return ItemType::Element; }
+    inline ItemType GetItemType() const noexcept override { return Element; }
 
     virtual void DrawToPixmap() override;
 

@@ -13,8 +13,7 @@ public:
     explicit CircuitInput(const CircuitInputMimeData& mimeData,
                           QWidget *parent = nullptr);
 
-    inline ItemType GetItemType() const noexcept final
-    { return ItemType::Input; }
+    inline ItemType GetItemType() const noexcept override { return Input; }
 
     virtual void DrawToPixmap() override;
 

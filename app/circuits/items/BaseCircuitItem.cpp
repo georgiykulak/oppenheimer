@@ -6,6 +6,12 @@ BaseCircuitItem::BaseCircuitItem(QWidget *parent)
 
 }
 
+BaseCircuitItem::~BaseCircuitItem()
+{
+    m_endingConnectors.clear();
+    m_startingConnectors.clear();
+}
+
 quint64 BaseCircuitItem::GetId() const
 {
     return m_id;
