@@ -2,18 +2,26 @@
 #include "items/BaseCircuitItem.hpp"
 
 #include <QDebug>
-#include <QMessageBox>
 #include <QPainter>
-#include <QFileDialog>
-
-#include <fstream>
 
 CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
     , m_areaManager{this}
+    , m_projectConfigurator{m_areaManager, m_idHandler, this}
 {
     setAcceptDrops(true);
     m_areaManager.SetMatrixSize(QSize(1280, 720));
+
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewInputItem,
+            this, &CircuitCanvas::addNewInputItem);
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewOutputItem,
+            this, &CircuitCanvas::addNewOutputItem);
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewElementItem,
+            this, &CircuitCanvas::addNewElementItem);
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::insertConnection,
+            this, &CircuitCanvas::InsertConnection);
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::clearCircuit,
+            this, &CircuitCanvas::ClearAll);
 }
 
 int CircuitCanvas::GetInputOrderIdHint()
@@ -33,104 +41,22 @@ int CircuitCanvas::GetElementOrderIdHint()
 
 void CircuitCanvas::CreateNewCircuit()
 {
-    QObjectList childList = this->children();
-    qDebug() << "CreateNewCircuit: childs:" << childList.size();
-    // childList.size() == 3 means no items placed on canvas
-    if (childList.size() > 3)
-    {
-        auto button = QMessageBox::question(this, tr("New Circuit"),
-                        tr("Do you want to save current circuit?"),
-                        QMessageBox::Yes,
-                        QMessageBox::No);
-
-        if (button == QMessageBox::Yes)
-        {
-            SaveCircuitToFile();
-        }
-    }
-    // Forget filename for saving
-    m_fileName = "";
-
-    ClearAll();
+    m_projectConfigurator.ResetCircuit();
 }
 
 void CircuitCanvas::OpenCircuitFromFile()
 {
-    auto fileName = QFileDialog::getOpenFileName(this, "Open Circuit");
-
-    std::ifstream file(fileName.toStdString());
-    if (!file.is_open())
-    {
-        return;
-    }
-
-    CreateNewCircuit();
-    m_fileName = fileName;
-
-    try
-    {
-        const json& metaRoot = json::parse(file);
-        ConstructItemsFromJson(metaRoot);
-    }
-    catch (json::parse_error& err)
-    {
-        qWarning() << "OpenCircuitFromFile, caught parsing exception:"
-                   << err.what();
-        CreateNewCircuit();
-        m_fileName = fileName;
-    }
-    catch (std::exception& err)
-    {
-        qWarning() << "OpenCircuitFromFile, caught unknown exception:"
-                   << err.what();
-        CreateNewCircuit();
-        m_fileName = fileName;
-    }
+    m_projectConfigurator.OpenCircuitFromFile();
 }
 
 void CircuitCanvas::SaveCircuitToFile()
 {
-    qDebug() << "Saving circuit to file:" << m_fileName;
-
-    if (m_fileName.isEmpty())
-    {
-        m_fileName = QFileDialog::getSaveFileName(this, "Save Circuit As");
-    }
-
-    QFile file(m_fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        return;
-    }
-
-    QObjectList childList = this->children();
-    qDebug() << "Saving circuit, items:" << childList.size();
-
-    json metaRoot;
-    auto& metaItems = metaRoot["items"];
-    auto& metaConnections = metaRoot["connections"];
-
-    for (auto* obj : childList)
-    {
-        auto* item = qobject_cast<BaseCircuitItem*>(obj);
-        if (item)
-        {
-            SaveCircuitItem(item, metaItems);
-        }
-    }
-
-    SaveItemConnections(metaConnections);
-
-    QTextStream out(&file);
-    out << metaRoot.dump(4).c_str();
+    m_projectConfigurator.SaveCircuitToFile();
 }
 
 void CircuitCanvas::NewSavingFile()
 {
-    qDebug() << "NewSavingFile: Filename to reset:" << m_fileName;
-    m_fileName = "";
-
-    SaveCircuitToFile();
+    m_projectConfigurator.NewSavingFile();
 }
 
 void CircuitCanvas::paintEvent(QPaintEvent *event)

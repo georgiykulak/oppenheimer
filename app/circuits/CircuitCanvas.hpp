@@ -1,15 +1,11 @@
 #ifndef DRAGANDDROPFRAME_H
 #define DRAGANDDROPFRAME_H
 
+#include "config/ProjectConfigurationManager.hpp"
 #include "AreaManager.hpp"
 #include "IdHandler.hpp"
 
 #include <QWidget>
-#include <QFile>
-
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
 
 class BaseCircuitItem;
 
@@ -55,7 +51,7 @@ protected:
 private:
     AreaManager m_areaManager;
     IdHandler m_idHandler;
-    QString m_fileName;
+    ProjectConfigurationManager m_projectConfigurator;
 
     QLine m_currentConnectingLine;
 
@@ -64,19 +60,14 @@ private:
     void ProcessDropEvent(QDropEvent *event);
     void ProcessMousePressEvent(QMouseEvent *event);
     void AcceptDndEvent(QDropEvent* baseDndEvent);
-    void ClearAll();
     void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
+
+private slots:
     void InsertConnection(quint64 startId,
                           quint64 endId,
                           QLine positions);
-    void SaveCircuitItem(BaseCircuitItem* item, json& metaItems);
-    void SaveItemConnections(json& metaConnections);
-    void ConstructItemsFromJson(const json& metaRoot);
-    void ConstructInputItemFromJson(const json& item);
-    void ConstructOutputItemFromJson(const json& item);
-    void ConstructElementItemFromJson(const json& item);
-    void ConstructConnectionFromJson(const json& connection);
+    void ClearAll();
 };
 
 #endif // DRAGANDDROPFRAME_H
