@@ -14,9 +14,9 @@ QDataStream &BaseCircuitItemMimeData::readBasicMimeData(QDataStream& iStream)
         >> pixmap
         >> color
         >> offset
+        >> itemSize
         >> id
         >> orderId
-        >> itemSize
         >> value;
 
     itemPosition = QPoint(eventPos - offset);
@@ -33,9 +33,9 @@ QDataStream &BaseCircuitItemMimeData::writeBasicMimeData(QDataStream& oStream) c
         << pixmap
         << color
         << offset
+        << itemSize
         << id
         << orderId
-        << itemSize
         << value;
 
     return oStream;
