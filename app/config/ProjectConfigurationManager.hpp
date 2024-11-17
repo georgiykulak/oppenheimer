@@ -49,9 +49,7 @@ private:
 
     // From config
     void ConstructItemsFromJson(const json& metaRoot);
-    void ConstructInputItemFromJson(const json& item);
-    void ConstructOutputItemFromJson(const json& item);
-    void ConstructElementItemFromJson(const json& item);
+    void ConstructItemFromJson(const json& itemMeta);
     void ConstructConnectionFromJson(const json& connection);
 };
 

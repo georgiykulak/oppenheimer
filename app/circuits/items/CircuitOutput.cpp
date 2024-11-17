@@ -37,6 +37,23 @@ CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
+void CircuitOutput::ConstructCircuitOutputFromJson(const RequiredItemMeta& reqMeta,
+                                                   const json& /*itemMeta*/,
+                                                   QWidget* canvas)
+{
+    CircuitOutputMimeData mimeData;
+    mimeData.endingPoints = reqMeta.endingPoints;
+    mimeData.startingPoints = reqMeta.startingPoints;
+    mimeData.color = reqMeta.color;
+    mimeData.itemSize = reqMeta.itemSize;
+    mimeData.itemPosition = reqMeta.itemPosition;
+    mimeData.id = reqMeta.id;
+    mimeData.orderId = reqMeta.orderId;
+
+    auto* item = new CircuitOutput(mimeData, canvas);
+    item->move(mimeData.itemPosition);
+}
+
 void CircuitOutput::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);

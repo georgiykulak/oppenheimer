@@ -13,7 +13,11 @@ public:
     explicit CircuitOutput(const CircuitOutputMimeData& mimeData,
                            QWidget *parent = nullptr);
 
-    inline ItemType GetItemType() const noexcept override { return Output; }
+    static void ConstructCircuitOutputFromJson(const RequiredItemMeta& reqMeta,
+                                               const json& itemMeta,
+                                               QWidget* canvas);
+
+    virtual ItemType GetItemType() const noexcept override { return Output; }
 
     virtual void DrawToPixmap() override;
 

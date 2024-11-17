@@ -1,5 +1,7 @@
 #include "CircuitCanvas.hpp"
-#include "items/BaseCircuitItem.hpp"
+#include "items/CircuitInput.hpp"
+#include "items/CircuitOutput.hpp"
+#include "items/CircuitElement.hpp"
 
 #include <QDebug>
 #include <QPainter>
@@ -11,6 +13,13 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
 {
     setAcceptDrops(true);
     m_areaManager.SetMatrixSize(QSize(1280, 720));
+
+    BaseCircuitItem::RegisterJsonProcessor(ItemType::Input,
+                            CircuitInput::ConstructCircuitInputFromJson);
+    BaseCircuitItem::RegisterJsonProcessor(ItemType::Output,
+                            CircuitOutput::ConstructCircuitOutputFromJson);
+    BaseCircuitItem::RegisterJsonProcessor(ItemType::Element,
+                            CircuitElement::ConstructCircuitElementFromJson);
 
     connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewInputItem,
             this, &CircuitCanvas::addNewInputItem);

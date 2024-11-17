@@ -3,12 +3,17 @@
 
 #include "ItemUtils.hpp"
 
-#include <vector>
-
 #include <QWidget>
+
+#include <vector>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class EndingConnector;
 class StartingConnector;
+
+struct RequiredItemMeta;
 
 class BaseCircuitItem : public QWidget
 {
@@ -17,16 +22,34 @@ public:
     explicit BaseCircuitItem(QWidget* parent = nullptr);
     virtual ~BaseCircuitItem();
 
-    virtual inline ItemType GetItemType() const noexcept
+    using JsonProcessor =
+            std::function<void (RequiredItemMeta reqMeta,
+                                const json& itemMeta,
+                                QWidget* canvas)>;
+
+    static std::map<quint64, JsonProcessor>& GetJsonProcessors()
+    {
+        static std::map<quint64, JsonProcessor> kJsonProcessors;
+        return kJsonProcessors;
+    }
+    static void RegisterJsonProcessor(quint64 type,
+                                      JsonProcessor processor);
+    static void ConstructItemFromJson(RequiredItemMeta reqMeta,
+                                      const json& itemMeta,
+                                      QWidget* canvas);
+
+    virtual ItemType GetItemType() const noexcept
     { WarnNotImplemented(ItemType(Invalid)); }
     quint64 GetId() const;
 
-    virtual void DrawToPixmap()              { WarnNotImplemented(); }
-    virtual void SetValue(bool)              { WarnNotImplemented(); }
+    virtual void DrawToPixmap() { WarnNotImplemented(); }
+    virtual void SetValue(bool) { WarnNotImplemented(); }
 
     virtual std::vector<EndingConnector*> GetEndingConnectors() const;
     virtual std::vector<StartingConnector*> GetStartingConnectors() const;
     virtual void RemoveConnectionId(quint64 connId);
+
+    virtual json GetJsonMeta() const;
 
 signals:
     bool closeDialogs();
@@ -44,6 +67,18 @@ protected:
     int m_orderId = -1;
 
     virtual void paintEvent(QPaintEvent* event) override;
+};
+
+struct RequiredItemMeta
+{
+    EndingPointVector endingPoints;
+    StartingPointVector startingPoints;
+    QColor color;
+    QSize itemSize;
+    QPoint itemPosition;
+    quint64 type;
+    quint64 id;
+    int orderId;
 };
 
 #endif // BASECIRCUITITEM_HPP

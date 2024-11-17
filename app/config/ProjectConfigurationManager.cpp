@@ -145,119 +145,7 @@ void ProjectConfigurationManager::SaveCircuitItem(BaseCircuitItem* item, json& m
         return;
     }
 
-    json itemMeta;
-
-    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
-    {
-        const auto mimeData = circuitInput->GetMimeData();
-
-        itemMeta["type"] = circuitInput->GetItemType();
-        itemMeta["id"] = mimeData.id;
-        itemMeta["orderId"] = mimeData.orderId;
-        itemMeta["width"] = mimeData.itemSize.width();
-        itemMeta["height"] = mimeData.itemSize.height();
-        itemMeta["pos"]["x"] = mimeData.itemPosition.x();
-        itemMeta["pos"]["y"] = mimeData.itemPosition.y();
-        itemMeta["color"] =
-            static_cast<quint64>(mimeData.color.rgba64());
-
-        auto& metaEndPoints = itemMeta["endPoints"];
-        for (const auto& [connPos, _] : mimeData.endingPoints)
-        {
-            json endPoint;
-            endPoint["connPos"]["x"] = connPos.x();
-            endPoint["connPos"]["y"] = connPos.y();
-
-            metaEndPoints.push_back(endPoint);
-        }
-
-        auto& metaStartPoints = itemMeta["startPoints"];
-        for (const auto& [connPos, _] : mimeData.startingPoints)
-        {
-            json startPoint;
-            startPoint["connPos"]["x"] = connPos.x();
-            startPoint["connPos"]["y"] = connPos.y();
-
-            metaStartPoints.push_back(startPoint);
-        }
-    }
-    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
-    {
-        const auto mimeData = circuitOutput->GetMimeData();
-
-        itemMeta["type"] = circuitOutput->GetItemType();
-        itemMeta["id"] = mimeData.id;
-        itemMeta["orderId"] = mimeData.orderId;
-        itemMeta["width"] = mimeData.itemSize.width();
-        itemMeta["height"] = mimeData.itemSize.height();
-        itemMeta["pos"]["x"] = mimeData.itemPosition.x();
-        itemMeta["pos"]["y"] = mimeData.itemPosition.y();
-        itemMeta["color"] =
-            static_cast<quint64>(mimeData.color.rgba64());
-
-        auto& metaEndPoints = itemMeta["endPoints"];
-        for (const auto& [connPos, _] : mimeData.endingPoints)
-        {
-            json endPoint;
-            endPoint["connPos"]["x"] = connPos.x();
-            endPoint["connPos"]["y"] = connPos.y();
-
-            metaEndPoints.push_back(endPoint);
-        }
-
-        auto& metaStartPoints = itemMeta["startPoints"];
-        for (const auto& [connPos, _] : mimeData.startingPoints)
-        {
-            json startPoint;
-            startPoint["connPos"]["x"] = connPos.x();
-            startPoint["connPos"]["y"] = connPos.y();
-
-            metaStartPoints.push_back(startPoint);
-        }
-    }
-    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
-    {
-        const auto mimeData = circuitElement->GetMimeData();
-
-        itemMeta["type"] = circuitElement->GetItemType();
-        itemMeta["id"] = mimeData.id;
-        itemMeta["orderId"] = mimeData.orderId;
-        itemMeta["width"] = mimeData.itemSize.width();
-        itemMeta["height"] = mimeData.itemSize.height();
-        itemMeta["pos"]["x"] = mimeData.itemPosition.x();
-        itemMeta["pos"]["y"] = mimeData.itemPosition.y();
-        itemMeta["color"] =
-            static_cast<quint64>(mimeData.color.rgba64());
-
-        itemMeta["numberParam"] = mimeData.numberParam;
-        itemMeta["isNotationBinary"] = mimeData.isNotationBinary;
-
-        auto& metaEndPoints = itemMeta["endPoints"];
-        for (const auto& [connPos, _] : mimeData.endingPoints)
-        {
-            json endPoint;
-            endPoint["connPos"]["x"] = connPos.x();
-            endPoint["connPos"]["y"] = connPos.y();
-
-            metaEndPoints.push_back(endPoint);
-        }
-
-        auto& metaStartPoints = itemMeta["startPoints"];
-        for (const auto& [connPos, _] : mimeData.startingPoints)
-        {
-            json startPoint;
-            startPoint["connPos"]["x"] = connPos.x();
-            startPoint["connPos"]["y"] = connPos.y();
-
-            metaStartPoints.push_back(startPoint);
-        }
-    }
-    else
-    {
-        throw std::runtime_error("ItemType is unknown, type = "
-                                 + std::to_string(item->GetItemType()));
-        return;
-    }
+    json itemMeta = item->GetJsonMeta();
 
     qDebug() << "Saving input item:" << itemMeta.dump().c_str();
 
@@ -292,32 +180,7 @@ void ProjectConfigurationManager::ConstructItemsFromJson(const json& metaRoot)
         qDebug() << "Items array is not empty, size =" << itemsArray.size();
         for (const auto& item : itemsArray)
         {
-            auto itemType = item.at("type").template get<int>();
-            switch (itemType)
-            {
-            case ItemType::Input:
-            {
-                ConstructInputItemFromJson(item);
-
-                break;
-            }
-            case ItemType::Output:
-            {
-                ConstructOutputItemFromJson(item);
-
-                break;
-            }
-            case ItemType::Element:
-            {
-                ConstructElementItemFromJson(item);
-
-                break;
-            }
-            default:
-            {
-                continue;
-            }
-            }
+            ConstructItemFromJson(item);
         }
     }
 
@@ -333,18 +196,21 @@ void ProjectConfigurationManager::ConstructItemsFromJson(const json& metaRoot)
     }
 }
 
-void ProjectConfigurationManager::ConstructInputItemFromJson(const json& item)
+void ProjectConfigurationManager::ConstructItemFromJson(const json& itemMeta)
 {
-    const auto& pos = item.at("pos");
-    auto itemX = pos.at("x").template get<int>();
-    auto itemY = pos.at("y").template get<int>();
-    QPoint itemPosition(itemX, itemY);
+    RequiredItemMeta meta;
 
-    auto width = item.at("width").template get<int>();
-    auto height = item.at("height").template get<int>();
-    QSize itemSize(width, height);
+    meta.type = itemMeta.at("type").template get<quint64>();
+    const auto& pos = itemMeta.at("pos");
+    const auto itemX = pos.at("x").template get<int>();
+    const auto itemY = pos.at("y").template get<int>();
+    meta.itemPosition = QPoint(itemX, itemY);
 
-    QRect area(itemPosition, itemSize);
+    auto width = itemMeta.at("width").template get<int>();
+    auto height = itemMeta.at("height").template get<int>();
+    meta.itemSize = QSize(width, height);
+
+    QRect area(meta.itemPosition, meta.itemSize);
 
     std::vector<std::pair<QPoint, QPoint>> emptyVector;
 
@@ -353,25 +219,27 @@ void ProjectConfigurationManager::ConstructInputItemFromJson(const json& item)
         return;
     }
 
-    CircuitInputMimeData mimeData;
+    meta.id = itemMeta.at("id").template get<quint64>();
+    meta.orderId = itemMeta.at("orderId").template get<int>();
 
-    mimeData.id = item.at("id").template get<quint64>();
-    mimeData.orderId = item.at("orderId").template get<int>();
-
-    auto orderIdInserted = m_idHandler.NewInputOrderId(mimeData.orderId);
-    auto uidInserted = m_idHandler.InsertUid(mimeData.id);
+    auto orderIdInserted = true;// m_idHandler.NewInputOrderId(meta.orderId);
+    auto uidInserted = m_idHandler.InsertUid(meta.id);
 
     if (!orderIdInserted || !uidInserted)
     {
+        m_areaManager.ClearArea(area);
         return;
     }
 
-    emit addNewInputItem(mimeData.id);
+    // emit addNewItem(meta.id, ...);
 
-    quint64 rgba64Color = item.at("color").template get<quint64>();
-    mimeData.color = QRgba64::fromRgba64(rgba64Color);
+    if (itemMeta.contains("color"))
+    {
+        quint64 rgba64Color = itemMeta.at("color").template get<quint64>();
+        meta.color = QRgba64::fromRgba64(rgba64Color);
+    }
 
-    const auto& endPoints = item.at("endPoints");
+    const auto& endPoints = itemMeta.at("endPoints");
     if (!endPoints.is_null() && endPoints.is_array())
     {
         for (const auto& endPoint : endPoints)
@@ -382,11 +250,11 @@ void ProjectConfigurationManager::ConstructInputItemFromJson(const json& item)
 
             EndingPoint point;
             point.connPos = {connX, connY};
-            mimeData.endingPoints.push_back(point);
+            meta.endingPoints.push_back(point);
         }
     }
 
-    const auto& startPoints = item.at("startPoints");
+    const auto& startPoints = itemMeta.at("startPoints");
     if (!startPoints.is_null() && startPoints.is_array())
     {
         for (const auto& startPoint : startPoints)
@@ -397,7 +265,7 @@ void ProjectConfigurationManager::ConstructInputItemFromJson(const json& item)
 
             StartingPoint point;
             point.connPos = {connX, connY};
-            mimeData.startingPoints.push_back(point);
+            meta.startingPoints.push_back(point);
         }
     }
 
@@ -407,167 +275,9 @@ void ProjectConfigurationManager::ConstructInputItemFromJson(const json& item)
         return;
     }
 
-    auto* circuitItem = new CircuitInput(mimeData, parentWidget);
-    circuitItem->move(itemPosition);
-}
-
-void ProjectConfigurationManager::ConstructOutputItemFromJson(const json& item)
-{
-    const auto& pos = item.at("pos");
-    auto itemX = pos.at("x").template get<int>();
-    auto itemY = pos.at("y").template get<int>();
-    QPoint itemPosition(itemX, itemY);
-
-    auto width = item.at("width").template get<int>();
-    auto height = item.at("height").template get<int>();
-    QSize itemSize(width, height);
-
-    QRect area(itemPosition, itemSize);
-
-    std::vector<std::pair<QPoint, QPoint>> emptyVector;
-
-    if (!m_areaManager.TryBookArea(area, emptyVector))
-    {
-        return;
-    }
-
-    CircuitOutputMimeData mimeData;
-
-    mimeData.id = item.at("id").template get<quint64>();
-    mimeData.orderId = item.at("orderId").template get<int>();
-
-    auto orderIdInserted = m_idHandler.NewOutputOrderId(mimeData.orderId);
-    auto uidInserted = m_idHandler.InsertUid(mimeData.id);
-
-    if (!orderIdInserted || !uidInserted)
-    {
-        return;
-    }
-
-    emit addNewOutputItem(mimeData.id);
-
-    quint64 rgba64Color = item.at("color").template get<quint64>();
-    mimeData.color = QRgba64::fromRgba64(rgba64Color);
-
-    const auto& endPoints = item.at("endPoints");
-    if (!endPoints.is_null() && endPoints.is_array())
-    {
-        for (const auto& endPoint : endPoints)
-        {
-            const auto& connPos = endPoint.at("connPos");
-            auto connX = connPos.at("x").template get<int>();
-            auto connY = connPos.at("y").template get<int>();
-
-            EndingPoint point;
-            point.connPos = {connX, connY};
-            mimeData.endingPoints.push_back(point);
-        }
-    }
-
-    const auto& startPoints = item.at("startPoints");
-    if (!startPoints.is_null() && startPoints.is_array())
-    {
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connPos = startPoint.at("connPos");
-            auto connX = connPos.at("x").template get<int>();
-            auto connY = connPos.at("y").template get<int>();
-
-            StartingPoint point;
-            point.connPos = {connX, connY};
-            mimeData.startingPoints.push_back(point);
-        }
-    }
-
-    auto parentWidget = qobject_cast<QWidget*>(parent());
-    if (!parentWidget)
-    {
-        return;
-    }
-
-    auto* circuitItem = new CircuitOutput(mimeData, parentWidget);
-    circuitItem->move(itemPosition);
-}
-
-void ProjectConfigurationManager::ConstructElementItemFromJson(const json& item)
-{
-    const auto& pos = item.at("pos");
-    auto itemX = pos.at("x").template get<int>();
-    auto itemY = pos.at("y").template get<int>();
-    QPoint itemPosition(itemX, itemY);
-
-    auto width = item.at("width").template get<int>();
-    auto height = item.at("height").template get<int>();
-    QSize itemSize(width, height);
-
-    QRect area(itemPosition, itemSize);
-
-    std::vector<std::pair<QPoint, QPoint>> emptyVector;
-
-    if (!m_areaManager.TryBookArea(area, emptyVector))
-    {
-        return;
-    }
-
-    CircuitElementMimeData mimeData;
-
-    mimeData.id = item.at("id").template get<quint64>();
-    mimeData.orderId = item.at("orderId").template get<int>();
-
-    auto orderIdInserted = m_idHandler.NewElementOrderId(mimeData.orderId);
-    auto uidInserted = m_idHandler.InsertUid(mimeData.id);
-
-    if (!orderIdInserted || !uidInserted)
-    {
-        return;
-    }
-
-    emit addNewElementItem(mimeData.id, mimeData.endingPoints.size());
-
-    quint64 rgba64Color = item.at("color").template get<quint64>();
-    mimeData.color = QRgba64::fromRgba64(rgba64Color);
-
-    mimeData.numberParam = item.at("numberParam").template get<int>();
-    mimeData.isNotationBinary = item.at("isNotationBinary").template get<bool>();
-
-    const auto& endPoints = item.at("endPoints");
-    if (!endPoints.is_null() && endPoints.is_array())
-    {
-        for (const auto& endPoint : endPoints)
-        {
-            const auto& connPos = endPoint.at("connPos");
-            auto connX = connPos.at("x").template get<int>();
-            auto connY = connPos.at("y").template get<int>();
-
-            EndingPoint point;
-            point.connPos = {connX, connY};
-            mimeData.endingPoints.push_back(point);
-        }
-    }
-
-    const auto& startPoints = item.at("startPoints");
-    if (!startPoints.is_null() && startPoints.is_array())
-    {
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connPos = startPoint.at("connPos");
-            auto connX = connPos.at("x").template get<int>();
-            auto connY = connPos.at("y").template get<int>();
-
-            StartingPoint point;
-            point.connPos = {connX, connY};
-            mimeData.startingPoints.push_back(point);
-        }
-    }
-
-    auto parentWidget = qobject_cast<QWidget*>(parent());
-    if (!parentWidget)
-    {
-        return;
-    }
-
-    auto* circuitItem = new CircuitElement(mimeData, parentWidget);
-    circuitItem->move(itemPosition);
+    BaseCircuitItem::ConstructItemFromJson(meta,
+                                           itemMeta,
+                                           parentWidget);
 }
 
 void ProjectConfigurationManager::ConstructConnectionFromJson(const json& connection)

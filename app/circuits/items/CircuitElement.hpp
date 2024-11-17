@@ -17,13 +17,18 @@ public:
                             QWidget *parent = nullptr,
                             bool numParamEnabled = true);
 
-    inline ItemType GetItemType() const noexcept override { return Element; }
+    static void ConstructCircuitElementFromJson(const RequiredItemMeta& reqMeta,
+                                                const json& itemMeta,
+                                                QWidget* canvas);
+
+    virtual ItemType GetItemType() const noexcept override { return Element; }
 
     virtual void DrawToPixmap() override;
 
     void SetNumberParameter(int numParam);
     // Warning: Not used
     virtual void SetValue(bool value) override;
+    virtual json GetJsonMeta() const override;
 
     void SetInputsNumber(int size);
     void SetInputsNumberAndRebook(int size);

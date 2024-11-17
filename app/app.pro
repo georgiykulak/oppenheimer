@@ -93,7 +93,7 @@ FORMS += \
     MainWindow.ui
 
 INCLUDEPATH += \
-    json/include/
+    json/single_include/
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

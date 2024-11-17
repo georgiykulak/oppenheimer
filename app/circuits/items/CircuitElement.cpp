@@ -149,6 +149,27 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
+void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& reqMeta,
+                                                     const json& itemMeta,
+                                                     QWidget* canvas)
+{
+    CircuitElementMimeData mimeData;
+    mimeData.endingPoints = reqMeta.endingPoints;
+    mimeData.startingPoints = reqMeta.startingPoints;
+    mimeData.color = reqMeta.color;
+    mimeData.itemSize = reqMeta.itemSize;
+    mimeData.itemPosition = reqMeta.itemPosition;
+    mimeData.id = reqMeta.id;
+    mimeData.orderId = reqMeta.orderId;
+
+    mimeData.numberParam = itemMeta.at("numberParam").template get<int>();
+    mimeData.isNotationBinary =
+        itemMeta.at("isNotationBinary").template get<bool>();
+
+    auto* item = new CircuitElement(mimeData, canvas);
+    item->move(mimeData.itemPosition);
+}
+
 void CircuitElement::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);
@@ -221,6 +242,16 @@ void CircuitElement::SetNumberParameter(int numberParam)
 void CircuitElement::SetValue(bool value)
 {
     m_outputValue = value;
+}
+
+json CircuitElement::GetJsonMeta() const
+{
+    auto elementMeta = BaseCircuitItem::GetJsonMeta();
+
+    elementMeta["numberParam"] = m_numberParam;
+    elementMeta["isNotationBinary"] = m_textField->IsNotationBinary();
+
+    return elementMeta;
 }
 
 void CircuitElement::SetInputsNumber(int size)

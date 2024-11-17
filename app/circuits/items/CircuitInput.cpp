@@ -37,6 +37,23 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     setAttribute(Qt::WA_DeleteOnClose);
 }
 
+void CircuitInput::ConstructCircuitInputFromJson(const RequiredItemMeta& reqMeta,
+                                                 const json& /*itemMeta*/,
+                                                 QWidget* canvas)
+{
+    CircuitInputMimeData mimeData;
+    mimeData.endingPoints = reqMeta.endingPoints;
+    mimeData.startingPoints = reqMeta.startingPoints;
+    mimeData.color = reqMeta.color;
+    mimeData.itemSize = reqMeta.itemSize;
+    mimeData.itemPosition = reqMeta.itemPosition;
+    mimeData.id = reqMeta.id;
+    mimeData.orderId = reqMeta.orderId;
+
+    auto* item = new CircuitInput(mimeData, canvas);
+    item->move(mimeData.itemPosition);
+}
+
 void CircuitInput::DrawToPixmap()
 {
     QPainter painter(&m_pixmap);
