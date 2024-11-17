@@ -7,37 +7,50 @@
 
 #include <QDebug>
 
-LogicController::LogicController(QObject *parent)
+LogicController::LogicController(QObject* parent)
     : QObject{parent}
 {
     m_simulator = new Simulator;
 }
 
-void LogicController::AddNewInputItem(quint64 id)
+AbstractItem* LogicController::CreateItem(quint64 itemType, QObject* parent)
 {
-    AbstractItem* item = new InputItem(this);
-    m_items.insert(std::make_pair(id, item));
+    switch (itemType)
+    {
+        case ItemType::Input:
+        {
+            return new InputItem(parent);
+        }
+        case ItemType::Output:
+        {
+            return new OutputItem(parent);
+        }
+        case ItemType::Element:
+        {
+            return new ElementItem(parent);
+        }
+        default:
+            break;
+    }
 
-    qDebug() << "AddNewInputItem: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items.at(id)->GetItemType();
+        return nullptr;
 }
 
-void LogicController::AddNewOutputItem(quint64 id)
+void LogicController::AddNewItem(quint64 itemType, quint64 id, std::size_t inputsSize)
 {
-    AbstractItem* item = new OutputItem(this);
+    AbstractItem* item = CreateItem(itemType, this);
+    if (!item)
+    {
+        return;
+    }
+
+    if (itemType == ItemType::Element)
+    {
+        item->SetInputsSize(inputsSize);
+    }
     m_items.insert(std::make_pair(id, item));
 
-    qDebug() << "AddNewOutputItem: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items.at(id)->GetItemType();
-}
-
-void LogicController::AddNewElementItem(quint64 id, std::size_t inputsSize)
-{
-    AbstractItem* item = new ElementItem(this);
-    item->SetInputsSize(inputsSize);
-    m_items.insert(std::make_pair(id, item));
-
-    qDebug() << "AddNewElementItem: size =" << m_items.size() << "id =" << id
+    qDebug() << "AddNewItem: size =" << m_items.size() << "id =" << id
              << "type =" << m_items.at(id)->GetItemType();
 }
 

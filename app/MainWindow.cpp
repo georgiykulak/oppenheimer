@@ -24,14 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_canvas = new CircuitCanvas(this);
     m_simulationPresenter = new SimulationPresenter(this);
 
-    connect(m_canvas, &CircuitCanvas::addNewInputItem,
-            m_logicController, &LogicController::AddNewInputItem);
-
-    connect(m_canvas, &CircuitCanvas::addNewOutputItem,
-            m_logicController, &LogicController::AddNewOutputItem);
-
-    connect(m_canvas, &CircuitCanvas::addNewElementItem,
-            m_logicController, &LogicController::AddNewElementItem);
+    connect(m_canvas, &CircuitCanvas::addNewItem,
+            m_logicController, &LogicController::AddNewItem);
 
     connect(m_canvas, &CircuitCanvas::removeItem,
             m_logicController, &LogicController::RemoveItem);

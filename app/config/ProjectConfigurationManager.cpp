@@ -1,7 +1,5 @@
 #include "ProjectConfigurationManager.hpp"
-#include "circuits/items/CircuitInput.hpp"
-#include "circuits/items/CircuitOutput.hpp"
-#include "circuits/items/CircuitElement.hpp"
+#include "circuits/items/BaseCircuitItem.hpp"
 
 #include <QDebug>
 #include <QFile>
@@ -22,8 +20,8 @@ void ProjectConfigurationManager::ResetCircuit()
 {
     QObjectList childList = parent()->children();
     qDebug() << "CreateNewCircuit: childs:" << childList.size();
-    // childList.size() == 3 means no items placed on canvas
-    if (childList.size() > 3)
+    // childList.size() == 4 means no items placed on canvas
+    if (childList.size() > 4)
     {
         auto parentWidget = qobject_cast<QWidget*>(parent());
         if (!parentWidget)
@@ -120,7 +118,7 @@ void ProjectConfigurationManager::OpenCircuitFromFile()
     try
     {
         const json& metaRoot = json::parse(file);
-        ConstructItemsFromJson(metaRoot);
+        ConstructCircuitFromJson(metaRoot);
     }
     catch (json::parse_error& err)
     {
@@ -170,9 +168,9 @@ void ProjectConfigurationManager::SaveItemConnections(json& metaConnections)
     }
 }
 
-void ProjectConfigurationManager::ConstructItemsFromJson(const json& metaRoot)
+void ProjectConfigurationManager::ConstructCircuitFromJson(const json& metaRoot)
 {
-    qDebug() << "ConstructItemsFromJson";
+    qDebug() << "ConstructCircuitFromJson";
 
     const auto& itemsArray = metaRoot.at("items");
     if (!itemsArray.is_null() && itemsArray.is_array())
@@ -231,8 +229,6 @@ void ProjectConfigurationManager::ConstructItemFromJson(const json& itemMeta)
         return;
     }
 
-    // emit addNewItem(meta.id, ...);
-
     if (itemMeta.contains("color"))
     {
         quint64 rgba64Color = itemMeta.at("color").template get<quint64>();
@@ -268,6 +264,8 @@ void ProjectConfigurationManager::ConstructItemFromJson(const json& itemMeta)
             meta.startingPoints.push_back(point);
         }
     }
+
+    emit addNewItem(meta.type, meta.id, meta.endingPoints.size());
 
     auto parentWidget = qobject_cast<QWidget*>(parent());
     if (!parentWidget)

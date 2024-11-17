@@ -21,12 +21,8 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
     BaseCircuitItem::RegisterJsonProcessor(ItemType::Element,
                             CircuitElement::ConstructCircuitElementFromJson);
 
-    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewInputItem,
-            this, &CircuitCanvas::addNewInputItem);
-    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewOutputItem,
-            this, &CircuitCanvas::addNewOutputItem);
-    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewElementItem,
-            this, &CircuitCanvas::addNewElementItem);
+    connect(&m_projectConfigurator, &ProjectConfigurationManager::addNewItem,
+            this, &CircuitCanvas::addNewItem);
     connect(&m_projectConfigurator, &ProjectConfigurationManager::insertConnection,
             this, &CircuitCanvas::InsertConnection);
     connect(&m_projectConfigurator, &ProjectConfigurationManager::clearCircuit,

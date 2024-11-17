@@ -30,9 +30,7 @@ public:
     void OpenCircuitFromFile();
 
 signals:
-    void addNewInputItem(quint64 id);
-    void addNewOutputItem(quint64 id);
-    void addNewElementItem(quint64 id, std::size_t inputsSize);
+    void addNewItem(quint64 itemType, quint64 id, std::size_t inputsSize);
     void insertConnection(quint64 startId,
                           quint64 endId,
                           QLine positions);
@@ -48,7 +46,7 @@ private:
     void SaveItemConnections(json& metaConnections);
 
     // From config
-    void ConstructItemsFromJson(const json& metaRoot);
+    void ConstructCircuitFromJson(const json& metaRoot);
     void ConstructItemFromJson(const json& itemMeta);
     void ConstructConnectionFromJson(const json& connection);
 };

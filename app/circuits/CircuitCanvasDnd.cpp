@@ -160,7 +160,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewInputItem(mimeData.id);
+                emit addNewItem(ItemType::Input, mimeData.id, 0);
 
                 emit setOrderIdHint(ItemType::Input,
                                     m_idHandler.GetLastOrderId(ItemType::Input));
@@ -214,7 +214,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewOutputItem(mimeData.id);
+                emit addNewItem(ItemType::Output, mimeData.id, 1);
 
                 emit setOrderIdHint(ItemType::Output,
                                     m_idHandler.GetLastOrderId(ItemType::Output));
@@ -268,7 +268,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                 }
 
                 mimeData.id = m_idHandler.NewUid();
-                emit addNewElementItem(mimeData.id, mimeData.endingPoints.size());
+                emit addNewItem(ItemType::Element, mimeData.id,
+                                mimeData.endingPoints.size());
 
                 emit setOrderIdHint(ItemType::Element,
                                     m_idHandler.GetLastOrderId(ItemType::Element));

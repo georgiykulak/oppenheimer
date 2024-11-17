@@ -21,9 +21,7 @@ signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
 
     // outgoing signals
-    void addNewInputItem(quint64 id);
-    void addNewOutputItem(quint64 id);
-    void addNewElementItem(quint64 id, std::size_t inputsSize);
+    void addNewItem(quint64 itemType, quint64 id, std::size_t inputsSize);
     void removeItem(quint64 id);
     void changeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void clearAllItems();
