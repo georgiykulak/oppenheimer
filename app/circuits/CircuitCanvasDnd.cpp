@@ -428,7 +428,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitInput, &CircuitInput::SetColor);
-                        connect(circuitInput, &CircuitInput::closeDialogs,
+                        connect(circuitInput, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -496,7 +496,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitOutput, &CircuitOutput::SetColor);
-                        connect(circuitOutput, &CircuitOutput::closeDialogs,
+                        connect(circuitOutput, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -587,7 +587,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(colorDialog, &QColorDialog::colorSelected,
                                 circuitElement, &CircuitElement::SetColor);
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 colorDialog, &QColorDialog::close);
                     });
 
@@ -598,7 +598,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         auto* elementSizeChanger = new ElementSizeChanger(circuitElement, this);
                         elementSizeChanger->move(mapToGlobal(eventPos));
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 elementSizeChanger, &ElementSizeChanger::close);
                         // Magic connect: elementSizeChanger passed as 3rd argument
                         // to ensure signal tryToRebookArea will work only while
@@ -722,7 +722,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
 
                         connect(this, &CircuitCanvas::setElementOrderIdHint,
                                 dialogDuplicate, &DialogDuplicateElementItem::SetElementOrderIdHint);
-                        connect(circuitElement, &CircuitElement::closeDialogs,
+                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
                                 dialogDuplicate, &DialogDuplicateElementItem::close);
 
             });

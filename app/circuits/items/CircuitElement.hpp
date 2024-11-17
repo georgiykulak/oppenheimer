@@ -39,7 +39,6 @@ public:
 
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
-    bool closeDialogs() override;
     void inputsNumber(int value);
     void outputsNumber(int value);
     void tryToRebookArea(int inputsNumber,

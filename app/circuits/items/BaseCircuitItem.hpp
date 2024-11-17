@@ -30,7 +30,7 @@ public:
     virtual void RemoveConnectionId(quint64) { WarnNotImplemented(); }
 
 signals:
-    virtual bool closeDialogs();
+    bool closeDialogs();
 
 public slots:
     void SetOrderId(int orderId);

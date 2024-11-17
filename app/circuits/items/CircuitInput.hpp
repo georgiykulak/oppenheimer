@@ -24,9 +24,6 @@ public:
 
     void RemoveConnectionId(quint64 connId) override;
 
-signals:
-    bool closeDialogs() override;
-
 public slots:
     void SetColor(const QColor& color);
 
