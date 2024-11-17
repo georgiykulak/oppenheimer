@@ -9,7 +9,9 @@ QDataStream& operator>>(QDataStream& iStream,
 {
     data.readBasicMimeData(iStream);
 
-    iStream >> data.numberParam >> data.color >> data.isNotationBinary;
+    iStream
+        >> data.numberParam
+        >> data.isNotationBinary;
 
     return iStream;
 }
@@ -19,7 +21,9 @@ QDataStream& operator<<(QDataStream& oStream,
 {
     data.writeBasicMimeData(oStream);
 
-    oStream << data.numberParam << data.color << data.isNotationBinary;
+    oStream
+        << data.numberParam
+        << data.isNotationBinary;
 
     return oStream;
 }

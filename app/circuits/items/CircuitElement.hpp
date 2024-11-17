@@ -47,9 +47,6 @@ signals:
                          StartingPointVector startingPoints,
                          QRect area);
 
-public slots:
-    void SetColor(const QColor& color);
-
 private:
     static constexpr int m_offsetBetweenConnection = 30;
 
@@ -62,8 +59,6 @@ private:
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;
     bool m_outputValue = 0;
-
-    QColor m_color = Qt::lightGray;
 };
 
 #endif // CIRCUITELEMENT_HPP

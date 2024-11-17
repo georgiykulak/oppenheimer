@@ -24,13 +24,8 @@ public:
 
     void RemoveConnectionId(quint64 connId) override;
 
-public slots:
-    void SetColor(const QColor& color);
-
 private:
     bool m_inputValue = 0;
-
-    QColor m_color = Qt::gray;
 };
 
 #endif // CIRCUITINPUT_HPP

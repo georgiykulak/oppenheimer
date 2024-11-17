@@ -13,6 +13,7 @@ struct BaseCircuitItemMimeData
     StartingPointVector startingPoints;
     std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
     QPixmap pixmap;
+    QColor color;
     QRect area;
     QSize itemSize;
     QPoint itemPosition;

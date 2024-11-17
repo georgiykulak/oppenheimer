@@ -6,8 +6,6 @@
 struct CircuitOutputMimeData : public BaseCircuitItemMimeData
 {
     CircuitOutputMimeData(QPoint eventPos = {});
-
-    QColor color;
 };
 
 QDataStream& operator>>(QDataStream& iStream,

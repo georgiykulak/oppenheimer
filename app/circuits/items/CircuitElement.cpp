@@ -12,6 +12,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                bool numParamEnabled)
     : BaseCircuitItem{parent}
 {
+    m_color = Qt::lightGray;
+
     m_minimumHeight = 110;
     m_minimumYShift = 55;
     QSize size;
@@ -521,10 +523,4 @@ void CircuitElement::RemoveConnectionId(quint64 connId)
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
-}
-
-void CircuitElement::SetColor(const QColor& color)
-{
-    m_color = color;
-    update();
 }

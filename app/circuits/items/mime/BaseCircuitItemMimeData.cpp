@@ -10,6 +10,7 @@ QDataStream &BaseCircuitItemMimeData::readBasicMimeData(QDataStream& iStream)
 
     iStream
         >> pixmap
+        >> color
         >> offset
         >> id
         >> orderId
@@ -28,6 +29,7 @@ QDataStream &BaseCircuitItemMimeData::writeBasicMimeData(QDataStream& oStream) c
 
     oStream
         << pixmap
+        << color
         << offset
         << id
         << orderId

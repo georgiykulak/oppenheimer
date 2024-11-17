@@ -9,6 +9,8 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
                            QWidget* parent)
     : BaseCircuitItem{parent}
 {
+    m_color = Qt::gray;
+
     setFixedSize(80, 30);
     m_pixmap = QPixmap(this->size());
     m_pixmap.fill(QColor(Qt::transparent));
@@ -129,10 +131,4 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
 void CircuitInput::RemoveConnectionId(quint64 connId)
 {
     m_startingConnectors.at(0)->RemoveConnectionId(connId);
-}
-
-void CircuitInput::SetColor(const QColor& color)
-{
-    m_color = color;
-    update();
 }

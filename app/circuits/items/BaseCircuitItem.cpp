@@ -35,6 +35,12 @@ void BaseCircuitItem::SetOrderId(int orderId)
     update();
 }
 
+void BaseCircuitItem::SetColor(const QColor& color)
+{
+    m_color = color;
+    update();
+}
+
 void BaseCircuitItem::paintEvent(QPaintEvent* event)
 {
     DrawToPixmap();

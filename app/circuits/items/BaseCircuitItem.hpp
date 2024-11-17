@@ -34,11 +34,13 @@ signals:
 
 public slots:
     void SetOrderId(int orderId);
+    void SetColor(const QColor& color);
 
 protected:
     std::vector<EndingConnector*> m_endingConnectors;
     std::vector<StartingConnector*> m_startingConnectors;
     QPixmap m_pixmap;
+    QColor m_color = Qt::white;
     quint64 m_id = 0;
     int m_orderId = -1;
 
