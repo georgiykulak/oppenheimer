@@ -136,11 +136,3 @@ void CircuitInput::SetColor(const QColor& color)
     m_color = color;
     update();
 }
-
-void CircuitInput::paintEvent(QPaintEvent *event)
-{
-    DrawToPixmap();
-
-    QPainter painter(this);
-    painter.drawPixmap(0, 0, m_pixmap);
-}

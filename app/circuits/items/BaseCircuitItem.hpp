@@ -14,7 +14,7 @@ class BaseCircuitItem : public QWidget
 {
     Q_OBJECT
 public:
-    explicit BaseCircuitItem(QWidget *parent = nullptr);
+    explicit BaseCircuitItem(QWidget* parent = nullptr);
     virtual ~BaseCircuitItem();
 
     virtual inline ItemType GetItemType() const noexcept
@@ -41,6 +41,8 @@ protected:
     QPixmap m_pixmap;
     quint64 m_id = 0;
     int m_orderId = -1;
+
+    virtual void paintEvent(QPaintEvent* event) override;
 };
 
 #endif // BASECIRCUITITEM_HPP

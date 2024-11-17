@@ -50,9 +50,6 @@ signals:
 public slots:
     void SetColor(const QColor& color);
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
 private:
     static constexpr int m_offsetBetweenConnection = 30;
 

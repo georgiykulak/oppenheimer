@@ -27,9 +27,6 @@ public:
 public slots:
     void SetColor(const QColor& color);
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
 private:
     bool m_outputValue = 0;
 
