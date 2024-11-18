@@ -7,7 +7,6 @@
 #include "items/mime/CircuitInputMimeData.hpp"
 #include "items/mime/CircuitOutputMimeData.hpp"
 #include "items/mime/CircuitElementMimeData.hpp"
-#include "dialogues/ElementSizeChanger.hpp"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -367,6 +366,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
             connect(this, &CircuitCanvas::setOrderIdHint,
                     item, &CircuitElement::setOrderIdHintForDuplicate);
 
+            connect(item, &CircuitElement::tryToRebookArea,
+                    this, &CircuitCanvas::TryToRebookArea);
+
             // To redraw connections
             update();
 
@@ -643,131 +645,8 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            auto eventPos = event->pos();
 
             circuitElement->AddActionsToMenu(menu);
-
-            /*QAction* actionChangeSize = new QAction("Change Size", this);
-            connect(actionChangeSize, &QAction::triggered,
-                    this, [this, circuitElement, eventPos] (bool) {
-                        emit circuitElement->closeDialogs();
-
-                        auto* elementSizeChanger = new ElementSizeChanger(circuitElement, this);
-                        elementSizeChanger->move(mapToGlobal(eventPos));
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                elementSizeChanger, &ElementSizeChanger::close);
-                        // Magic connect: elementSizeChanger passed as 3rd argument
-                        // to ensure signal tryToRebookArea will work only while
-                        // ElementSizeChanger dialog is opened (and not deleted)
-                        connect(circuitElement, &CircuitElement::tryToRebookArea,
-                                elementSizeChanger, [this, circuitElement](int previousInputsNumber,
-                                                             int previousOutputsNumber,
-                                                             EndingPointVector oldEndingPointVector,
-                                                             StartingPointVector oldStartingPointVector,
-                                                             QRect previousArea){
-                                    EndingPointVector endPoints = circuitElement->GetEndPoints();
-                                    StartingPointVector startPoints = circuitElement->GetStartPoints();
-                                    std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
-                                    quint64 connId = 0;
-                                    StartingPoint::IdsSet connIdSet;
-
-                                    // Ending point incrementing case
-                                    if (endPoints.size() > oldEndingPointVector.size())
-                                    {
-                                        for (std::size_t i = 0; i < oldEndingPointVector.size(); ++i)
-                                        {
-                                            auto oldEndingPoint = oldEndingPointVector[i];
-                                            auto endPoint = endPoints[i];
-                                            oldNewPoints.push_back({oldEndingPoint.connPos,
-                                                                    endPoint.connPos});
-                                        }
-                                        oldNewPoints.push_back({QPoint(),
-                                                                endPoints.back().connPos});
-                                    }
-                                    else
-                                    {
-                                        // Ending point decrementing case
-                                        if (endPoints.size() < oldEndingPointVector.size())
-                                        {
-                                            connId = oldEndingPointVector.back().connId;
-                                        }
-
-                                        for (std::size_t i = 0; i < endPoints.size(); ++i)
-                                        {
-                                            oldNewPoints.push_back({oldEndingPointVector[i].connPos,
-                                                                    endPoints[i].connPos});
-                                        }
-                                    }
-
-                                    // Starting point incrementing case
-                                    if (startPoints.size() > oldStartingPointVector.size())
-                                    {
-                                        for (std::size_t i = 0; i < oldStartingPointVector.size(); ++i)
-                                        {
-                                            auto oldStartingPoint = oldStartingPointVector[i];
-                                            auto startPoint = startPoints[i];
-                                            oldNewPoints.push_back({oldStartingPoint.connPos,
-                                                                    startPoint.connPos});
-                                        }
-                                        oldNewPoints.push_back({QPoint(),
-                                                                startPoints.back().connPos});
-                                    }
-                                    else
-                                    {
-                                        // Starting point decrementing case
-                                        if (startPoints.size() < oldStartingPointVector.size())
-                                        {
-                                            connIdSet = oldStartingPointVector.back().connIds;
-                                        }
-
-                                        for (std::size_t i = 0; i < startPoints.size(); ++i)
-                                        {
-                                            oldNewPoints.push_back({oldStartingPointVector[i].connPos,
-                                                                    startPoints[i].connPos});
-                                        }
-                                    }
-
-                                    m_areaManager.ClearAndBackupArea(previousArea);
-
-                                    QRect area(circuitElement->pos(), circuitElement->size());
-                                    if (m_areaManager.TryBookArea(area, oldNewPoints))
-                                    {
-                                        // Successfully booked new area
-                                        // Decrementing case of inputs size
-                                        if (connId)
-                                        {
-                                            RemoveConnectionById(connId);
-                                        }
-
-                                        // Decrementing case of outputs size
-                                        if (!connIdSet.empty())
-                                        {
-                                            for (const auto& connId : connIdSet)
-                                            {
-                                                RemoveConnectionById(connId);
-                                            }
-                                        }
-
-                                        circuitElement->SetNumberParameter(0);
-                                        emit changeElementItemInputsSize(circuitElement->GetId(),
-                                                                         circuitElement->GetEndingConnectors().size());
-                                    }
-                                    else
-                                    {
-                                        // Can't book new area
-                                        circuitElement->SetInputsNumber(previousInputsNumber);
-                                        emit circuitElement->inputsNumber(previousInputsNumber);
-                                        circuitElement->SetOutputsNumber(previousOutputsNumber);
-                                        emit circuitElement->outputsNumber(previousOutputsNumber);
-                                    }
-
-                                    // To redraw connections
-                                    update();
-                                });
-                    });
-
-
-            menu->addAction(actionChangeSize);*/
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();

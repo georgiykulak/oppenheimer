@@ -54,6 +54,51 @@ void CircuitCanvas::NewSavingFile()
     m_projectConfigurator.NewSavingFile();
 }
 
+void CircuitCanvas::TryToRebookArea(CircuitElement* circuitElement,
+                                    QRect previousArea,
+                                    std::vector<std::pair<QPoint, QPoint> > oldNewPoints,
+                                    quint64 displacedConnId,
+                                    StartingPoint::IdsSet displacedConnIdSet,
+                                    int previousInputsNumber,
+                                    int previousOutputsNumber)
+{
+    m_areaManager.ClearAndBackupArea(previousArea);
+
+    QRect area(circuitElement->pos(), circuitElement->size());
+    if (m_areaManager.TryBookArea(area, oldNewPoints))
+    {
+        // Successfully booked new area
+        // Decrementing case of inputs size
+        if (displacedConnId)
+        {
+            RemoveConnectionById(displacedConnId);
+        }
+
+        // Decrementing case of outputs size
+        if (!displacedConnIdSet.empty())
+        {
+            for (const auto& connId : displacedConnIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        emit changeElementItemInputsSize(circuitElement->GetId(),
+                                         circuitElement->GetEndingConnectors().size());
+    }
+    else
+    {
+        // Can't book new area
+        circuitElement->SetInputsNumber(previousInputsNumber);
+        emit circuitElement->inputsNumber(previousInputsNumber);
+        circuitElement->SetOutputsNumber(previousOutputsNumber);
+        emit circuitElement->outputsNumber(previousOutputsNumber);
+    }
+
+    // To redraw connections
+    update();
+}
+
 void CircuitCanvas::paintEvent(QPaintEvent *event)
 {
     (void)event;

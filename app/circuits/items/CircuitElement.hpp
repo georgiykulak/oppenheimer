@@ -50,11 +50,18 @@ signals:
     void setOrderIdHintForDuplicate(quint64 itemType, int orderId);
     void inputsNumber(int value);
     void outputsNumber(int value);
-    void tryToRebookArea(int inputsNumber,
-                         int outputsNumber,
-                         EndingPointVector endingPoints,
-                         StartingPointVector startingPoints,
-                         QRect area);
+    void checkAndTryToRebookArea(int inputsNumber,
+                                 int outputsNumber,
+                                 EndingPointVector endingPoints,
+                                 StartingPointVector startingPoints,
+                                 QRect area);
+    void tryToRebookArea(CircuitElement* circuitElement,
+                         QRect previousArea,
+                         std::vector<std::pair<QPoint, QPoint>> oldNewPoints,
+                         quint64 displacedConnId,
+                         StartingPoint::IdsSet displacedConnIdSet,
+                         int previousInputsNumber,
+                         int previousOutputsNumber);
 
 protected:
     void AddActionSimulateToMenu(QMenu* menu);

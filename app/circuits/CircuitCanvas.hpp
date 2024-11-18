@@ -4,10 +4,12 @@
 #include "config/ProjectConfigurationManager.hpp"
 #include "AreaManager.hpp"
 #include "IdHandler.hpp"
+#include "ItemUtils.hpp"
 
 #include <QWidget>
 
 class BaseCircuitItem;
+class CircuitElement;
 
 class CircuitCanvas : public QWidget
 {
@@ -33,6 +35,13 @@ public slots:
     void OpenCircuitFromFile();
     void SaveCircuitToFile();
     void NewSavingFile();
+    void TryToRebookArea(CircuitElement* circuitElement,
+                         QRect previousArea,
+                         std::vector<std::pair<QPoint, QPoint>> oldNewPoints,
+                         quint64 displacedConnId,
+                         StartingPoint::IdsSet displacedConnIdSet,
+                         int previousInputsNumber,
+                         int previousOutputsNumber);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
