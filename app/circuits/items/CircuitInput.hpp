@@ -26,6 +26,8 @@ public:
 
     CircuitInputMimeData GetMimeData(QPoint eventPos = {}) const;
 
+    virtual void AddActionsToMenu(QMenu* menu) override;
+
 private:
     bool m_inputValue = 0;
 };

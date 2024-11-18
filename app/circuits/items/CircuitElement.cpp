@@ -2,10 +2,13 @@
 #include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
 #include "widgets/LogicVectorEdit.hpp"
+#include "dialogues/DialogDuplicateElementItem.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
 #include <QPushButton>
+#include <QMenu>
+#include <QMessageBox>
 
 CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
@@ -507,7 +510,7 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
-    for (const auto& endingConnector : m_endingConnectors)
+    for (const auto* endingConnector : m_endingConnectors)
     {
         const auto endPoint = endingConnector->GetEndPoint();
         oldEndingPointVector.push_back(endPoint);
@@ -541,4 +544,76 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
+}
+
+void CircuitElement::AddActionsToMenu(QMenu* menu)
+{
+    AddActionSimulateToMenu(menu);
+    AddActionChangeColorToMenu(menu);
+    AddActionChangeSizeToMenu(menu);
+    AddActionDuplicateToMenu(menu);
+    BaseCircuitItem::AddActionsToMenu(menu);
+}
+
+void CircuitElement::AddActionSimulateToMenu(QMenu* menu)
+{
+    auto* actionSimulate = new QAction("Simulate", this);
+    connect(actionSimulate, &QAction::triggered,
+            this, [this] (bool) {
+                if (m_numberParameterIsValid)
+                {
+                    emit startFunctionalFaultSimulation(GetId());
+                }
+                else
+                {
+                    auto parentWidget = qobject_cast<QWidget*>(parent());
+                    if (!parentWidget)
+                    {
+                        return;
+                    }
+
+                    QMessageBox::information(parentWidget,
+                            tr("Can't simulate on element #")
+                               + QString::number(m_orderId),
+                            tr("Element has empty or invalid number parameter.\n"
+                               "Please use another one and try again."),
+                            QMessageBox::Ok
+                            );
+                }
+            });
+
+    menu->addAction(actionSimulate);
+}
+
+void CircuitElement::AddActionChangeSizeToMenu(QMenu* menu)
+{
+
+}
+
+void CircuitElement::AddActionDuplicateToMenu(QMenu* menu)
+{
+    auto* actionDuplicate = new QAction("Duplicate", parent());
+    connect(actionDuplicate, &QAction::triggered,
+            this, [this] (bool) {
+                emit closeDialogs();
+
+                auto parentWidget = qobject_cast<QWidget*>(parent());
+                if (!parentWidget)
+                {
+                    return;
+                }
+
+                auto* dialogDuplicate =
+                    new DialogDuplicateElementItem(this, parentWidget);
+                dialogDuplicate->move(pos());
+
+                connect(this, &CircuitElement::setOrderIdHintForDuplicate,
+                        dialogDuplicate, &DialogDuplicateElementItem::SetOrderId);
+                connect(this, &BaseCircuitItem::closeDialogs,
+                        dialogDuplicate, &DialogDuplicateElementItem::close);
+
+                emit askOrderIdHint();
+            });
+
+    menu->addAction(actionDuplicate);
 }

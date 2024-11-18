@@ -41,8 +41,13 @@ public:
 
     bool IsNumberParameterValid() const;
 
+    virtual void AddActionsToMenu(QMenu* menu) override;
+
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);
+    void startFunctionalFaultSimulation(quint64 elementId);
+    void askOrderIdHint();
+    void setOrderIdHintForDuplicate(quint64 itemType, int orderId);
     void inputsNumber(int value);
     void outputsNumber(int value);
     void tryToRebookArea(int inputsNumber,
@@ -50,6 +55,11 @@ signals:
                          EndingPointVector endingPoints,
                          StartingPointVector startingPoints,
                          QRect area);
+
+protected:
+    void AddActionSimulateToMenu(QMenu* menu);
+    void AddActionChangeSizeToMenu(QMenu* menu);
+    void AddActionDuplicateToMenu(QMenu* menu);
 
 private:
     static constexpr int m_offsetBetweenConnection = 30;

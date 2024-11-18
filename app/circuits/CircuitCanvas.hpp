@@ -54,10 +54,10 @@ private:
     void ProcessDropEvent(QDropEvent *event);
     void ProcessMousePressEvent(QMouseEvent *event);
     void AcceptDndEvent(QDropEvent* baseDndEvent);
-    void RemoveCircuitItem(BaseCircuitItem* item);
     void RemoveConnectionById(quint64 connId);
 
 private slots:
+    void RemoveCircuitItem(BaseCircuitItem* item);
     void InsertConnection(quint64 startId,
                           quint64 endId,
                           QLine positions);

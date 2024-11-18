@@ -144,3 +144,9 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
 
     return mimeData;
 }
+
+void CircuitInput::AddActionsToMenu(QMenu* menu)
+{
+    AddActionChangeColorToMenu(menu);
+    BaseCircuitItem::AddActionsToMenu(menu);
+}

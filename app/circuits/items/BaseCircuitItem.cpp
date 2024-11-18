@@ -3,6 +3,8 @@
 #include "connectors/StartingConnector.hpp"
 
 #include <QPainter>
+#include <QMenu>
+#include <QColorDialog>
 
 BaseCircuitItem::BaseCircuitItem(QWidget *parent)
     : QWidget{parent}
@@ -90,6 +92,11 @@ void BaseCircuitItem::RemoveConnectionId(quint64 connId)
     }
 }
 
+void BaseCircuitItem::AddActionsToMenu(QMenu* menu)
+{
+    AddActionDeleteToMenu(menu);
+}
+
 json BaseCircuitItem::GetJsonMeta() const
 {
     json itemMeta;
@@ -146,4 +153,45 @@ void BaseCircuitItem::paintEvent(QPaintEvent* event)
 
     QPainter painter(this);
     painter.drawPixmap(0, 0, m_pixmap);
+}
+
+void BaseCircuitItem::AddActionDeleteToMenu(QMenu* menu)
+{
+    auto* actionDelete = new QAction("Delete", parent());
+    connect(actionDelete, &QAction::triggered,
+            this, [this] (bool) {
+                qDebug() << "Action Delete for circuit item invoked, ID ="
+                         << GetId() << "type =" << GetItemType();
+
+                emit removeCircuitItem(this);
+            });
+
+    menu->addAction(actionDelete);
+}
+
+void BaseCircuitItem::AddActionChangeColorToMenu(QMenu* menu)
+{
+    auto* actionChangeColor = new QAction("Change Color", parent());
+    connect(actionChangeColor, &QAction::triggered,
+            this, [this] (bool) {
+                emit closeDialogs();
+
+                auto parentWidget = qobject_cast<QWidget*>(parent());
+                if (!parentWidget)
+                {
+                    return;
+                }
+
+                auto* colorDialog = new QColorDialog(parentWidget);
+                colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                colorDialog->show();
+                colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                connect(colorDialog, &QColorDialog::colorSelected,
+                        this, &BaseCircuitItem::SetColor);
+                connect(this, &BaseCircuitItem::closeDialogs,
+                        colorDialog, &QColorDialog::close);
+            });
+
+    menu->addAction(actionChangeColor);
 }

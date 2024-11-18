@@ -8,7 +8,6 @@
 #include "items/mime/CircuitOutputMimeData.hpp"
 #include "items/mime/CircuitElementMimeData.hpp"
 #include "dialogues/ElementSizeChanger.hpp"
-#include "dialogues/DialogDuplicateElementItem.hpp"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -19,7 +18,6 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QMenu>
-#include <QColorDialog>
 
 void CircuitCanvas::ProcessDragEnterEvent(QDragEnterEvent *event)
 {
@@ -123,8 +121,74 @@ void CircuitCanvas::ProcessDragMoveEvent(QDragMoveEvent *event)
     }
 }
 
-void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
+void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 {
+    //BaseCircuitItem::GetDropEventProcessorByMimeType()
+
+    /*for (const auto& mimeType : BaseCircuitItem::GetRegisteredMimeTypes())
+    {
+        if (event->mimeData()->hasFormat(mimeType))
+        {
+            //QByteArray itemData = event->mimeData()->data(mimeType);
+            //QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+            //CircuitInputMimeData mimeData(event->pos());
+            //dataStream >> mimeData;
+
+            auto itemMeta = BaseCircuitItem::ReadMimeFromByteArray(mimeType);
+
+            if (event->source() != this
+                && m_idHandler.ContainsOrderId(itemMeta.type, itemMeta.orderId))
+            {
+                event->ignore();
+
+                QString text = "Input item with such order id '"
+                               + QString::number(itemMeta.orderId) + "' already exists";
+                QMessageBox::information(this, "Can't place item", text);
+
+                // TODO: apply backup
+
+                return;
+            }
+
+            if (m_areaManager.TryBookArea(itemMeta.area, itemMeta.oldNewPoints))
+            {
+                if (event->source() != this)
+                {
+                    qDebug() << "Placing new input item";
+
+                    if (!m_idHandler.NewOrderId(itemMeta.type, itemMeta.orderId))
+                    {
+                        event->ignore();
+                        // TODO: apply backup
+                        return;
+                    }
+
+                    itemMeta.id = m_idHandler.NewUid();
+                    emit addNewItem(itemMeta.type, itemMeta.id,
+                                    itemMeta.endingConnectors.size());
+
+                    emit setOrderIdHint(itemMeta.type,
+                                        m_idHandler.GetLastOrderId(itemMeta.type));
+                }
+
+                //auto circuitInput = new CircuitInput(mimeData, this);
+                //circuitInput->move(mimeData.itemPosition);
+                BaseCircuitItem::ConstructItemFromByteArray(mimeType, )
+
+                // To redraw connections
+                update();
+
+                AcceptDndEvent(event);
+            }
+            else
+            {
+                event->ignore();
+            }
+
+            return;
+        }
+    }*/
+
     if (event->mimeData()->hasFormat(inputMime))
     {
         QByteArray itemData = event->mimeData()->data(inputMime);
@@ -166,8 +230,11 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                                     m_idHandler.GetLastOrderId(ItemType::Input));
             }
 
-            auto circuitInput = new CircuitInput(mimeData, this);
-            circuitInput->move(mimeData.itemPosition);
+            auto item = new CircuitInput(mimeData, this);
+            item->move(mimeData.itemPosition);
+
+            connect(item, &BaseCircuitItem::removeCircuitItem,
+                    this, &CircuitCanvas::RemoveCircuitItem);
 
             // To redraw connections
             update();
@@ -220,8 +287,11 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                                     m_idHandler.GetLastOrderId(ItemType::Output));
             }
 
-            CircuitOutput *cOutput = new CircuitOutput(mimeData, this);
-            cOutput->move(mimeData.itemPosition);
+            auto* item = new CircuitOutput(mimeData, this);
+            item->move(mimeData.itemPosition);
+
+            connect(item, &BaseCircuitItem::removeCircuitItem,
+                    this, &CircuitCanvas::RemoveCircuitItem);
 
             // To redraw connections
             update();
@@ -275,11 +345,27 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
                                     m_idHandler.GetLastOrderId(ItemType::Element));
             }
 
-            CircuitElement *cElement = new CircuitElement(mimeData, this);
-            cElement->move(mimeData.itemPosition);
+            auto* item = new CircuitElement(mimeData, this);
+            item->move(mimeData.itemPosition);
 
-            connect(cElement, &CircuitElement::setNumberParameterToElementItem,
+            connect(item, &BaseCircuitItem::removeCircuitItem,
+                    this, &CircuitCanvas::RemoveCircuitItem);
+
+            connect(item, &CircuitElement::setNumberParameterToElementItem,
                     this, &CircuitCanvas::setNumberParameterToElementItem);
+
+            connect(item, &CircuitElement::startFunctionalFaultSimulation,
+                    this, &CircuitCanvas::startFunctionalFaultSimulation);
+
+            connect(item, &CircuitElement::askOrderIdHint,
+                    this, [this](){
+                        const auto orderId =
+                            m_idHandler.GetLastOrderId(ItemType::Element);
+                        emit setOrderIdHint(ItemType::Element, orderId);
+                    });
+
+            connect(this, &CircuitCanvas::setOrderIdHint,
+                    item, &CircuitElement::setOrderIdHintForDuplicate);
 
             // To redraw connections
             update();
@@ -388,6 +474,55 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         return;
     }
 
+    /*auto* item = qobject_cast<BaseCircuitItem*>(child);
+    if (item)
+    {
+        if (event->button() == Qt::LeftButton)
+        {
+            //const auto mimeData = item->GetMimeData(event->pos());
+            //QByteArray itemData;
+            //QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+            //dataStream << mimeData;
+
+            auto itemData = item->WriteMimeByteArray();
+
+            QMimeData* mime = new QMimeData;
+            mime->setData(item->GetMimeType(), itemData);
+
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime);
+            drag->setPixmap(mimeData.pixmap);
+            drag->setHotSpot(event->pos() - item->pos());
+
+            m_areaManager.ClearAndBackupArea(mimeData.area);
+
+            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
+            {
+                item->close();
+            }
+            else
+            {
+                item->show();
+            }
+        }
+        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
+        {
+            QMenu* menu = new QMenu(this);
+
+            item->AddActionsToMenu(menu, this);
+
+            menu->move(mapToGlobal(event->pos()));
+            menu->show();
+            menu->setAttribute(Qt::WA_DeleteOnClose);
+        }
+        else
+        {
+            //item->ProcessMousePressEvent(event);
+        }
+
+        return;
+    }*/
+
     CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
     if (circuitInput)
     {
@@ -420,33 +555,8 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitInput] (bool) {
-                        emit circuitInput->closeDialogs();
 
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitInput, &CircuitInput::SetColor);
-                        connect(circuitInput, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitInput] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitInput->GetId();
-
-                        RemoveCircuitItem(circuitInput);
-                    });
-
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionDelete);
+            circuitInput->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
@@ -488,33 +598,8 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitOutput] (bool) {
-                        emit circuitOutput->closeDialogs();
 
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitOutput, &CircuitOutput::SetColor);
-                        connect(circuitOutput, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitOutput] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitOutput->GetId();
-
-                        RemoveCircuitItem(circuitOutput);
-                    });
-
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionDelete);
+            circuitOutput->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
@@ -560,42 +645,9 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QMenu* menu = new QMenu(this);
             auto eventPos = event->pos();
 
-            QAction* actionSimulate = new QAction("Simulate", this);
-            connect(actionSimulate, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        if (circuitElement->IsNumberParameterValid())
-                        {
-                            emit startFunctionalFaultSimulation(circuitElement->GetId());
-                        }
-                        else
-                        {
-                            QMessageBox::information(this,
-                                tr("Can't simulate on element #")
-                                    + QString::number(circuitElement->GetMimeData().orderId),
-                                tr("Element has empty or invalid number parameter.\n"
-                                   "Please use another one and try again."),
-                                QMessageBox::Ok
-                            );
-                        }
-                    });
+            circuitElement->AddActionsToMenu(menu);
 
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        emit circuitElement->closeDialogs();
-
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitElement, &CircuitElement::SetColor);
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionChangeSize = new QAction("Change Size", this);
+            /*QAction* actionChangeSize = new QAction("Change Size", this);
             connect(actionChangeSize, &QAction::triggered,
                     this, [this, circuitElement, eventPos] (bool) {
                         emit circuitElement->closeDialogs();
@@ -714,37 +766,8 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                                 });
                     });
 
-            QAction* actionDuplicate = new QAction("Duplicate", this);
-            connect(actionDuplicate, &QAction::triggered,
-                    this, [this, circuitElement, eventPos] (bool) {
-                        emit circuitElement->closeDialogs();
 
-                        const auto orderId = GetOrderIdHint(ItemType::Element);
-                        auto* dialogDuplicate = new DialogDuplicateElementItem(
-                                                circuitElement, orderId, this);
-                        dialogDuplicate->move(mapToGlobal(eventPos));
-
-                        connect(this, &CircuitCanvas::setOrderIdHint,
-                                dialogDuplicate, &DialogDuplicateElementItem::SetOrderIdHint);
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                dialogDuplicate, &DialogDuplicateElementItem::close);
-
-            });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitElement->GetId();
-
-                        RemoveCircuitItem(circuitElement);
-            });
-
-            menu->addAction(actionSimulate);
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionChangeSize);
-            menu->addAction(actionDuplicate);
-            menu->addAction(actionDelete);
+            menu->addAction(actionChangeSize);*/
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
@@ -895,6 +918,25 @@ void CircuitCanvas::AcceptDndEvent(QDropEvent* baseDndEvent)
     }
 }
 
+void CircuitCanvas::RemoveConnectionById(quint64 connId)
+{
+    qDebug() << "CircuitCanvas::RemoveConnectionById: Trying to remove connection, ID ="
+             << connId;
+
+    m_areaManager.RemoveConnection(connId);
+
+    QObjectList childList = this->children();
+
+    for (auto* obj : childList)
+    {
+        auto* item = qobject_cast<BaseCircuitItem*>(obj);
+        if (item)
+        {
+            item->RemoveConnectionId(connId);
+        }
+    }
+}
+
 void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
 {
     if (!item)
@@ -908,6 +950,27 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     emit removeItem(uid);
     m_idHandler.RemoveUid(item->GetId());
 
+    /*
+    const auto mimeData = item->GetMimeData();
+    m_idHandler.RemoveOrderId(item->GetItemType(), mimeData.orderId);
+
+    for (const auto* endingConnector : item->GetEndingConnectors())
+    {
+        const auto connId = endingConnector->GetEndPoint().connId;
+        RemoveConnectionById(connId);
+    }
+
+    for (const auto* startingConnector : item->GetStartingConnectors())
+    {
+        const auto& connIdSet = startingConnector->GetStartPoint().connIds;
+        for (const auto& connId : connIdSet)
+        {
+            RemoveConnectionById(connId);
+        }
+    }
+    */
+
+    ///*
     if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
     {
         const auto mimeData = circuitInput->GetMimeData();
@@ -979,6 +1042,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
         throw std::runtime_error("ItemType is unknown, type = "
                                  + std::to_string(item->GetItemType()));
     }
+    //*/
 
     QRect area(item->pos(), item->size());
     m_areaManager.ClearArea(area);
@@ -986,25 +1050,6 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     item->close();
 
     update();
-}
-
-void CircuitCanvas::RemoveConnectionById(quint64 connId)
-{
-    qDebug() << "CircuitCanvas::RemoveConnectionById: Trying to remove connection, ID ="
-             << connId;
-
-    m_areaManager.RemoveConnection(connId);
-
-    QObjectList childList = this->children();
-
-    for (auto* obj : childList)
-    {
-        auto* item = qobject_cast<BaseCircuitItem*>(obj);
-        if (item)
-        {
-            item->RemoveConnectionId(connId);
-        }
-    }
 }
 
 void CircuitCanvas::InsertConnection(quint64 startId,
