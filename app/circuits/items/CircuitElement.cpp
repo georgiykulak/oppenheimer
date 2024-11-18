@@ -603,7 +603,7 @@ void CircuitElement::AddActionChangeSizeToMenu(QMenu* menu)
 
                 auto* elementSizeChanger = new ElementSizeChanger(this,
                                                                   parentWidget);
-                elementSizeChanger->move(pos());
+                elementSizeChanger->move(QCursor::pos());
                 connect(this, &BaseCircuitItem::closeDialogs,
                         elementSizeChanger, &ElementSizeChanger::close);
 
@@ -708,7 +708,7 @@ void CircuitElement::AddActionDuplicateToMenu(QMenu* menu)
 
                 auto* dialogDuplicate =
                     new DialogDuplicateElementItem(this, parentWidget);
-                dialogDuplicate->move(pos());
+                dialogDuplicate->move(QCursor::pos());
 
                 connect(this, &CircuitElement::setOrderIdHintForDuplicate,
                         dialogDuplicate, &DialogDuplicateElementItem::SetOrderId);
