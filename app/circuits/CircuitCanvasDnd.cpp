@@ -476,17 +476,15 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         return;
     }
 
-    /*auto* item = qobject_cast<BaseCircuitItem*>(child);
+    auto* item = qobject_cast<BaseCircuitItem*>(child);
     if (item)
     {
         if (event->button() == Qt::LeftButton)
         {
-            //const auto mimeData = item->GetMimeData(event->pos());
-            //QByteArray itemData;
-            //QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            //dataStream << mimeData;
-
-            auto itemData = item->WriteMimeByteArray();
+            const auto mimeData = item->GetBaseCircuitMimeData(event->pos());
+            QByteArray itemData;
+            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+            mimeData.writeBasicMimeData(dataStream);
 
             QMimeData* mime = new QMimeData;
             mime->setData(item->GetMimeType(), itemData);
@@ -511,7 +509,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         {
             QMenu* menu = new QMenu(this);
 
-            item->AddActionsToMenu(menu, this);
+            item->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
@@ -520,137 +518,6 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         else
         {
             //item->ProcessMousePressEvent(event);
-        }
-
-        return;
-    }*/
-
-    CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
-    if (circuitInput)
-    {
-        if (event->button() == Qt::LeftButton)
-        {
-            const auto mimeData = circuitInput->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
-
-            QMimeData* mime = new QMimeData;
-            mime->setData(inputMime, itemData);
-
-            QDrag* drag = new QDrag(this);
-            drag->setMimeData(mime);
-            drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitInput->pos());
-
-            m_areaManager.ClearAndBackupArea(mimeData.area);
-
-            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
-            {
-                circuitInput->close();
-            }
-            else
-            {
-                circuitInput->show();
-            }
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-
-            circuitInput->AddActionsToMenu(menu);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
-
-        return;
-    }
-
-    CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(child);
-    if (circuitOutput)
-    {
-        if (event->button() == Qt::LeftButton)
-        {
-            const auto mimeData = circuitOutput->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
-
-            QMimeData* mime = new QMimeData;
-            mime->setData(outputMime, itemData);
-
-            QDrag* drag = new QDrag(this);
-            drag->setMimeData(mime);
-            drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitOutput->pos());
-
-            m_areaManager.ClearAndBackupArea(mimeData.area);
-
-            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
-            {
-                circuitOutput->close();
-            }
-            else
-            {
-                circuitOutput->show();
-            }
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-
-            circuitOutput->AddActionsToMenu(menu);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
-
-        return;
-    }
-
-    CircuitElement* circuitElement = qobject_cast<CircuitElement*>(child);
-    if (circuitElement)
-    {
-        if (event->button() == Qt::LeftButton)
-        {
-            emit circuitElement->closeDialogs();
-
-            const auto mimeData = circuitElement->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
-
-            QMimeData* mime = new QMimeData;
-            mime->setData(elementMime, itemData);
-
-            QDrag* drag = new QDrag(this);
-            drag->setMimeData(mime);
-            drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitElement->pos());
-
-            m_areaManager.ClearAndBackupArea(mimeData.area);
-
-            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
-            {
-                circuitElement->close();
-            }
-            else
-            {
-                circuitElement->show();
-            }
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-
-            circuitElement->AddActionsToMenu(menu);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
         }
 
         return;

@@ -2,6 +2,7 @@
 #define BASECIRCUITITEM_HPP
 
 #include "ItemUtils.hpp"
+#include "mime/BaseCircuitItemMimeData.hpp"
 
 #include <QWidget>
 
@@ -43,6 +44,8 @@ public:
 
     virtual ItemType GetItemType() const noexcept
     { WarnNotImplemented(ItemType(Invalid)); }
+    virtual QString GetMimeType() const
+    { WarnNotImplemented("text/plain"); }
     quint64 GetId() const;
 
     virtual void DrawToPixmap() { WarnNotImplemented(); }
@@ -55,6 +58,8 @@ public:
     virtual void AddActionsToMenu(QMenu* menu);
 
     virtual json GetJsonMeta() const;
+
+    BaseCircuitItemMimeData GetBaseCircuitMimeData(QPoint eventPos) const;
 
 signals:
     bool closeDialogs();

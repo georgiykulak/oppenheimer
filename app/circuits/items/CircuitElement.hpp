@@ -22,6 +22,7 @@ public:
                                                 QWidget* canvas);
 
     virtual ItemType GetItemType() const noexcept override { return Element; }
+    virtual QString GetMimeType() const override { return elementMime; }
 
     virtual void DrawToPixmap() override;
 

@@ -135,6 +135,51 @@ json BaseCircuitItem::GetJsonMeta() const
     return itemMeta;
 }
 
+BaseCircuitItemMimeData BaseCircuitItem::GetBaseCircuitMimeData(QPoint eventPos) const
+{
+    BaseCircuitItemMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.color = m_color;
+    mimeData.itemSize = this->size();
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    for (const auto& endingConnector : m_endingConnectors)
+    {
+        const auto endPoint = endingConnector->GetEndPoint();
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPoints.push_back({endPoint.connPos,
+                                         endPoint.connId});
+    }
+
+    for (const auto* startingConnector : m_startingConnectors)
+    {
+        const auto startPoint = startingConnector->GetStartPoint();
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPoints.push_back({startPoint.connPos,
+                                           startPoint.connIds});
+    }
+
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPoints[i].connPos});
+    }
+
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPoints[i].connPos});
+    }
+
+    return mimeData;
+}
+
 void BaseCircuitItem::SetOrderId(int orderId)
 {
     m_orderId = orderId;
@@ -147,7 +192,7 @@ void BaseCircuitItem::SetColor(const QColor& color)
     update();
 }
 
-void BaseCircuitItem::paintEvent(QPaintEvent* event)
+void BaseCircuitItem::paintEvent(QPaintEvent* /*event*/)
 {
     DrawToPixmap();
 
