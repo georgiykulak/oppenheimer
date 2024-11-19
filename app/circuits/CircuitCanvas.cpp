@@ -10,9 +10,39 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
     , m_areaManager{this}
     , m_projectConfigurator{m_areaManager, m_idHandler, this}
+    , m_itemRegistry{this}
 {
     setAcceptDrops(true);
     m_areaManager.SetMatrixSize(QSize(1280, 720));
+
+    connect(&m_itemRegistry, &ItemRegistry::removeCircuitItem,
+            this, &CircuitCanvas::RemoveCircuitItem);
+
+    connect(&m_itemRegistry, &ItemRegistry::setNumberParameterToElementItem,
+            this, &CircuitCanvas::setNumberParameterToElementItem);
+
+    connect(&m_itemRegistry, &ItemRegistry::startFunctionalFaultSimulation,
+            this, &CircuitCanvas::startFunctionalFaultSimulation);
+
+    connect(&m_itemRegistry, &ItemRegistry::askOrderIdHint,
+            this, [this](){
+                const auto orderId =
+                    m_idHandler.GetLastOrderId(ItemType::Element);
+                emit setOrderIdHint(ItemType::Element, orderId);
+            });
+
+    connect(this, &CircuitCanvas::setOrderIdHint,
+            &m_itemRegistry, &ItemRegistry::setOrderIdHintForDuplicate);
+
+    connect(&m_itemRegistry, &ItemRegistry::tryToRebookArea,
+            this, &CircuitCanvas::TryToRebookArea);
+
+    m_itemRegistry.RegisterMimeProcessor(inputMime, ItemType::Input,
+                            CircuitInput::ConstructCircuitInputFromStream);
+    m_itemRegistry.RegisterMimeProcessor(outputMime, ItemType::Output,
+                            CircuitOutput::ConstructCircuitOutputFromStream);
+    m_itemRegistry.RegisterMimeProcessor(elementMime, ItemType::Element,
+                            CircuitElement::ConstructCircuitElementFromStream);
 
     BaseCircuitItem::RegisterJsonProcessor(ItemType::Input,
                             CircuitInput::ConstructCircuitInputFromJson);
@@ -52,6 +82,51 @@ void CircuitCanvas::SaveCircuitToFile()
 void CircuitCanvas::NewSavingFile()
 {
     m_projectConfigurator.NewSavingFile();
+}
+
+void CircuitCanvas::TryToRebookArea(CircuitElement* circuitElement,
+                                    QRect previousArea,
+                                    std::vector<std::pair<QPoint, QPoint> > oldNewPoints,
+                                    quint64 displacedConnId,
+                                    StartingPoint::IdsSet displacedConnIdSet,
+                                    int previousInputsNumber,
+                                    int previousOutputsNumber)
+{
+    m_areaManager.ClearAndBackupArea(previousArea);
+
+    QRect area(circuitElement->pos(), circuitElement->size());
+    if (m_areaManager.TryBookArea(area, oldNewPoints))
+    {
+        // Successfully booked new area
+        // Decrementing case of inputs size
+        if (displacedConnId)
+        {
+            RemoveConnectionById(displacedConnId);
+        }
+
+        // Decrementing case of outputs size
+        if (!displacedConnIdSet.empty())
+        {
+            for (const auto& connId : displacedConnIdSet)
+            {
+                RemoveConnectionById(connId);
+            }
+        }
+
+        emit changeElementItemInputsSize(circuitElement->GetId(),
+                                         circuitElement->GetEndingConnectors().size());
+    }
+    else
+    {
+        // Can't book new area
+        circuitElement->SetInputsNumber(previousInputsNumber);
+        emit circuitElement->inputsNumber(previousInputsNumber);
+        circuitElement->SetOutputsNumber(previousOutputsNumber);
+        emit circuitElement->outputsNumber(previousOutputsNumber);
+    }
+
+    // To redraw connections
+    update();
 }
 
 void CircuitCanvas::paintEvent(QPaintEvent *event)

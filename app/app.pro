@@ -14,6 +14,7 @@ SOURCES += \
     circuits/CircuitCanvas.cpp \
     circuits/CircuitCanvasDnd.cpp \
     circuits/IdHandler.cpp \
+    circuits/ItemRegistry.cpp \
     circuits/graph/DndBackup.cpp \
     circuits/graph/GraphDesigner.cpp \
     circuits/items/BaseCircuitItem.cpp \
@@ -53,6 +54,7 @@ HEADERS += \
     circuits/AreaManager.hpp \
     circuits/CircuitCanvas.hpp \
     circuits/IdHandler.hpp \
+    circuits/ItemRegistry.hpp \
     circuits/graph/DndBackup.hpp \
     circuits/graph/CommonTypes.hpp \
     circuits/graph/GraphDesigner.hpp \

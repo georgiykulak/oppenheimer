@@ -3,6 +3,8 @@
 #include "connectors/StartingConnector.hpp"
 
 #include <QPainter>
+#include <QMenu>
+#include <QColorDialog>
 
 BaseCircuitItem::BaseCircuitItem(QWidget *parent)
     : QWidget{parent}
@@ -16,10 +18,11 @@ BaseCircuitItem::~BaseCircuitItem()
     m_startingConnectors.clear();
 }
 
-std::map<quint64, BaseCircuitItem::JsonProcessor>& BaseCircuitItem::GetJsonProcessors()
+std::map<quint64, BaseCircuitItem::JsonProcessor>&
+BaseCircuitItem::GetJsonProcessors()
 {
-    static std::map<quint64, JsonProcessor> kJsonProcessors;
-    return kJsonProcessors;
+    static std::map<quint64, JsonProcessor> jsonProcessors;
+    return jsonProcessors;
 }
 
 void BaseCircuitItem::RegisterJsonProcessor(quint64 type,
@@ -90,6 +93,11 @@ void BaseCircuitItem::RemoveConnectionId(quint64 connId)
     }
 }
 
+void BaseCircuitItem::AddActionsToMenu(QMenu* menu)
+{
+    AddActionDeleteToMenu(menu);
+}
+
 json BaseCircuitItem::GetJsonMeta() const
 {
     json itemMeta;
@@ -128,6 +136,51 @@ json BaseCircuitItem::GetJsonMeta() const
     return itemMeta;
 }
 
+BaseCircuitItemMimeData BaseCircuitItem::GetBaseCircuitMimeData(QPoint eventPos) const
+{
+    BaseCircuitItemMimeData mimeData(eventPos);
+    mimeData.pixmap = m_pixmap;
+    mimeData.color = m_color;
+    mimeData.itemSize = this->size();
+    mimeData.itemPosition = pos();
+    mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
+    mimeData.offset = QPoint(eventPos - pos());
+    mimeData.id = GetId();
+    mimeData.orderId = m_orderId;
+
+    EndingPointVector oldEndingPointVector;
+    StartingPointVector oldStartingPointVector;
+    for (const auto& endingConnector : m_endingConnectors)
+    {
+        const auto endPoint = endingConnector->GetEndPoint();
+        oldEndingPointVector.push_back(endPoint);
+        mimeData.endingPoints.push_back({endPoint.connPos,
+                                         endPoint.connId});
+    }
+
+    for (const auto* startingConnector : m_startingConnectors)
+    {
+        const auto startPoint = startingConnector->GetStartPoint();
+        oldStartingPointVector.push_back(startPoint);
+        mimeData.startingPoints.push_back({startPoint.connPos,
+                                           startPoint.connIds});
+    }
+
+    for (unsigned int i = 0; i < mimeData.endingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                         mimeData.endingPoints[i].connPos});
+    }
+
+    for (unsigned int i = 0; i < mimeData.startingPoints.size(); ++i)
+    {
+        mimeData.oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                         mimeData.startingPoints[i].connPos});
+    }
+
+    return mimeData;
+}
+
 void BaseCircuitItem::SetOrderId(int orderId)
 {
     m_orderId = orderId;
@@ -140,10 +193,51 @@ void BaseCircuitItem::SetColor(const QColor& color)
     update();
 }
 
-void BaseCircuitItem::paintEvent(QPaintEvent* event)
+void BaseCircuitItem::paintEvent(QPaintEvent* /*event*/)
 {
     DrawToPixmap();
 
     QPainter painter(this);
     painter.drawPixmap(0, 0, m_pixmap);
+}
+
+void BaseCircuitItem::AddActionDeleteToMenu(QMenu* menu)
+{
+    auto* actionDelete = new QAction("Delete", parent());
+    connect(actionDelete, &QAction::triggered,
+            this, [this] (bool) {
+                qDebug() << "Action Delete for circuit item invoked, ID ="
+                         << GetId() << "type =" << GetItemType();
+
+                emit removeCircuitItem(this);
+            });
+
+    menu->addAction(actionDelete);
+}
+
+void BaseCircuitItem::AddActionChangeColorToMenu(QMenu* menu)
+{
+    auto* actionChangeColor = new QAction("Change Color", parent());
+    connect(actionChangeColor, &QAction::triggered,
+            this, [this] (bool) {
+                emit closeDialogs();
+
+                auto parentWidget = qobject_cast<QWidget*>(parent());
+                if (!parentWidget)
+                {
+                    return;
+                }
+
+                auto* colorDialog = new QColorDialog(parentWidget);
+                colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
+                colorDialog->show();
+                colorDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+                connect(colorDialog, &QColorDialog::colorSelected,
+                        this, &BaseCircuitItem::SetColor);
+                connect(this, &BaseCircuitItem::closeDialogs,
+                        colorDialog, &QColorDialog::close);
+            });
+
+    menu->addAction(actionChangeColor);
 }

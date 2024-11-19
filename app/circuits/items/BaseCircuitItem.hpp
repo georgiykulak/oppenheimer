@@ -2,6 +2,7 @@
 #define BASECIRCUITITEM_HPP
 
 #include "ItemUtils.hpp"
+#include "mime/BaseCircuitItemMimeData.hpp"
 
 #include <QWidget>
 
@@ -22,11 +23,12 @@ public:
     explicit BaseCircuitItem(QWidget* parent = nullptr);
     virtual ~BaseCircuitItem();
 
+    ///////////////////////////////////////////////////////////////////////////
+
     using JsonProcessor =
             std::function<void (RequiredItemMeta reqMeta,
                                 const json& itemMeta,
                                 QWidget* canvas)>;
-
     static std::map<quint64, JsonProcessor>& GetJsonProcessors();
     static void RegisterJsonProcessor(quint64 type,
                                       JsonProcessor processor);
@@ -34,8 +36,12 @@ public:
                                       const json& itemMeta,
                                       QWidget* canvas);
 
+    ///////////////////////////////////////////////////////////////////////////
+
     virtual ItemType GetItemType() const noexcept
     { WarnNotImplemented(ItemType(Invalid)); }
+    virtual QString GetMimeType() const
+    { WarnNotImplemented("text/plain"); }
     quint64 GetId() const;
 
     virtual void DrawToPixmap() { WarnNotImplemented(); }
@@ -45,10 +51,15 @@ public:
     virtual std::vector<StartingConnector*> GetStartingConnectors() const;
     virtual void RemoveConnectionId(quint64 connId);
 
+    virtual void AddActionsToMenu(QMenu* menu);
+
     virtual json GetJsonMeta() const;
+
+    BaseCircuitItemMimeData GetBaseCircuitMimeData(QPoint eventPos = {}) const;
 
 signals:
     bool closeDialogs();
+    void removeCircuitItem(BaseCircuitItem* item);
 
 public slots:
     void SetOrderId(int orderId);
@@ -63,6 +74,9 @@ protected:
     int m_orderId = -1;
 
     virtual void paintEvent(QPaintEvent* event) override;
+
+    void AddActionDeleteToMenu(QMenu* menu);
+    void AddActionChangeColorToMenu(QMenu* menu);
 };
 
 struct RequiredItemMeta

@@ -4,14 +4,20 @@ CircuitElementMimeData::CircuitElementMimeData(QPoint eventPos)
     : BaseCircuitItemMimeData{eventPos}
 {}
 
+QDataStream& CircuitElementMimeData::readMimeData(QDataStream& iStream)
+{
+    iStream
+        >> numberParam
+        >> isNotationBinary;
+
+    return iStream;
+}
+
 QDataStream& operator>>(QDataStream& iStream,
                         CircuitElementMimeData& data)
 {
     data.readBasicMimeData(iStream);
-
-    iStream
-        >> data.numberParam
-        >> data.isNotationBinary;
+    data.readMimeData(iStream);
 
     return iStream;
 }

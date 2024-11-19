@@ -2,10 +2,15 @@
 #include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
 #include "widgets/LogicVectorEdit.hpp"
+#include "dialogues/ElementSizeChanger.hpp"
+#include "dialogues/DialogDuplicateElementItem.hpp"
+#include "circuits/ItemRegistry.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
 #include <QPushButton>
+#include <QMenu>
+#include <QMessageBox>
 
 CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
@@ -168,6 +173,48 @@ void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& req
 
     auto* item = new CircuitElement(mimeData, canvas);
     item->move(mimeData.itemPosition);
+}
+
+void CircuitElement::ConstructCircuitElementFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                       QDataStream& additionalData,
+                                                       ItemRegistry* itemRegistry)
+{
+    auto* parentWidget = qobject_cast<QWidget*>(itemRegistry->parent());
+    if (!parentWidget)
+    {
+        return;
+    }
+
+    CircuitElementMimeData mimeData;
+    mimeData.endingPoints = baseMimeData.endingPoints;
+    mimeData.startingPoints = baseMimeData.startingPoints;
+    mimeData.color = baseMimeData.color;
+    mimeData.itemSize = baseMimeData.itemSize;
+    mimeData.itemPosition = baseMimeData.itemPosition;
+    mimeData.id = baseMimeData.id;
+    mimeData.orderId = baseMimeData.orderId;
+    //mimeData.readMimeData(additionalData);
+
+    auto* item = new CircuitElement(mimeData, parentWidget);
+    item->move(mimeData.itemPosition);
+
+    connect(item, &BaseCircuitItem::removeCircuitItem,
+            itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &CircuitElement::setNumberParameterToElementItem,
+            itemRegistry, &ItemRegistry::setNumberParameterToElementItem);
+
+    connect(item, &CircuitElement::startFunctionalFaultSimulation,
+            itemRegistry, &ItemRegistry::startFunctionalFaultSimulation);
+
+    connect(item, &CircuitElement::askOrderIdHint,
+            itemRegistry, &ItemRegistry::askOrderIdHint);
+
+    connect(itemRegistry, &ItemRegistry::setOrderIdHintForDuplicate,
+            item, &CircuitElement::setOrderIdHintForDuplicate);
+
+    connect(item, &CircuitElement::tryToRebookArea,
+            itemRegistry, &ItemRegistry::tryToRebookArea);
 }
 
 void CircuitElement::DrawToPixmap()
@@ -362,11 +409,11 @@ void CircuitElement::SetInputsNumberAndRebook(int size)
     // Try upcoming changes
     SetInputsNumber(size);
 
-    emit tryToRebookArea(currentInputsNumber,
-                         m_startingConnectors.size(),
-                         currentEndingPointVector,
-                         currentStartingPointVector,
-                         currentArea);
+    emit checkAndTryToRebookArea(currentInputsNumber,
+                                       m_startingConnectors.size(),
+                                       currentEndingPointVector,
+                                       currentStartingPointVector,
+                                       currentArea);
 }
 
 void CircuitElement::SetOutputsNumber(int size)
@@ -461,11 +508,11 @@ void CircuitElement::SetOutputsNumberAndRebook(int size)
     // Try upcoming changes
     SetOutputsNumber(size);
 
-    emit tryToRebookArea(m_endingConnectors.size(),
-                         currentOutputsNumber,
-                         currentEndingPointVector,
-                         currentStartingPointVector,
-                         currentArea);
+    emit checkAndTryToRebookArea(m_endingConnectors.size(),
+                                       currentOutputsNumber,
+                                       currentEndingPointVector,
+                                       currentStartingPointVector,
+                                       currentArea);
 }
 
 EndingPointVector CircuitElement::GetEndPoints() const
@@ -507,7 +554,7 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
-    for (const auto& endingConnector : m_endingConnectors)
+    for (const auto* endingConnector : m_endingConnectors)
     {
         const auto endPoint = endingConnector->GetEndPoint();
         oldEndingPointVector.push_back(endPoint);
@@ -541,4 +588,178 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
+}
+
+void CircuitElement::AddActionsToMenu(QMenu* menu)
+{
+    AddActionSimulateToMenu(menu);
+    AddActionChangeColorToMenu(menu);
+    AddActionChangeSizeToMenu(menu);
+    AddActionDuplicateToMenu(menu);
+    BaseCircuitItem::AddActionsToMenu(menu);
+}
+
+void CircuitElement::AddActionSimulateToMenu(QMenu* menu)
+{
+    auto* actionSimulate = new QAction("Simulate", this);
+    connect(actionSimulate, &QAction::triggered,
+            this, [this] (bool)
+            {
+                if (m_numberParameterIsValid)
+                {
+                    emit startFunctionalFaultSimulation(GetId());
+                }
+                else
+                {
+                    auto parentWidget = qobject_cast<QWidget*>(parent());
+                    if (!parentWidget)
+                    {
+                        return;
+                    }
+
+                    QMessageBox::information(parentWidget,
+                            tr("Can't simulate on element #")
+                               + QString::number(m_orderId),
+                            tr("Element has empty or invalid number parameter.\n"
+                               "Please use another one and try again."),
+                            QMessageBox::Ok
+                            );
+                }
+            });
+
+    menu->addAction(actionSimulate);
+}
+
+void CircuitElement::AddActionChangeSizeToMenu(QMenu* menu)
+{
+    QAction* actionChangeSize = new QAction("Change Size", parent());
+    connect(actionChangeSize, &QAction::triggered,
+            this, [this] (bool)
+            {
+                emit closeDialogs();
+
+                auto parentWidget = qobject_cast<QWidget*>(parent());
+                if (!parentWidget)
+                {
+                    return;
+                }
+
+                auto* elementSizeChanger = new ElementSizeChanger(this,
+                                                                  parentWidget);
+                elementSizeChanger->move(QCursor::pos());
+                connect(this, &BaseCircuitItem::closeDialogs,
+                        elementSizeChanger, &ElementSizeChanger::close);
+
+                // Magic connect: elementSizeChanger passed as 3rd argument
+                // to ensure signal checkAndTryToRebookArea will work only
+                // while ElementSizeChanger dialog is opened (and not deleted)
+                connect(this, &CircuitElement::checkAndTryToRebookArea,
+                        elementSizeChanger, [this](int previousInputsNumber,
+                                                   int previousOutputsNumber,
+                                                   EndingPointVector oldEndingPointVector,
+                                                   StartingPointVector oldStartingPointVector,
+                                                   QRect previousArea)
+                        {
+                            EndingPointVector endPoints = GetEndPoints();
+                            StartingPointVector startPoints = GetStartPoints();
+                            std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
+                            quint64 displacedConnId = 0;
+                            StartingPoint::IdsSet displacedConnIdSet;
+
+                            // Ending point incrementing case
+                            if (endPoints.size() > oldEndingPointVector.size())
+                            {
+                                for (std::size_t i = 0; i < oldEndingPointVector.size(); ++i)
+                                {
+                                    auto oldEndingPoint = oldEndingPointVector[i];
+                                    auto endPoint = endPoints[i];
+                                    oldNewPoints.push_back({oldEndingPoint.connPos,
+                                                            endPoint.connPos});
+                                }
+                                oldNewPoints.push_back({QPoint(),
+                                                        endPoints.back().connPos});
+                            }
+                            else
+                            {
+                                // Ending point decrementing case
+                                if (endPoints.size() < oldEndingPointVector.size())
+                                {
+                                    displacedConnId = oldEndingPointVector.back().connId;
+                                }
+
+                                for (std::size_t i = 0; i < endPoints.size(); ++i)
+                                {
+                                    oldNewPoints.push_back({oldEndingPointVector[i].connPos,
+                                                            endPoints[i].connPos});
+                                }
+                            }
+
+                            // Starting point incrementing case
+                            if (startPoints.size() > oldStartingPointVector.size())
+                            {
+                                for (std::size_t i = 0; i < oldStartingPointVector.size(); ++i)
+                                {
+                                    auto oldStartingPoint = oldStartingPointVector[i];
+                                    auto startPoint = startPoints[i];
+                                    oldNewPoints.push_back({oldStartingPoint.connPos,
+                                                            startPoint.connPos});
+                                }
+                                oldNewPoints.push_back({QPoint(),
+                                                        startPoints.back().connPos});
+                            }
+                            else
+                            {
+                                // Starting point decrementing case
+                                if (startPoints.size() < oldStartingPointVector.size())
+                                {
+                                    displacedConnIdSet = oldStartingPointVector.back().connIds;
+                                }
+
+                                for (std::size_t i = 0; i < startPoints.size(); ++i)
+                                {
+                                    oldNewPoints.push_back({oldStartingPointVector[i].connPos,
+                                                            startPoints[i].connPos});
+                                }
+                            }
+
+                            emit tryToRebookArea(this,
+                                                 previousArea,
+                                                 oldNewPoints,
+                                                 displacedConnId,
+                                                 displacedConnIdSet,
+                                                 previousInputsNumber,
+                                                 previousOutputsNumber);
+                        });
+            });
+
+    menu->addAction(actionChangeSize);
+}
+
+void CircuitElement::AddActionDuplicateToMenu(QMenu* menu)
+{
+    auto* actionDuplicate = new QAction("Duplicate", parent());
+    connect(actionDuplicate, &QAction::triggered,
+            this, [this] (bool)
+            {
+                emit closeDialogs();
+
+                auto parentWidget = qobject_cast<QWidget*>(parent());
+                if (!parentWidget)
+                {
+                    return;
+                }
+
+                auto* dialogDuplicate =
+                    new DialogDuplicateElementItem(this, parentWidget);
+                dialogDuplicate->move(QCursor::pos());
+
+                connect(this, &CircuitElement::setOrderIdHintForDuplicate,
+                        dialogDuplicate, &DialogDuplicateElementItem::SetOrderId);
+                connect(this, &BaseCircuitItem::closeDialogs,
+                        dialogDuplicate, &DialogDuplicateElementItem::close);
+
+                emit askOrderIdHint();
+            });
+
+    menu->addAction(actionDuplicate);
 }

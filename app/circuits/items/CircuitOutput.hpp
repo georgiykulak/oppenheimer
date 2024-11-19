@@ -5,6 +5,7 @@
 #include "mime/CircuitOutputMimeData.hpp"
 
 class EndingConnector;
+class ItemRegistry;
 
 class CircuitOutput : public BaseCircuitItem
 {
@@ -17,7 +18,12 @@ public:
                                                const json& itemMeta,
                                                QWidget* canvas);
 
+    static void ConstructCircuitOutputFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                 QDataStream& additionalData,
+                                                 ItemRegistry* itemRegistry);
+
     virtual ItemType GetItemType() const noexcept override { return Output; }
+    virtual QString GetMimeType() const override { return outputMime; }
 
     virtual void DrawToPixmap() override;
 
@@ -25,6 +31,8 @@ public:
     void SetValue(bool value) final;
 
     CircuitOutputMimeData GetMimeData(QPoint eventPos = {}) const;
+
+    virtual void AddActionsToMenu(QMenu* menu) override;
 
 private:
     bool m_outputValue = 0;
