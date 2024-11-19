@@ -4,6 +4,7 @@
 #include "widgets/LogicVectorEdit.hpp"
 #include "dialogues/ElementSizeChanger.hpp"
 #include "dialogues/DialogDuplicateElementItem.hpp"
+#include "circuits/ItemRegistry.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
@@ -172,6 +173,48 @@ void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& req
 
     auto* item = new CircuitElement(mimeData, canvas);
     item->move(mimeData.itemPosition);
+}
+
+void CircuitElement::ConstructCircuitElementFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                       QDataStream& additionalData,
+                                                       ItemRegistry* itemRegistry)
+{
+    auto* parentWidget = qobject_cast<QWidget*>(itemRegistry->parent());
+    if (!parentWidget)
+    {
+        return;
+    }
+
+    CircuitElementMimeData mimeData;
+    mimeData.endingPoints = baseMimeData.endingPoints;
+    mimeData.startingPoints = baseMimeData.startingPoints;
+    mimeData.color = baseMimeData.color;
+    mimeData.itemSize = baseMimeData.itemSize;
+    mimeData.itemPosition = baseMimeData.itemPosition;
+    mimeData.id = baseMimeData.id;
+    mimeData.orderId = baseMimeData.orderId;
+    //mimeData.readMimeData(additionalData);
+
+    auto* item = new CircuitElement(mimeData, parentWidget);
+    item->move(mimeData.itemPosition);
+
+    connect(item, &BaseCircuitItem::removeCircuitItem,
+            itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &CircuitElement::setNumberParameterToElementItem,
+            itemRegistry, &ItemRegistry::setNumberParameterToElementItem);
+
+    connect(item, &CircuitElement::startFunctionalFaultSimulation,
+            itemRegistry, &ItemRegistry::startFunctionalFaultSimulation);
+
+    connect(item, &CircuitElement::askOrderIdHint,
+            itemRegistry, &ItemRegistry::askOrderIdHint);
+
+    connect(itemRegistry, &ItemRegistry::setOrderIdHintForDuplicate,
+            item, &CircuitElement::setOrderIdHintForDuplicate);
+
+    connect(item, &CircuitElement::tryToRebookArea,
+            itemRegistry, &ItemRegistry::tryToRebookArea);
 }
 
 void CircuitElement::DrawToPixmap()

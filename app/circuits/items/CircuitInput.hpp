@@ -5,6 +5,7 @@
 #include "mime/CircuitInputMimeData.hpp"
 
 class StartingConnector;
+class ItemRegistry;
 
 class CircuitInput : public BaseCircuitItem
 {
@@ -16,6 +17,10 @@ public:
     static void ConstructCircuitInputFromJson(const RequiredItemMeta& reqMeta,
                                               const json& itemMeta,
                                               QWidget* canvas);
+
+    static void ConstructCircuitInputFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                QDataStream& additionalData,
+                                                ItemRegistry* itemRegistry);
 
     virtual ItemType GetItemType() const noexcept override { return Input; }
     virtual QString GetMimeType() const override { return inputMime; }

@@ -5,6 +5,7 @@
 #include "mime/CircuitOutputMimeData.hpp"
 
 class EndingConnector;
+class ItemRegistry;
 
 class CircuitOutput : public BaseCircuitItem
 {
@@ -16,6 +17,10 @@ public:
     static void ConstructCircuitOutputFromJson(const RequiredItemMeta& reqMeta,
                                                const json& itemMeta,
                                                QWidget* canvas);
+
+    static void ConstructCircuitOutputFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                 QDataStream& additionalData,
+                                                 ItemRegistry* itemRegistry);
 
     virtual ItemType GetItemType() const noexcept override { return Output; }
     virtual QString GetMimeType() const override { return outputMime; }

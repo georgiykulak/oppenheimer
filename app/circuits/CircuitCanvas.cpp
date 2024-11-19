@@ -10,9 +10,39 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
     : QWidget{parent}
     , m_areaManager{this}
     , m_projectConfigurator{m_areaManager, m_idHandler, this}
+    , m_itemRegistry{this}
 {
     setAcceptDrops(true);
     m_areaManager.SetMatrixSize(QSize(1280, 720));
+
+    connect(&m_itemRegistry, &ItemRegistry::removeCircuitItem,
+            this, &CircuitCanvas::RemoveCircuitItem);
+
+    connect(&m_itemRegistry, &ItemRegistry::setNumberParameterToElementItem,
+            this, &CircuitCanvas::setNumberParameterToElementItem);
+
+    connect(&m_itemRegistry, &ItemRegistry::startFunctionalFaultSimulation,
+            this, &CircuitCanvas::startFunctionalFaultSimulation);
+
+    connect(&m_itemRegistry, &ItemRegistry::askOrderIdHint,
+            this, [this](){
+                const auto orderId =
+                    m_idHandler.GetLastOrderId(ItemType::Element);
+                emit setOrderIdHint(ItemType::Element, orderId);
+            });
+
+    connect(this, &CircuitCanvas::setOrderIdHint,
+            &m_itemRegistry, &ItemRegistry::setOrderIdHintForDuplicate);
+
+    connect(&m_itemRegistry, &ItemRegistry::tryToRebookArea,
+            this, &CircuitCanvas::TryToRebookArea);
+
+    m_itemRegistry.RegisterMimeProcessor(inputMime, ItemType::Input,
+                            CircuitInput::ConstructCircuitInputFromStream);
+    m_itemRegistry.RegisterMimeProcessor(outputMime, ItemType::Output,
+                            CircuitOutput::ConstructCircuitOutputFromStream);
+    m_itemRegistry.RegisterMimeProcessor(elementMime, ItemType::Element,
+                            CircuitElement::ConstructCircuitElementFromStream);
 
     BaseCircuitItem::RegisterJsonProcessor(ItemType::Input,
                             CircuitInput::ConstructCircuitInputFromJson);

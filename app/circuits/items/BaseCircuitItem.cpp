@@ -18,10 +18,11 @@ BaseCircuitItem::~BaseCircuitItem()
     m_startingConnectors.clear();
 }
 
-std::map<quint64, BaseCircuitItem::JsonProcessor>& BaseCircuitItem::GetJsonProcessors()
+std::map<quint64, BaseCircuitItem::JsonProcessor>&
+BaseCircuitItem::GetJsonProcessors()
 {
-    static std::map<quint64, JsonProcessor> kJsonProcessors;
-    return kJsonProcessors;
+    static std::map<quint64, JsonProcessor> jsonProcessors;
+    return jsonProcessors;
 }
 
 void BaseCircuitItem::RegisterJsonProcessor(quint64 type,

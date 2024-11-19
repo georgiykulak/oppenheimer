@@ -38,10 +38,6 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////
 
-
-
-    ///////////////////////////////////////////////////////////////////////////
-
     virtual ItemType GetItemType() const noexcept
     { WarnNotImplemented(ItemType(Invalid)); }
     virtual QString GetMimeType() const
@@ -59,7 +55,7 @@ public:
 
     virtual json GetJsonMeta() const;
 
-    BaseCircuitItemMimeData GetBaseCircuitMimeData(QPoint eventPos) const;
+    BaseCircuitItemMimeData GetBaseCircuitMimeData(QPoint eventPos = {}) const;
 
 signals:
     bool closeDialogs();

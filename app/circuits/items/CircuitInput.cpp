@@ -1,6 +1,7 @@
 #include "CircuitInput.hpp"
 #include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
+#include "circuits/ItemRegistry.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
@@ -52,6 +53,32 @@ void CircuitInput::ConstructCircuitInputFromJson(const RequiredItemMeta& reqMeta
 
     auto* item = new CircuitInput(mimeData, canvas);
     item->move(mimeData.itemPosition);
+}
+
+void CircuitInput::ConstructCircuitInputFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                   QDataStream& /*additionalData*/,
+                                                   ItemRegistry* itemRegistry)
+{
+    auto* parentWidget = qobject_cast<QWidget*>(itemRegistry->parent());
+    if (!parentWidget)
+    {
+        return;
+    }
+
+    CircuitInputMimeData mimeData;
+    mimeData.endingPoints = baseMimeData.endingPoints;
+    mimeData.startingPoints = baseMimeData.startingPoints;
+    mimeData.color = baseMimeData.color;
+    mimeData.itemSize = baseMimeData.itemSize;
+    mimeData.itemPosition = baseMimeData.itemPosition;
+    mimeData.id = baseMimeData.id;
+    mimeData.orderId = baseMimeData.orderId;
+
+    auto* item = new CircuitInput(mimeData, parentWidget);
+    item->move(mimeData.itemPosition);
+
+    connect(item, &BaseCircuitItem::removeCircuitItem,
+            itemRegistry, &ItemRegistry::removeCircuitItem);
 }
 
 void CircuitInput::DrawToPixmap()

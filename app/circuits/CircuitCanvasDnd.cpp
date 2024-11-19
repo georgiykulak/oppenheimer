@@ -122,26 +122,24 @@ void CircuitCanvas::ProcessDragMoveEvent(QDragMoveEvent *event)
 
 void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 {
-    //BaseCircuitItem::GetDropEventProcessorByMimeType()
-
-    /*for (const auto& mimeType : BaseCircuitItem::GetRegisteredMimeTypes())
+    for (const auto& [mimeType, itemMimePair] : m_itemRegistry.GetMimeProcessors())
     {
         if (event->mimeData()->hasFormat(mimeType))
         {
-            //QByteArray itemData = event->mimeData()->data(mimeType);
-            //QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-            //CircuitInputMimeData mimeData(event->pos());
-            //dataStream >> mimeData;
-
-            auto itemMeta = BaseCircuitItem::ReadMimeFromByteArray(mimeType);
+            const auto itemType = itemMimePair.first;
+            QByteArray itemData = event->mimeData()->data(mimeType);
+            QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+            BaseCircuitItemMimeData baseMimeData(event->pos());
+            baseMimeData.readBasicMimeData(dataStream);
 
             if (event->source() != this
-                && m_idHandler.ContainsOrderId(itemMeta.type, itemMeta.orderId))
+                && m_idHandler.ContainsOrderId(itemType, baseMimeData.orderId))
             {
                 event->ignore();
 
                 QString text = "Input item with such order id '"
-                               + QString::number(itemMeta.orderId) + "' already exists";
+                               + QString::number(baseMimeData.orderId)
+                               + "' already exists";
                 QMessageBox::information(this, "Can't place item", text);
 
                 // TODO: apply backup
@@ -149,30 +147,31 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
                 return;
             }
 
-            if (m_areaManager.TryBookArea(itemMeta.area, itemMeta.oldNewPoints))
+            if (m_areaManager.TryBookArea(baseMimeData.area,
+                                          baseMimeData.oldNewPoints))
             {
                 if (event->source() != this)
                 {
                     qDebug() << "Placing new input item";
 
-                    if (!m_idHandler.NewOrderId(itemMeta.type, itemMeta.orderId))
+                    if (!m_idHandler.NewOrderId(itemType, baseMimeData.orderId))
                     {
                         event->ignore();
                         // TODO: apply backup
                         return;
                     }
 
-                    itemMeta.id = m_idHandler.NewUid();
-                    emit addNewItem(itemMeta.type, itemMeta.id,
-                                    itemMeta.endingConnectors.size());
+                    baseMimeData.id = m_idHandler.NewUid();
+                    emit addNewItem(itemType, baseMimeData.id,
+                                    baseMimeData.endingPoints.size());
 
-                    emit setOrderIdHint(itemMeta.type,
-                                        m_idHandler.GetLastOrderId(itemMeta.type));
+                    emit setOrderIdHint(itemType,
+                                        m_idHandler.GetLastOrderId(itemType));
                 }
 
-                //auto circuitInput = new CircuitInput(mimeData, this);
-                //circuitInput->move(mimeData.itemPosition);
-                BaseCircuitItem::ConstructItemFromByteArray(mimeType, )
+                m_itemRegistry.ConstructItemFromStream(mimeType,
+                                                       baseMimeData,
+                                                       dataStream);
 
                 // To redraw connections
                 update();
@@ -186,200 +185,9 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 
             return;
         }
-    }*/
-
-    if (event->mimeData()->hasFormat(inputMime))
-    {
-        QByteArray itemData = event->mimeData()->data(inputMime);
-        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitInputMimeData mimeData(event->pos());
-        dataStream >> mimeData;
-
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Input, mimeData.orderId))
-        {
-            event->ignore();
-
-            QString text = "Input item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
-
-            // TODO: apply backup
-
-            return;
-        }
-
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new input item";
-
-                if (!m_idHandler.NewOrderId(ItemType::Input, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
-
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Input, mimeData.id, 0);
-
-                emit setOrderIdHint(ItemType::Input,
-                                    m_idHandler.GetLastOrderId(ItemType::Input));
-            }
-
-            auto item = new CircuitInput(mimeData, this);
-            item->move(mimeData.itemPosition);
-
-            connect(item, &BaseCircuitItem::removeCircuitItem,
-                    this, &CircuitCanvas::RemoveCircuitItem);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
     }
-    else if (event->mimeData()->hasFormat(outputMime))
-    {
-        QByteArray itemData = event->mimeData()->data(outputMime);
-        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitOutputMimeData mimeData(event->pos());
-        dataStream >> mimeData;
 
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Output, mimeData.orderId))
-        {
-            event->ignore();
-
-            QString text = "Output item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
-
-            // TODO: apply backup
-
-            return;
-        }
-
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new output item";
-
-                if (!m_idHandler.NewOrderId(ItemType::Output, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
-
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Output, mimeData.id, 1);
-
-                emit setOrderIdHint(ItemType::Output,
-                                    m_idHandler.GetLastOrderId(ItemType::Output));
-            }
-
-            auto* item = new CircuitOutput(mimeData, this);
-            item->move(mimeData.itemPosition);
-
-            connect(item, &BaseCircuitItem::removeCircuitItem,
-                    this, &CircuitCanvas::RemoveCircuitItem);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
-    }
-    else if (event->mimeData()->hasFormat(elementMime))
-    {
-        QByteArray itemData = event->mimeData()->data(elementMime);
-        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitElementMimeData mimeData(event->pos());
-        dataStream >> mimeData;
-
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Element, mimeData.orderId))
-        {
-            event->ignore();
-
-            QString text = "Element item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
-
-            // TODO: apply backup
-
-            return;
-        }
-
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new output item";
-
-                if (!m_idHandler.NewOrderId(ItemType::Element, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
-
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Element, mimeData.id,
-                                mimeData.endingPoints.size());
-
-                emit setOrderIdHint(ItemType::Element,
-                                    m_idHandler.GetLastOrderId(ItemType::Element));
-            }
-
-            auto* item = new CircuitElement(mimeData, this);
-            item->move(mimeData.itemPosition);
-
-            connect(item, &BaseCircuitItem::removeCircuitItem,
-                    this, &CircuitCanvas::RemoveCircuitItem);
-
-            connect(item, &CircuitElement::setNumberParameterToElementItem,
-                    this, &CircuitCanvas::setNumberParameterToElementItem);
-
-            connect(item, &CircuitElement::startFunctionalFaultSimulation,
-                    this, &CircuitCanvas::startFunctionalFaultSimulation);
-
-            connect(item, &CircuitElement::askOrderIdHint,
-                    this, [this](){
-                        const auto orderId =
-                            m_idHandler.GetLastOrderId(ItemType::Element);
-                        emit setOrderIdHint(ItemType::Element, orderId);
-                    });
-
-            connect(this, &CircuitCanvas::setOrderIdHint,
-                    item, &CircuitElement::setOrderIdHintForDuplicate);
-
-            connect(item, &CircuitElement::tryToRebookArea,
-                    this, &CircuitCanvas::TryToRebookArea);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
-    }
-    else if (event->mimeData()->hasFormat(endingConnectorMime)
+    if (event->mimeData()->hasFormat(endingConnectorMime)
              && event->source() == this)
     {
         QByteArray itemData = event->mimeData()->data(endingConnectorMime);
@@ -481,10 +289,13 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
     {
         if (event->button() == Qt::LeftButton)
         {
+            //const auto itemData item->WriteToByteArray(event->pos());
+            //*/
             const auto mimeData = item->GetBaseCircuitMimeData(event->pos());
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
             mimeData.writeBasicMimeData(dataStream);
+            //*/
 
             QMimeData* mime = new QMimeData;
             mime->setData(item->GetMimeType(), itemData);
@@ -696,8 +507,7 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
     emit removeItem(uid);
     m_idHandler.RemoveUid(item->GetId());
 
-    /*
-    const auto mimeData = item->GetMimeData();
+    const auto mimeData = item->GetBaseCircuitMimeData();
     m_idHandler.RemoveOrderId(item->GetItemType(), mimeData.orderId);
 
     for (const auto* endingConnector : item->GetEndingConnectors())
@@ -714,81 +524,6 @@ void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
             RemoveConnectionById(connId);
         }
     }
-    */
-
-    ///*
-    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
-    {
-        const auto mimeData = circuitInput->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Input, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
-    {
-        const auto mimeData = circuitOutput->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Output, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
-    {
-        const auto mimeData = circuitElement->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Element, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else
-    {
-        throw std::runtime_error("ItemType is unknown, type = "
-                                 + std::to_string(item->GetItemType()));
-    }
-    //*/
 
     QRect area(item->pos(), item->size());
     m_areaManager.ClearArea(area);

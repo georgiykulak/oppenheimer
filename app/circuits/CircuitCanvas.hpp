@@ -5,6 +5,7 @@
 #include "AreaManager.hpp"
 #include "IdHandler.hpp"
 #include "ItemUtils.hpp"
+#include "ItemRegistry.hpp"
 
 #include <QWidget>
 
@@ -55,6 +56,7 @@ private:
     AreaManager m_areaManager;
     IdHandler m_idHandler;
     ProjectConfigurationManager m_projectConfigurator;
+    ItemRegistry m_itemRegistry;
 
     QLine m_currentConnectingLine;
 

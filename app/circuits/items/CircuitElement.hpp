@@ -8,6 +8,7 @@ class EndingConnector;
 class StartingConnector;
 class LogicVectorEdit;
 class QPushButton;
+class ItemRegistry;
 
 class CircuitElement : public BaseCircuitItem
 {
@@ -20,6 +21,10 @@ public:
     static void ConstructCircuitElementFromJson(const RequiredItemMeta& reqMeta,
                                                 const json& itemMeta,
                                                 QWidget* canvas);
+
+    static void ConstructCircuitElementFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                  QDataStream& additionalData,
+                                                  ItemRegistry* itemRegistry);
 
     virtual ItemType GetItemType() const noexcept override { return Element; }
     virtual QString GetMimeType() const override { return elementMime; }
