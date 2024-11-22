@@ -11,6 +11,8 @@ class MultilineNumberEdit : public QPlainTextEdit
 public:
     explicit MultilineNumberEdit(QWidget *parent = nullptr);
 
+    static constexpr std::size_t kBinaryPerRowMaximum = 8;
+
 private:
     QTextDocument* m_textDocument;
 };
@@ -26,6 +28,7 @@ public:
 
 private:
     QFontMetrics m_fontMetrics;
+    int m_calculatedWidth;
 };
 
 #endif // MULTILINENUMBEREDIT_H

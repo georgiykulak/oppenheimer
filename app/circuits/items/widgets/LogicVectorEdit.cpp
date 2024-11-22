@@ -121,11 +121,11 @@ void LogicVectorEdit::onTextChanged()
             return;
         }
 
-        const auto binaryPerRowMaximum = 4;
+        const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
         // Rows with wrapped lines
         const auto textSize = newText.size();
-        std::size_t rows = textSize / binaryPerRowMaximum;
-        rows += (textSize % 4) ? 1 : 0;
+        std::size_t rows = textSize / maxLength;
+        rows += (textSize % maxLength) ? 1 : 0;
         if (!rows)
         {
             rows = 1;

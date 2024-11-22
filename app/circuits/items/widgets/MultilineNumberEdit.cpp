@@ -26,7 +26,14 @@ MultilineNumberTextDocumentLayout::MultilineNumberTextDocumentLayout(QTextDocume
     : QPlainTextDocumentLayout{textDocument}
     , m_fontMetrics(font)
 {
-
+    // For measuring the length of a line based on a fixed number of characters
+    // and current font. 8 zeroes stand for binary maximum per line
+    QString sampleString;
+    for (std::size_t i = 0; i < MultilineNumberEdit::kBinaryPerRowMaximum; ++i)
+    {
+        sampleString += '0';
+    }
+    m_calculatedWidth = m_fontMetrics.horizontalAdvance(sampleString);
 }
 
 QRectF MultilineNumberTextDocumentLayout::blockBoundingRect(const QTextBlock &block) const
@@ -35,10 +42,6 @@ QRectF MultilineNumberTextDocumentLayout::blockBoundingRect(const QTextBlock &bl
     layout->clearLayout();
 
     qreal height = 0;
-    // For measuring the length of a line based on a fixed number of characters
-    // and current font. 4 zeroes stand for binary maximum per line
-    QString sampleString = "0000";
-    auto calculatedWidth = m_fontMetrics.horizontalAdvance(sampleString);
 
     layout->beginLayout();
     while (true)
@@ -49,7 +52,7 @@ QRectF MultilineNumberTextDocumentLayout::blockBoundingRect(const QTextBlock &bl
             break;
         }
 
-        line.setLineWidth(calculatedWidth);
+        line.setLineWidth(m_calculatedWidth);
         line.setPosition(QPointF(0, height));
         height += line.height();
     }
