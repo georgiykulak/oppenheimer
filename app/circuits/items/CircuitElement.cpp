@@ -26,7 +26,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
                            (std::max(mimeData.endingPoints.size(),
                                      mimeData.startingPoints.size()) - 1);
-        size = QSize(110, realHeight);
+        size = QSize(130, realHeight);
     }
     setFixedSize(size);
     m_pixmap = QPixmap(this->size());
@@ -58,7 +58,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     for (const auto& startPoint : mimeData.startingPoints)
     {
         const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
-        QPoint positionOffset(95, yShift - 4);
+        QPoint positionOffset(width() - 15, yShift - 4);
         StartingConnector* startingConnector =
             new StartingConnector(startPoint, positionOffset, this);
 
@@ -73,8 +73,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     m_textField = new LogicVectorEdit(this);
-    m_textField->setMinimumSize(60, 30);
-    m_textField->setMaximumSize(60, 30);
+    m_textField->setMinimumSize(80, 30);
+    m_textField->setMaximumSize(80, 30);
     m_textField->move(25, 45);
     m_textField->show();
     m_textField->setEnabled(numParamEnabled);
@@ -178,7 +178,7 @@ void CircuitElement::DrawToPixmap()
     mPen.setColor(m_color);
     painter.setPen(mPen);
     painter.setBrush(m_color);
-    int wBig = 90;
+    int wBig = width() - 20;
     int hBig = height();
     const int borderWidth = 2;
     painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
@@ -192,7 +192,7 @@ void CircuitElement::DrawToPixmap()
 
     int xStartText = 25;
     int yStartText = 45;
-    int wSmall = 60;
+    int wSmall = m_textField->width();
     int hSmall = m_textField->height();
     mPen.setWidth(2);
     mPen.setColor(Qt::darkGray);
@@ -211,7 +211,7 @@ void CircuitElement::DrawToPixmap()
     painter.setFont(QFont("Arial"));
     QString strVal;
     strVal.setNum(m_outputValue);
-    painter.drawText(QRect(80, 10, 10, 15), Qt::AlignCenter, strVal);
+    painter.drawText(QRect(100, 10, 10, 15), Qt::AlignCenter, strVal);
 
     mPen.setColor(Qt::black);
     painter.setPen(mPen);

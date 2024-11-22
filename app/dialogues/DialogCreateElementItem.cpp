@@ -134,7 +134,7 @@ void DialogCreateElementItem::mousePressEvent(QMouseEvent *event)
 void DialogCreateElementItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(130, 80);
+    m_itemFrame->setMinimumSize(150, 80);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
@@ -199,7 +199,7 @@ void DialogCreateElementItem::InitElementItem(int orderId)
     CircuitElementMimeData mimeData;
     mimeData.orderId = orderId;
     mimeData.endingPoints.push_back({QPoint(5, 55) + offset, 0});
-    mimeData.startingPoints.push_back({QPoint(105, 55) + offset,
+    mimeData.startingPoints.push_back({QPoint(125, 55) + offset,
                                             StartingPoint::IdsSet()});
 
     m_newElement = new CircuitElement(mimeData, this, false);

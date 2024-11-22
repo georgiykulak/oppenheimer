@@ -17,7 +17,7 @@ DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
 {
     setWindowTitle("Duplicate");
     setAcceptDrops(false);
-    setMinimumSize(150, original->height() + m_offset.y() * 2);
+    setMinimumSize(original->width() + 40, original->height() + m_offset.y() * 2);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 
@@ -115,7 +115,7 @@ void DialogDuplicateElementItem::mousePressEvent(QMouseEvent *event)
 void DialogDuplicateElementItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(130, 80);
+    m_itemFrame->setMinimumSize(150, 80);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
