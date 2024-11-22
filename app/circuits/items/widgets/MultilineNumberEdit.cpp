@@ -1,6 +1,7 @@
 #include "MultilineNumberEdit.hpp"
 
 #include <QTextBlock>
+#include <QScrollBar>
 
 MultilineNumberEdit::MultilineNumberEdit(QWidget *parent)
     : QPlainTextEdit{parent}
@@ -12,8 +13,12 @@ MultilineNumberEdit::MultilineNumberEdit(QWidget *parent)
 
     setFrameStyle(QFrame::NoFrame);
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    auto* sb = new QScrollBar(this);
+    setVerticalScrollBar(sb);
+    sb->hide();
 
     m_textDocument = new QTextDocument(this);
     auto textLayout = new MultilineNumberTextDocumentLayout(m_textDocument, font());
