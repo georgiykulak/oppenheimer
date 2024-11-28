@@ -121,27 +121,59 @@ void LogicVectorEdit::onTextChanged()
             return;
         }
 
-        const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
-        // Rows with wrapped lines
-        const auto textSize = newText.size();
-        std::size_t rows = textSize / maxLength;
-        rows += (textSize % maxLength) ? 1 : 0;
-        if (!rows)
+        // TODO: Resize text edit height there, if the input count >= 4 & <= 6
+        // THEN rewrite circuit element with layouts as in sample widget
+        // so text edit will be resized automatically when element resized
+
+        if (newText.size() >= (1 << 4)
+         && newText.size() < (1 << 6))
         {
-            rows = 1;
+            const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
+            // Rows with wrapped lines
+            const auto textSize = newText.size();
+            std::size_t rows = textSize / maxLength;
+            rows += (textSize % maxLength) ? 1 : 0;
+            if (!rows)
+            {
+                rows = 1;
+            }
+
+            QFontMetrics fontMetrics(m_textEdit->font());
+            const auto approximateHeightOffset = 12;
+            setFixedHeight(fontMetrics.height() * rows
+                           + approximateHeightOffset);
+
+            if (m_rows != rows)
+            {
+                emit textRowsCountChanged();
+                m_rows = rows;
+            }
         }
 
-        QFontMetrics fontMetrics(m_textEdit->font());
-        const auto approximateHeightOffset = 12;
-        setFixedHeight(fontMetrics.height() * rows
-                       + approximateHeightOffset);
+        if (newText.size() >= (1 << 6))
+        {
+            const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
+            const auto textSize = 1 << 6;
+            std::size_t rows = textSize / maxLength;
+            rows += (textSize % maxLength) ? 1 : 0;
+            if (!rows)
+            {
+                rows = 1;
+            }
+
+            QFontMetrics fontMetrics(m_textEdit->font());
+            const auto approximateHeightOffset = 12;
+            setFixedHeight(fontMetrics.height() * rows
+                           + approximateHeightOffset);
+
+            if (m_rows != rows)
+            {
+                emit textRowsCountChanged();
+                m_rows = rows;
+            }
+        }
+
         number = newText.toInt(&ok, 2);
-
-        if (m_rows != rows)
-        {
-            emit textRowsCountChanged();
-            m_rows = rows;
-        }
         m_currentText = newText;
 
         if (ok && newText.size() == m_digitCount)

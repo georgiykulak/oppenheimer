@@ -13,55 +13,9 @@ MultilineNumberEdit::MultilineNumberEdit(QWidget *parent)
 
     setFrameStyle(QFrame::NoFrame);
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
-    //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    auto* sb = new QScrollBar(this);
-    setVerticalScrollBar(sb);
-    sb->hide();
-
-    m_textDocument = new QTextDocument(this);
-    auto textLayout = new MultilineNumberTextDocumentLayout(m_textDocument, font());
-    m_textDocument->setDocumentLayout(textLayout);
-    setDocument(m_textDocument);
-}
-
-MultilineNumberTextDocumentLayout::MultilineNumberTextDocumentLayout(QTextDocument *textDocument,
-                                                                     QFont font)
-    : QPlainTextDocumentLayout{textDocument}
-    , m_fontMetrics(font)
-{
-    // For measuring the length of a line based on a fixed number of characters
-    // and current font. 8 zeroes stand for binary maximum per line
-    QString sampleString;
-    for (std::size_t i = 0; i < MultilineNumberEdit::kBinaryPerRowMaximum; ++i)
-    {
-        sampleString += '0';
-    }
-    m_calculatedWidth = m_fontMetrics.horizontalAdvance(sampleString);
-}
-
-QRectF MultilineNumberTextDocumentLayout::blockBoundingRect(const QTextBlock &block) const
-{
-    QTextLayout* layout = block.layout();
-    layout->clearLayout();
-
-    qreal height = 0;
-
-    layout->beginLayout();
-    while (true)
-    {
-        QTextLine line = layout->createLine();
-        if (!line.isValid())
-        {
-            break;
-        }
-
-        line.setLineWidth(m_calculatedWidth);
-        line.setPosition(QPointF(0, height));
-        height += line.height();
-    }
-    layout->endLayout();
-
-    return QPlainTextDocumentLayout::blockBoundingRect(block);
+    m_vScroll = new QScrollBar(this);
+    setVerticalScrollBar(m_vScroll);
 }

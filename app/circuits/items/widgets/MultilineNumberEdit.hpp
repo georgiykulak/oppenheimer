@@ -3,7 +3,7 @@
 
 #include <QPlainTextEdit>
 
-class QTextDocument;
+class QScrollBar;
 
 class MultilineNumberEdit : public QPlainTextEdit
 {
@@ -14,21 +14,7 @@ public:
     static constexpr std::size_t kBinaryPerRowMaximum = 8;
 
 private:
-    QTextDocument* m_textDocument;
-};
-
-class MultilineNumberTextDocumentLayout : public QPlainTextDocumentLayout
-{
-    Q_OBJECT
-public:
-    explicit MultilineNumberTextDocumentLayout(QTextDocument* textDocument,
-                                               QFont font);
-
-    QRectF blockBoundingRect(const QTextBlock &block) const override;
-
-private:
-    QFontMetrics m_fontMetrics;
-    int m_calculatedWidth;
+    QScrollBar* m_vScroll;
 };
 
 #endif // MULTILINENUMBEREDIT_H

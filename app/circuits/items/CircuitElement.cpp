@@ -264,16 +264,10 @@ void CircuitElement::SetInputsNumber(int size)
     const auto vectorSize = 1 << number; // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setNumber(m_numberParam);
-    const auto calculatedHeight =
-        25 + m_textField->height() + m_notationSwitchButton->height() + 25;
 
     if (number > m_endingConnectors.size())
     {
         int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
-        if (calculatedHeight > newHeight)
-        {
-            newHeight = calculatedHeight;
-        }
 
         if (newHeight > height())
         {
@@ -317,10 +311,6 @@ void CircuitElement::SetInputsNumber(int size)
         m_endingConnectors.resize(number);
 
         int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
-        if (calculatedHeight > newHeight)
-        {
-            newHeight = calculatedHeight;
-        }
 
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
