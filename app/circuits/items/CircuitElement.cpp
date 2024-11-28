@@ -36,39 +36,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     pixmap.fill(QColor(Qt::transparent));
     QPainter painter(&pixmap);
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    int i = 0;
-    for (const auto& endPoint : mimeData.endingPoints)
-    {
-        const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
-        QPoint positionOffset(3, yShift - 4);
-        EndingConnector* endingConnector =
-            new EndingConnector(endPoint, positionOffset, this);
-
-        endingConnector->move(positionOffset);
-        endingConnector->update();
-        endingConnector->show();
-        endingConnector->setAttribute(Qt::WA_DeleteOnClose);
-
-        m_endingConnectors.push_back(endingConnector);
-    }
-
-    i = 0;
-    for (const auto& startPoint : mimeData.startingPoints)
-    {
-        const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
-        QPoint positionOffset(width() - 15, yShift - 4);
-        StartingConnector* startingConnector =
-            new StartingConnector(startPoint, positionOffset, this);
-
-        startingConnector->move(positionOffset);
-        startingConnector->update();
-        startingConnector->show();
-        startingConnector->setAttribute(Qt::WA_DeleteOnClose);
-
-        m_startingConnectors.push_back(startingConnector);
-    }
+    InitConnectors(mimeData);
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -143,6 +111,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     m_textField->setNumber(m_numberParam);
     m_notationSwitchButton->setText(mimeData.isNotationBinary ? "bin" : "dec");
     m_textField->setNotation(mimeData.isNotationBinary);
+
+
 
     CircuitElement::DrawToPixmap();
     show();
@@ -531,4 +501,38 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
 bool CircuitElement::IsNumberParameterValid() const
 {
     return m_numberParameterIsValid;
+}
+
+template<class Connector, class Point>
+void InitConnectorsOnSide(CircuitElement* parent,
+                          std::vector<Connector*>& connectors,
+                          const std::vector<Point>& points,
+                          const int minimumYShift,
+                          const int connectorOffset,
+                          const int xOffset)
+{
+    int i = 0;
+    for (const auto& point : points)
+    {
+        const int yShift = minimumYShift + connectorOffset * i++;
+        QPoint positionOffset(xOffset, yShift - 4);
+        Connector* connector =
+            new Connector(point, positionOffset, parent);
+
+        connector->move(positionOffset);
+        connector->update();
+        connector->show();
+        connector->setAttribute(Qt::WA_DeleteOnClose);
+
+        connectors.push_back(connector);
+    }
+}
+
+void CircuitElement::InitConnectors(const CircuitElementMimeData& mimeData)
+{
+    InitConnectorsOnSide(this, m_endingConnectors, mimeData.endingPoints,
+                         m_minimumYShift, m_offsetBetweenConnection, 3);
+
+    InitConnectorsOnSide(this, m_startingConnectors, mimeData.startingPoints,
+                         m_minimumYShift, m_offsetBetweenConnection, width() - 15);
 }

@@ -63,6 +63,8 @@ private:
     int m_numberParam = 0;
     bool m_numberParameterIsValid = true;
     bool m_outputValue = 0;
+
+    void InitConnectors(const CircuitElementMimeData& mimeData);
 };
 
 #endif // CIRCUITELEMENT_HPP
