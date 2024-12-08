@@ -542,10 +542,10 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
 
     hButtonLayout->addWidget(m_notationSwitchButton);
     hButtonLayout->addItem(buttonHSpacer);
-    hButtonLayout->setSpacing(0);
 
     vTextEditLayout->addWidget(m_textField);
     vTextEditLayout->addItem(hButtonLayout);
+    vTextEditLayout->setSpacing(0);
 
     //scrollbar
 
