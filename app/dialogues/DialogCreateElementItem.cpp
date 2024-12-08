@@ -22,7 +22,7 @@ DialogCreateElementItem::DialogCreateElementItem(QPoint pos,
     setWindowTitle("New Element");
     setAcceptDrops(false);
     m_minimumHeight = 150;
-    setMinimumSize(290, m_minimumHeight);
+    setMinimumSize(330, m_minimumHeight);
     move(pos);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
@@ -165,7 +165,7 @@ void DialogCreateElementItem::InitLayout()
     m_outputsCount->setRange(1, 16);
     m_outputsCount->setAttribute(Qt::WA_DeleteOnClose);
 
-    QSpacerItem* spacer = new QSpacerItem(130, 90,
+    QSpacerItem* spacer = new QSpacerItem(150, 90,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
 
