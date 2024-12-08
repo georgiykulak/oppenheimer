@@ -65,6 +65,7 @@ private:
     bool m_outputValue = 0;
 
     void InitConnectors(const CircuitElementMimeData& mimeData);
+    void InitLayout(const CircuitElementMimeData& mimeData);
 };
 
 #endif // CIRCUITELEMENT_HPP

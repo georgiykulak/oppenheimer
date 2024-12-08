@@ -12,10 +12,13 @@ LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     m_textEdit = new MultilineNumberEdit(this);
     m_textEdit->move(2, 2);
 
-    setSizePolicy(m_textEdit->sizePolicy());
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     connect(m_textEdit, &QPlainTextEdit::textChanged,
             this, &LogicVectorEdit::onTextChanged);
+
+    setAttribute(Qt::WA_DeleteOnClose);
+    show();
 }
 
 QSize LogicVectorEdit::sizeHint() const
@@ -119,58 +122,6 @@ void LogicVectorEdit::onTextChanged()
         {
             m_textEdit->setPlainText(m_currentText);
             return;
-        }
-
-        // TODO: Resize text edit height there, if the input count >= 4 & <= 6
-        // THEN rewrite circuit element with layouts as in sample widget
-        // so text edit will be resized automatically when element resized
-
-        if (newText.size() >= (1 << 4)
-         && newText.size() < (1 << 6))
-        {
-            const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
-            // Rows with wrapped lines
-            const auto textSize = newText.size();
-            std::size_t rows = textSize / maxLength;
-            rows += (textSize % maxLength) ? 1 : 0;
-            if (!rows)
-            {
-                rows = 1;
-            }
-
-            QFontMetrics fontMetrics(m_textEdit->font());
-            const auto approximateHeightOffset = 12;
-            setFixedHeight(fontMetrics.height() * rows
-                           + approximateHeightOffset);
-
-            if (m_rows != rows)
-            {
-                emit textRowsCountChanged();
-                m_rows = rows;
-            }
-        }
-
-        if (newText.size() >= (1 << 6))
-        {
-            const auto& maxLength = MultilineNumberEdit::kBinaryPerRowMaximum;
-            const auto textSize = 1 << 6;
-            std::size_t rows = textSize / maxLength;
-            rows += (textSize % maxLength) ? 1 : 0;
-            if (!rows)
-            {
-                rows = 1;
-            }
-
-            QFontMetrics fontMetrics(m_textEdit->font());
-            const auto approximateHeightOffset = 12;
-            setFixedHeight(fontMetrics.height() * rows
-                           + approximateHeightOffset);
-
-            if (m_rows != rows)
-            {
-                emit textRowsCountChanged();
-                m_rows = rows;
-            }
         }
 
         number = newText.toInt(&ok, 2);
