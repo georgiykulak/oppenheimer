@@ -56,6 +56,7 @@ public:
     virtual json GetJsonMeta() const;
 
     BaseCircuitItemMimeData GetBaseCircuitMimeData(QPoint eventPos = {}) const;
+    virtual QByteArray WriteToByteArray(QPoint eventPos) const;
 
 signals:
     bool closeDialogs();

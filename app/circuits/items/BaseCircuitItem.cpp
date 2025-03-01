@@ -181,6 +181,11 @@ BaseCircuitItemMimeData BaseCircuitItem::GetBaseCircuitMimeData(QPoint eventPos)
     return mimeData;
 }
 
+QByteArray BaseCircuitItem::WriteToByteArray(QPoint /* eventPos */) const
+{
+    return {};
+}
+
 void BaseCircuitItem::SetOrderId(int orderId)
 {
     m_orderId = orderId;

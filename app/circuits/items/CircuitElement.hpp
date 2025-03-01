@@ -48,6 +48,7 @@ public:
     bool IsNumberParameterValid() const;
 
     virtual void AddActionsToMenu(QMenu* menu) override;
+    QByteArray WriteToByteArray(QPoint eventPos) const override;
 
 signals:
     void setNumberParameterToElementItem(quint64 id, int numParam);

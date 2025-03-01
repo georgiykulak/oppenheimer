@@ -11,6 +11,7 @@
 #include <QPushButton>
 #include <QMenu>
 #include <QMessageBox>
+#include <QIODevice>
 
 CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
@@ -193,7 +194,7 @@ void CircuitElement::ConstructCircuitElementFromStream(const BaseCircuitItemMime
     mimeData.itemPosition = baseMimeData.itemPosition;
     mimeData.id = baseMimeData.id;
     mimeData.orderId = baseMimeData.orderId;
-    //mimeData.readMimeData(additionalData);
+    mimeData.readMimeData(additionalData);
 
     auto* item = new CircuitElement(mimeData, parentWidget);
     item->move(mimeData.itemPosition);
@@ -551,6 +552,8 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     mimeData.itemPosition = pos();
     mimeData.area = QRect(mimeData.itemPosition, mimeData.itemSize);
     mimeData.color = m_color;
+    mimeData.numberParam = m_numberParam;
+    mimeData.isNotationBinary = m_textField->IsNotationBinary();
 
     EndingPointVector oldEndingPointVector;
     StartingPointVector oldStartingPointVector;
@@ -597,6 +600,16 @@ void CircuitElement::AddActionsToMenu(QMenu* menu)
     AddActionChangeSizeToMenu(menu);
     AddActionDuplicateToMenu(menu);
     BaseCircuitItem::AddActionsToMenu(menu);
+}
+
+QByteArray CircuitElement::WriteToByteArray(QPoint eventPos) const
+{
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    const auto mimeData = GetMimeData(eventPos);
+    dataStream << mimeData;
+
+    return itemData;
 }
 
 void CircuitElement::AddActionSimulateToMenu(QMenu* menu)

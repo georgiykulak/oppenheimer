@@ -5,6 +5,7 @@
 #include "Config.hpp"
 
 #include <QPainter>
+#include <QIODevice>
 
 CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
                            QWidget* parent)
@@ -176,4 +177,14 @@ void CircuitInput::AddActionsToMenu(QMenu* menu)
 {
     AddActionChangeColorToMenu(menu);
     BaseCircuitItem::AddActionsToMenu(menu);
+}
+
+QByteArray CircuitInput::WriteToByteArray(QPoint eventPos) const
+{
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    const auto mimeData = GetMimeData(eventPos);
+    dataStream << mimeData;
+
+    return itemData;
 }

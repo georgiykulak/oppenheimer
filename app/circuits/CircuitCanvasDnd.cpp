@@ -289,13 +289,8 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
     {
         if (event->button() == Qt::LeftButton)
         {
-            //const auto itemData item->WriteToByteArray(event->pos());
-            //*/
+            const auto itemData = item->WriteToByteArray(event->pos());
             const auto mimeData = item->GetBaseCircuitMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            mimeData.writeBasicMimeData(dataStream);
-            //*/
 
             QMimeData* mime = new QMimeData;
             mime->setData(item->GetMimeType(), itemData);

@@ -33,6 +33,7 @@ public:
     CircuitOutputMimeData GetMimeData(QPoint eventPos = {}) const;
 
     virtual void AddActionsToMenu(QMenu* menu) override;
+    QByteArray WriteToByteArray(QPoint eventPos) const override;
 
 private:
     bool m_outputValue = 0;
