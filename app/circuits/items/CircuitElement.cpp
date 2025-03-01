@@ -6,6 +6,7 @@
 
 #include <QPainter>
 #include <QLabel>
+#include <QScrollBar>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -30,7 +31,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
                            (std::max(mimeData.endingPoints.size(),
                                      mimeData.startingPoints.size()) - 1);
-        size = QSize(130, realHeight);
+        size = QSize(120, realHeight);
     }
     setFixedSize(size);
     m_pixmap = QPixmap(this->size());
@@ -91,13 +92,13 @@ void CircuitElement::DrawToPixmap()
     QPainter painter(&m_pixmap);
 
     QPen mPen;
+    const int borderWidth = 2;
+    int wBig = width() - 12;
+    int hBig = height() - borderWidth;
     mPen.setColor(m_color);
     painter.setPen(mPen);
     painter.setBrush(m_color);
-    int wBig = width() - 20;
-    int hBig = height();
-    const int borderWidth = 2;
-    painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
+    painter.drawRoundedRect(6, borderWidth - 1, wBig, hBig, 10, 10, Qt::AbsoluteSize);
 
 #ifdef DRAW_ELEMENT_ITEM_BORDERS
     mPen.setWidth(borderWidth);
@@ -205,7 +206,7 @@ void CircuitElement::SetInputsNumber(int size)
             EndingPoint endPoint = {shift, 0};
 
             const int yShift = m_minimumYShift + m_offsetBetweenConnection * i;
-            QPoint positionOffset(3, yShift - 4);
+            QPoint positionOffset(0, yShift - 4);
             EndingConnector* endingConnector =
                 new EndingConnector(endPoint, positionOffset, this);
 
@@ -305,7 +306,7 @@ void CircuitElement::SetOutputsNumber(int size)
             StartingPoint startPoint = {shift, StartingPoint::IdsSet()};
 
             const int yShift = m_minimumYShift + m_offsetBetweenConnection * i;
-            QPoint positionOffset(95, yShift - 4);
+            QPoint positionOffset(width() - 12, yShift - 4);
             StartingConnector* startingConnector =
                 new StartingConnector(startPoint, positionOffset, this);
 
@@ -477,10 +478,10 @@ void InitConnectorsOnSide(CircuitElement* parent,
 void CircuitElement::InitConnectors(const CircuitElementMimeData& mimeData)
 {
     InitConnectorsOnSide(this, m_endingConnectors, mimeData.endingPoints,
-                         m_minimumYShift, m_offsetBetweenConnection, 3);
+                         m_minimumYShift, m_offsetBetweenConnection, 0);
 
     InitConnectorsOnSide(this, m_startingConnectors, mimeData.startingPoints,
-                         m_minimumYShift, m_offsetBetweenConnection, width() - 15);
+                         m_minimumYShift, m_offsetBetweenConnection, width() - 12);
 }
 
 void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
@@ -547,40 +548,59 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
     vTextEditLayout->addItem(hButtonLayout);
     vTextEditLayout->setSpacing(0);
 
-    //scrollbar
+    auto* scrollbar = new QScrollBar(this);
+    QString sbStyleSheet =
+        "QScrollBar:vertical {"
+            "width: 10px;}"
+        "QScrollBar::handle:vertical {"
+            "min-height: 20px;}";
+
+    scrollbar->setStyleSheet(sbStyleSheet);
+
+    m_textField->set_sb(scrollbar);
 
     auto* gridVSpacer
-        = new QSpacerItem(15, 0,
-                QSizePolicy::Minimum, QSizePolicy::Expanding);
-    auto* gridHSpacer = new QSpacerItem(0, 5,
+        = new QSpacerItem(10, 0,
+                QSizePolicy::Fixed, QSizePolicy::Expanding);
+    auto* gridHSpacer = new QSpacerItem(0, 15,
                                         QSizePolicy::Expanding,
                                         QSizePolicy::Minimum);
+    auto* connectorLeftSpacer = new QSpacerItem(12, 15,
+                QSizePolicy::Fixed, QSizePolicy::Minimum);
+    auto* connectorRightSpacer = new QSpacerItem(12, 15,
+                QSizePolicy::Fixed, QSizePolicy::Minimum);
 
+    // width 130
+    //  <12><10><><10><12>
     // (4 rows x 3 columns)
-    /*    0      1     2
-        +----------------+
-      0 |   |        | x |
-        +----------------+
-      1 |   |  yyyy  |   |
-        +----------------+
-      2 | # |........| ^ |
-        | # |........| | |
-        | # |........| | |
-        | # |..      |[=]|
-        | # |[bin]###| v |
-        +----------------+
-      3 |   |########|   |
-        +----------------+
+    /*    0   1     2      3   4
+        +---+---+--------+---+---+
+      0 |   |   |        | x |   |
+        +---+---+--------+---+---+
+      1 |   |   |  yyyy  |   |   |
+        +---+---+--------+---+---+
+      2 |   | # |........| ^ |   |
+        | * | # |........| | | * |
+        |   | # |........| | |   |
+        | * | # |..      |[=]|   |
+        |   | # |[bin]###| v |   |
+        +---+---+--------+---+---+
+      3 | # |   |########|   | # |
+        +---+---+--------+---+---+
     */
     auto* gridLayout = new QGridLayout;
 
-    gridLayout->addWidget(outputValueLabel, 0, 2,
+    gridLayout->addWidget(outputValueLabel, 0, 3,
                           Qt::AlignLeft | Qt::AlignBottom);
-    gridLayout->addWidget(orderIdLabel, 0, 1, Qt::AlignCenter);
-    gridLayout->addItem(gridVSpacer, 2, 0);
-    gridLayout->addLayout(vTextEditLayout, 2, 1);
-    //gridLayout->addWidget(scrollbar, 2, 2, Qt::AlignLeft);
-    gridLayout->addItem(gridHSpacer, 3, 1);
+    gridLayout->addWidget(orderIdLabel, 1, 2, Qt::AlignCenter);
+    gridLayout->addItem(gridVSpacer, 2, 1);
+    gridLayout->addLayout(vTextEditLayout, 2, 2);
+    gridLayout->addWidget(scrollbar, 2, 3, Qt::AlignLeft);
+    gridLayout->addItem(gridHSpacer, 3, 2);
+    gridLayout->addItem(connectorLeftSpacer, 3, 0);
+    gridLayout->addItem(connectorRightSpacer, 3, 4);
+    gridLayout->setSpacing(0);
+    gridLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(gridLayout);
 }

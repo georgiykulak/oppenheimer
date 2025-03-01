@@ -195,11 +195,11 @@ void DialogCreateElementItem::InitLayout()
 
 void DialogCreateElementItem::InitElementItem(int orderId)
 {
-    QPoint offset(20, 20);
+    QPoint offset(15, 15);
     CircuitElementMimeData mimeData;
     mimeData.orderId = orderId;
-    mimeData.endingPoints.push_back({QPoint(5, 55) + offset, 0});
-    mimeData.startingPoints.push_back({QPoint(125, 55) + offset,
+    mimeData.endingPoints.push_back({QPoint(0, 55) + offset, 0});
+    mimeData.startingPoints.push_back({QPoint(115, 55) + offset,
                                             StartingPoint::IdsSet()});
 
     m_newElement = new CircuitElement(mimeData, this, false);

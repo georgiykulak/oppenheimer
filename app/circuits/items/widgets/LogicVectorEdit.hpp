@@ -4,12 +4,15 @@
 #include <QWidget>
 
 class MultilineNumberEdit;
+class QScrollBar;
 
 class LogicVectorEdit : public QWidget
 {
     Q_OBJECT
 public:
     explicit LogicVectorEdit(QWidget *parent = nullptr);
+
+    void set_sb(QScrollBar* sb);
 
     QSize sizeHint() const override;
     void setEnabled(bool enable);

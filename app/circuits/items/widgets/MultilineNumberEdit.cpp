@@ -15,7 +15,4 @@ MultilineNumberEdit::MultilineNumberEdit(QWidget *parent)
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    m_vScroll = new QScrollBar(this);
-    setVerticalScrollBar(m_vScroll);
 }

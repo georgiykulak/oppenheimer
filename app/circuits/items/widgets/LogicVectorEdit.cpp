@@ -13,12 +13,18 @@ LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     m_textEdit->move(2, 2);
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_textEdit->document()->setDocumentMargin(1);
 
     connect(m_textEdit, &QPlainTextEdit::textChanged,
             this, &LogicVectorEdit::onTextChanged);
 
     setAttribute(Qt::WA_DeleteOnClose);
     show();
+}
+
+void LogicVectorEdit::set_sb(QScrollBar *sb)
+{
+    m_textEdit->setVerticalScrollBar(sb);
 }
 
 QSize LogicVectorEdit::sizeHint() const
