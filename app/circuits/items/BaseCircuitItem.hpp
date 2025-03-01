@@ -61,6 +61,7 @@ public:
 signals:
     bool closeDialogs();
     void removeCircuitItem(BaseCircuitItem* item);
+    void removeConnectionById(quint64 connId);
 
 public slots:
     void SetOrderId(int orderId);

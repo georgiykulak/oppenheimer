@@ -26,6 +26,9 @@ CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
     endingConnector->move(positionOffset);
     m_endingConnectors.at(0) = endingConnector;
 
+    connect(endingConnector, &BaseConnector::removeConnectionById,
+            this, &BaseCircuitItem::removeConnectionById);
+
     m_id = mimeData.id;
     m_orderId = mimeData.orderId;
     m_outputValue = mimeData.value;
@@ -80,6 +83,9 @@ void CircuitOutput::ConstructCircuitOutputFromStream(const BaseCircuitItemMimeDa
 
     connect(item, &BaseCircuitItem::removeCircuitItem,
             itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &BaseCircuitItem::removeConnectionById,
+            itemRegistry, &ItemRegistry::removeConnectionById);
 }
 
 void CircuitOutput::DrawToPixmap()

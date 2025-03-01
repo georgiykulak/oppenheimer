@@ -31,6 +31,7 @@ public:
 
 signals:
     void removeCircuitItem(BaseCircuitItem* item);
+    void removeConnectionById(quint64 connId);
     void setNumberParameterToElementItem(quint64 id, int numParam);
     void startFunctionalFaultSimulation(quint64 elementId);
     void askOrderIdHint();

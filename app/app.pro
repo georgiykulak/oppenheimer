@@ -21,6 +21,7 @@ SOURCES += \
     circuits/items/CircuitElement.cpp \
     circuits/items/CircuitInput.cpp \
     circuits/items/CircuitOutput.cpp \
+    circuits/items/connectors/BaseConnector.cpp \
     circuits/items/widgets/LogicVectorEdit.cpp \
     circuits/items/connectors/EndingConnector.cpp \
     circuits/items/connectors/StartingConnector.cpp \
@@ -62,6 +63,7 @@ HEADERS += \
     circuits/items/CircuitElement.hpp \
     circuits/items/CircuitInput.hpp \
     circuits/items/CircuitOutput.hpp \
+    circuits/items/connectors/BaseConnector.hpp \
     circuits/items/widgets/LogicVectorEdit.hpp \
     circuits/items/connectors/EndingConnector.hpp \
     circuits/items/connectors/StartingConnector.hpp \

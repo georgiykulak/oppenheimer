@@ -52,6 +52,9 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         EndingConnector* endingConnector =
             new EndingConnector(endPoint, positionOffset, this);
 
+        connect(endingConnector, &BaseConnector::removeConnectionById,
+                this, &BaseCircuitItem::removeConnectionById);
+
         endingConnector->move(positionOffset);
         endingConnector->update();
         endingConnector->show();
@@ -67,6 +70,9 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         QPoint positionOffset(95, yShift - 4);
         StartingConnector* startingConnector =
             new StartingConnector(startPoint, positionOffset, this);
+
+        connect(startingConnector, &BaseConnector::removeConnectionById,
+                this, &BaseCircuitItem::removeConnectionById);
 
         startingConnector->move(positionOffset);
         startingConnector->update();
@@ -201,6 +207,9 @@ void CircuitElement::ConstructCircuitElementFromStream(const BaseCircuitItemMime
 
     connect(item, &BaseCircuitItem::removeCircuitItem,
             itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &BaseCircuitItem::removeConnectionById,
+            itemRegistry, &ItemRegistry::removeConnectionById);
 
     connect(item, &CircuitElement::setNumberParameterToElementItem,
             itemRegistry, &ItemRegistry::setNumberParameterToElementItem);
@@ -347,6 +356,9 @@ void CircuitElement::SetInputsNumber(int size)
             EndingConnector* endingConnector =
                 new EndingConnector(endPoint, positionOffset, this);
 
+            connect(endingConnector, &BaseConnector::removeConnectionById,
+                    this, &BaseCircuitItem::removeConnectionById);
+
             endingConnector->move(positionOffset);
             endingConnector->update();
             endingConnector->show();
@@ -450,6 +462,9 @@ void CircuitElement::SetOutputsNumber(int size)
             QPoint positionOffset(95, yShift - 4);
             StartingConnector* startingConnector =
                 new StartingConnector(startPoint, positionOffset, this);
+
+            connect(startingConnector, &BaseConnector::removeConnectionById,
+                    this, &BaseCircuitItem::removeConnectionById);
 
             startingConnector->move(positionOffset);
             startingConnector->update();

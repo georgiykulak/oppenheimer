@@ -26,6 +26,9 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
     startingConnector->move(positionOffset);
     m_startingConnectors.at(0) = startingConnector;
 
+    connect(startingConnector, &BaseConnector::removeConnectionById,
+            this, &BaseCircuitItem::removeConnectionById);
+
     m_id = mimeData.id;
     m_orderId = mimeData.orderId;
     m_inputValue = mimeData.value;
@@ -80,6 +83,9 @@ void CircuitInput::ConstructCircuitInputFromStream(const BaseCircuitItemMimeData
 
     connect(item, &BaseCircuitItem::removeCircuitItem,
             itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &BaseCircuitItem::removeConnectionById,
+            itemRegistry, &ItemRegistry::removeConnectionById);
 }
 
 void CircuitInput::DrawToPixmap()

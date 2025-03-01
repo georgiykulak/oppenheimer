@@ -18,6 +18,9 @@ CircuitCanvas::CircuitCanvas(QWidget *parent)
     connect(&m_itemRegistry, &ItemRegistry::removeCircuitItem,
             this, &CircuitCanvas::RemoveCircuitItem);
 
+    connect(&m_itemRegistry, &ItemRegistry::removeConnectionById,
+            this, &CircuitCanvas::RemoveConnectionById);
+
     connect(&m_itemRegistry, &ItemRegistry::setNumberParameterToElementItem,
             this, &CircuitCanvas::setNumberParameterToElementItem);
 

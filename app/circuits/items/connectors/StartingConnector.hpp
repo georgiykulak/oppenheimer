@@ -1,13 +1,9 @@
 #ifndef STARTINGCONNECTOR_HPP
 #define STARTINGCONNECTOR_HPP
 
-#include "ItemUtils.hpp"
+#include "BaseConnector.hpp"
 
-#include <QWidget>
-
-class BaseCircuitItem;
-
-class StartingConnector : public QWidget
+class StartingConnector : public BaseConnector
 {
     Q_OBJECT
 public:
@@ -15,28 +11,17 @@ public:
                                QPoint positionOffset = QPoint(0, 0),
                                QWidget* parent = nullptr);
 
-    quint64 GetItemId() const;
-    QPoint GetConnectorSize() { return QPoint(10, 10); }
+    QString GetMimeType() const override;
+    QPoint GetConnectionPoint() const override;
     const StartingPoint& GetStartPoint() const;
-    QPoint GetPositionOffset() const;
-    void SetPixmap(const QPixmap& pixmap);
-    QPixmap GetPixmap() const;
-    void DrawToPixmap();
-
-    static void DrawConnectorToPixmap(QPainter& painter, QPoint position_offset);
+    void AddActionsToMenu(QMenu* menu) override;
 
 public slots:
-    void SetConnectionId(quint64 connId);
-    void RemoveConnectionId(quint64 connId);
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
+    void SetConnectionId(quint64 connId) override;
+    void RemoveConnectionId(quint64 connId) override;
 
 private:
-    BaseCircuitItem* m_sourceItem;
-    QPixmap m_pixmap;
     StartingPoint m_startPoint;
-    QPoint m_positionOffset;
 };
 
 #endif // STARTINGCONNECTOR_HPP

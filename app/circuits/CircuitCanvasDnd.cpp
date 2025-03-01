@@ -187,6 +187,46 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
         }
     }
 
+    /*
+    if (event->source() == this &&
+          (event->mimeData()->hasFormat(endingConnectorMime)
+        || event->mimeData()->hasFormat(startingConnectorMime)))
+    {
+        QByteArray itemData = event->mimeData()->data(connectorMime);
+        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+
+        QPixmap pixmap;
+        QPoint sourceItemPosition;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
+
+        m_currentConnectingLine = {};
+        QWidget* child = childAt(event->pos());
+        BaseConnector* connector = qobject_cast<BaseConnector*>(child);
+        if (!child || !connector)
+        {
+            update();
+            event->ignore();
+            return;
+        }
+
+        const auto connectorId = connector->GetItemId();
+        const auto connectorPos = connector->GetConnectionPoint();
+
+        connector->ConnectPoints(connectorId, connectorPos,
+                                 sourceItemId, sourceItemPosition);
+
+        update();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
+    }
+    else
+    {
+        m_currentConnectingLine = {};
+        event->ignore();
+    }
+    */
+
     if (event->mimeData()->hasFormat(endingConnectorMime)
              && event->source() == this)
     {
@@ -195,9 +235,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 
         QPixmap pixmap;
         QPoint sourceItemPosition;
-        QPoint offset;
         quint64 sourceItemId;
-        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -214,8 +253,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 
         const auto startId = startingConnector->GetItemId();
         const auto startPos = startingConnector->GetStartPoint().connPos;
-        const auto endPos = sourceItemPosition + offset;
-        const auto positions = QLine(startPos, endPos);
+        const auto positions = QLine(startPos, sourceItemPosition);
 
         InsertConnection(startId, sourceItemId, positions);
 
@@ -231,9 +269,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 
         QPixmap pixmap;
         QPoint sourceItemPosition;
-        QPoint offset;
         quint64 sourceItemId;
-        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -260,8 +297,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 
         const auto endId = endingConnector->GetItemId();
         const auto endPos = endingConnector->GetEndPoint().connPos;
-        const auto startPos = sourceItemPosition + offset;
-        const auto positions = QLine(startPos, endPos);
+        const auto positions = QLine(sourceItemPosition, endPos);
 
         InsertConnection(sourceItemId, endId, positions);
 
@@ -329,131 +365,50 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         return;
     }
 
-    EndingConnector* endingConnector = qobject_cast<EndingConnector*>(child);
-    if (endingConnector)
-    {
-        if (event->button() == Qt::LeftButton && !endingConnector->IsConnected())
-        {
-            QPixmap pixmap = endingConnector->GetPixmap();
-            QPoint endingPosition = endingConnector->GetEndPoint().connPos;
-            quint64 itemId = endingConnector->GetItemId();
-            QPoint offset = {};
-
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << endingPosition << offset
-                       << itemId;
-
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData("application/x-oph-endingconnector", itemData);
-
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
-            drag->setHotSpot(offset + endingConnector->GetConnectorSize());
-
-            //! TODO: improve design for dragging element
-            QPixmap tempPixmap = pixmap;
-            QPainter painter;
-            painter.begin(&tempPixmap);
-            painter.fillRect(pixmap.rect(), QColor(127, 127, 127, 50));
-            painter.end();
-            //!
-
-            endingConnector->SetPixmap(tempPixmap);
-
-            if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-            {
-                endingConnector->show();
-                endingConnector->SetPixmap(pixmap);
-            }
-
-            return;
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-            QAction* actionDisconnect = new QAction("Disconnect", this);
-            connect(actionDisconnect, &QAction::triggered,
-                    this, [this, endingConnector] (bool) {
-                        const auto connId = endingConnector->GetConnectionId();
-
-                        RemoveConnectionById(connId);
-
-                        update();
-                    });
-
-            menu->addAction(actionDisconnect);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
-    }
-
-    StartingConnector* startingConnector = qobject_cast<StartingConnector*>(child);
-    if (startingConnector)
+    auto* connector = qobject_cast<BaseConnector*>(child);
+    if (connector)
     {
         if (event->button() == Qt::LeftButton)
         {
-            QPixmap pixmap = startingConnector->GetPixmap();
-            QPoint startingPosition = startingConnector->GetStartPoint().connPos;
-            quint64 itemId = startingConnector->GetItemId();
-            QPoint offset = {};
+            auto* endingConnector = qobject_cast<EndingConnector*>(connector);
+            if (endingConnector && endingConnector->IsConnected())
+            {
+                return;
+            }
+
+            QPixmap pixmap = connector->GetPixmap();
+            QPoint connectionPoint = connector->GetConnectionPoint();
+            quint64 itemId = connector->GetItemId();
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << startingPosition << offset
-                       << itemId;
+            dataStream << pixmap << connectionPoint << itemId;
 
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData("application/x-oph-startingconnector", itemData);
+            QMimeData* mimeData = new QMimeData;
+            mimeData->setData(connector->GetMimeType(), itemData);
 
             QDrag *drag = new QDrag(this);
             drag->setMimeData(mimeData);
             drag->setPixmap(pixmap);
-            drag->setHotSpot(offset + startingConnector->GetConnectorSize());
-
-            //! TODO: improve design for dragging element
-            QPixmap tempPixmap = pixmap;
-            QPainter painter;
-            painter.begin(&tempPixmap);
-            painter.fillRect(pixmap.rect(), QColor(127, 127, 127, 50));
-            painter.end();
-            //!
-
-            startingConnector->SetPixmap(tempPixmap);
+            drag->setHotSpot(endingConnector->GetConnectorSize());
 
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
-                startingConnector->show();
-                startingConnector->SetPixmap(pixmap);
+                connector->show();
             }
-
-            return;
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            const auto connIdsSize = startingConnector->GetStartPoint().connIds.size();
-            QAction* actionDisconnect = new QAction(connIdsSize > 1 ? "Disconnect All" : "Disconnect", this);
-            connect(actionDisconnect, &QAction::triggered,
-                    this, [this, startingConnector] (bool) {
-                        const auto connIdSet = startingConnector->GetStartPoint().connIds;
-                        for (const auto& connId : connIdSet)
-                        {
-                            RemoveConnectionById(connId);
-                        }
 
-                        update();
-                    });
-
-            menu->addAction(actionDisconnect);
+            connector->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
         }
+
+        return;
     }
 }
 
@@ -487,6 +442,8 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
             item->RemoveConnectionId(connId);
         }
     }
+
+    update();
 }
 
 void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
