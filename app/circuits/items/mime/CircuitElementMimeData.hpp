@@ -9,6 +9,8 @@ struct CircuitElementMimeData : public BaseCircuitItemMimeData
 
     int numberParam = 0;
     bool isNotationBinary = true;
+
+    QDataStream& readMimeData(QDataStream& iStream);
 };
 
 QDataStream& operator>>(QDataStream& iStream,

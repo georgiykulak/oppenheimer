@@ -7,8 +7,6 @@
 #include "items/mime/CircuitInputMimeData.hpp"
 #include "items/mime/CircuitOutputMimeData.hpp"
 #include "items/mime/CircuitElementMimeData.hpp"
-#include "dialogues/ElementSizeChanger.hpp"
-#include "dialogues/DialogDuplicateElementItem.hpp"
 
 #include <QDebug>
 #include <QMessageBox>
@@ -19,7 +17,6 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QMenu>
-#include <QColorDialog>
 
 void CircuitCanvas::ProcessDragEnterEvent(QDragEnterEvent *event)
 {
@@ -123,175 +120,114 @@ void CircuitCanvas::ProcessDragMoveEvent(QDragMoveEvent *event)
     }
 }
 
-void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
+void CircuitCanvas::ProcessDropEvent(QDropEvent* event)
 {
-    if (event->mimeData()->hasFormat(inputMime))
+    for (const auto& [mimeType, itemMimePair] : m_itemRegistry.GetMimeProcessors())
     {
-        QByteArray itemData = event->mimeData()->data(inputMime);
-        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitInputMimeData mimeData(event->pos());
-        dataStream >> mimeData;
-
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Input, mimeData.orderId))
+        if (event->mimeData()->hasFormat(mimeType))
         {
-            event->ignore();
+            const auto itemType = itemMimePair.first;
+            QByteArray itemData = event->mimeData()->data(mimeType);
+            QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+            BaseCircuitItemMimeData baseMimeData(event->pos());
+            baseMimeData.readBasicMimeData(dataStream);
 
-            QString text = "Input item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
+            if (event->source() != this
+                && m_idHandler.ContainsOrderId(itemType, baseMimeData.orderId))
+            {
+                event->ignore();
 
-            // TODO: apply backup
+                QString text = "Input item with such order id '"
+                               + QString::number(baseMimeData.orderId)
+                               + "' already exists";
+                QMessageBox::information(this, "Can't place item", text);
+
+                // TODO: apply backup
+
+                return;
+            }
+
+            if (m_areaManager.TryBookArea(baseMimeData.area,
+                                          baseMimeData.oldNewPoints))
+            {
+                if (event->source() != this)
+                {
+                    qDebug() << "Placing new input item";
+
+                    if (!m_idHandler.NewOrderId(itemType, baseMimeData.orderId))
+                    {
+                        event->ignore();
+                        // TODO: apply backup
+                        return;
+                    }
+
+                    baseMimeData.id = m_idHandler.NewUid();
+                    emit addNewItem(itemType, baseMimeData.id,
+                                    baseMimeData.endingPoints.size());
+
+                    emit setOrderIdHint(itemType,
+                                        m_idHandler.GetLastOrderId(itemType));
+                }
+
+                m_itemRegistry.ConstructItemFromStream(mimeType,
+                                                       baseMimeData,
+                                                       dataStream);
+
+                // To redraw connections
+                update();
+
+                AcceptDndEvent(event);
+            }
+            else
+            {
+                event->ignore();
+            }
 
             return;
         }
-
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new input item";
-
-                if (!m_idHandler.NewOrderId(ItemType::Input, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
-
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Input, mimeData.id, 0);
-
-                emit setOrderIdHint(ItemType::Input,
-                                    m_idHandler.GetLastOrderId(ItemType::Input));
-            }
-
-            auto circuitInput = new CircuitInput(mimeData, this);
-            circuitInput->move(mimeData.itemPosition);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
     }
-    else if (event->mimeData()->hasFormat(outputMime))
+
+    /*
+    if (event->source() == this &&
+          (event->mimeData()->hasFormat(endingConnectorMime)
+        || event->mimeData()->hasFormat(startingConnectorMime)))
     {
-        QByteArray itemData = event->mimeData()->data(outputMime);
+        QByteArray itemData = event->mimeData()->data(connectorMime);
         QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitOutputMimeData mimeData(event->pos());
-        dataStream >> mimeData;
 
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Output, mimeData.orderId))
+        QPixmap pixmap;
+        QPoint sourceItemPosition;
+        quint64 sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
+
+        m_currentConnectingLine = {};
+        QWidget* child = childAt(event->pos());
+        BaseConnector* connector = qobject_cast<BaseConnector*>(child);
+        if (!child || !connector)
         {
+            update();
             event->ignore();
-
-            QString text = "Output item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
-
-            // TODO: apply backup
-
             return;
         }
 
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new output item";
+        const auto connectorId = connector->GetItemId();
+        const auto connectorPos = connector->GetConnectionPoint();
 
-                if (!m_idHandler.NewOrderId(ItemType::Output, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
+        connector->ConnectPoints(connectorId, connectorPos,
+                                 sourceItemId, sourceItemPosition);
 
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Output, mimeData.id, 1);
-
-                emit setOrderIdHint(ItemType::Output,
-                                    m_idHandler.GetLastOrderId(ItemType::Output));
-            }
-
-            CircuitOutput *cOutput = new CircuitOutput(mimeData, this);
-            cOutput->move(mimeData.itemPosition);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
+        update();
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
     }
-    else if (event->mimeData()->hasFormat(elementMime))
+    else
     {
-        QByteArray itemData = event->mimeData()->data(elementMime);
-        QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-        CircuitElementMimeData mimeData(event->pos());
-        dataStream >> mimeData;
-
-        if (event->source() != this
-            && m_idHandler.ContainsOrderId(ItemType::Element, mimeData.orderId))
-        {
-            event->ignore();
-
-            QString text = "Element item with such order id '"
-                           + QString::number(mimeData.orderId) + "' already exists";
-            QMessageBox::information(this, "Can't place item", text);
-
-            // TODO: apply backup
-
-            return;
-        }
-
-        if (m_areaManager.TryBookArea(mimeData.area, mimeData.oldNewPoints))
-        {
-            if (event->source() != this)
-            {
-                qDebug() << "Placing new output item";
-
-                if (!m_idHandler.NewOrderId(ItemType::Element, mimeData.orderId))
-                {
-                    event->ignore();
-                    // TODO: apply backup
-                    return;
-                }
-
-                mimeData.id = m_idHandler.NewUid();
-                emit addNewItem(ItemType::Element, mimeData.id,
-                                mimeData.endingPoints.size());
-
-                emit setOrderIdHint(ItemType::Element,
-                                    m_idHandler.GetLastOrderId(ItemType::Element));
-            }
-
-            CircuitElement *cElement = new CircuitElement(mimeData, this);
-            cElement->move(mimeData.itemPosition);
-
-            connect(cElement, &CircuitElement::setNumberParameterToElementItem,
-                    this, &CircuitCanvas::setNumberParameterToElementItem);
-
-            // To redraw connections
-            update();
-
-            AcceptDndEvent(event);
-        }
-        else
-        {
-            event->ignore();
-        }
+        m_currentConnectingLine = {};
+        event->ignore();
     }
-    else if (event->mimeData()->hasFormat(endingConnectorMime)
+    */
+
+    if (event->mimeData()->hasFormat(endingConnectorMime)
              && event->source() == this)
     {
         QByteArray itemData = event->mimeData()->data(endingConnectorMime);
@@ -299,9 +235,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
         QPixmap pixmap;
         QPoint sourceItemPosition;
-        QPoint offset;
         quint64 sourceItemId;
-        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -318,8 +253,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
         const auto startId = startingConnector->GetItemId();
         const auto startPos = startingConnector->GetStartPoint().connPos;
-        const auto endPos = sourceItemPosition + offset;
-        const auto positions = QLine(startPos, endPos);
+        const auto positions = QLine(startPos, sourceItemPosition);
 
         InsertConnection(startId, sourceItemId, positions);
 
@@ -335,9 +269,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
         QPixmap pixmap;
         QPoint sourceItemPosition;
-        QPoint offset;
         quint64 sourceItemId;
-        dataStream >> pixmap >> sourceItemPosition >> offset >> sourceItemId;
+        dataStream >> pixmap >> sourceItemPosition >> sourceItemId;
 
         m_currentConnectingLine = {};
         QWidget* child = childAt(event->pos());
@@ -364,8 +297,7 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
 
         const auto endId = endingConnector->GetItemId();
         const auto endPos = endingConnector->GetEndPoint().connPos;
-        const auto startPos = sourceItemPosition + offset;
-        const auto positions = QLine(startPos, endPos);
+        const auto positions = QLine(sourceItemPosition, endPos);
 
         InsertConnection(sourceItemId, endId, positions);
 
@@ -388,497 +320,95 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
         return;
     }
 
-    CircuitInput* circuitInput = qobject_cast<CircuitInput*>(child);
-    if (circuitInput)
+    auto* item = qobject_cast<BaseCircuitItem*>(child);
+    if (item)
     {
         if (event->button() == Qt::LeftButton)
         {
-            const auto mimeData = circuitInput->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
+            const auto itemData = item->WriteToByteArray(event->pos());
+            const auto mimeData = item->GetBaseCircuitMimeData(event->pos());
 
             QMimeData* mime = new QMimeData;
-            mime->setData(inputMime, itemData);
+            mime->setData(item->GetMimeType(), itemData);
 
             QDrag* drag = new QDrag(this);
             drag->setMimeData(mime);
             drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitInput->pos());
+            drag->setHotSpot(event->pos() - item->pos());
 
             m_areaManager.ClearAndBackupArea(mimeData.area);
 
             if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
             {
-                circuitInput->close();
+                item->close();
             }
             else
             {
-                circuitInput->show();
+                item->show();
             }
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitInput] (bool) {
-                        emit circuitInput->closeDialogs();
 
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitInput, &CircuitInput::SetColor);
-                        connect(circuitInput, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitInput] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitInput->GetId();
-
-                        RemoveCircuitItem(circuitInput);
-                    });
-
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionDelete);
+            item->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
         }
+        else
+        {
+            //item->ProcessMousePressEvent(event);
+        }
 
         return;
     }
 
-    CircuitOutput* circuitOutput = qobject_cast<CircuitOutput*>(child);
-    if (circuitOutput)
+    auto* connector = qobject_cast<BaseConnector*>(child);
+    if (connector)
     {
         if (event->button() == Qt::LeftButton)
         {
-            const auto mimeData = circuitOutput->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
-
-            QMimeData* mime = new QMimeData;
-            mime->setData(outputMime, itemData);
-
-            QDrag* drag = new QDrag(this);
-            drag->setMimeData(mime);
-            drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitOutput->pos());
-
-            m_areaManager.ClearAndBackupArea(mimeData.area);
-
-            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
+            auto* endingConnector = qobject_cast<EndingConnector*>(connector);
+            if (endingConnector && endingConnector->IsConnected())
             {
-                circuitOutput->close();
+                return;
             }
-            else
-            {
-                circuitOutput->show();
-            }
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitOutput] (bool) {
-                        emit circuitOutput->closeDialogs();
 
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitOutput, &CircuitOutput::SetColor);
-                        connect(circuitOutput, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitOutput] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitOutput->GetId();
-
-                        RemoveCircuitItem(circuitOutput);
-                    });
-
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionDelete);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
-
-        return;
-    }
-
-    CircuitElement* circuitElement = qobject_cast<CircuitElement*>(child);
-    if (circuitElement)
-    {
-        if (event->button() == Qt::LeftButton)
-        {
-            emit circuitElement->closeDialogs();
-
-            const auto mimeData = circuitElement->GetMimeData(event->pos());
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << mimeData;
-
-            QMimeData* mime = new QMimeData;
-            mime->setData(elementMime, itemData);
-
-            QDrag* drag = new QDrag(this);
-            drag->setMimeData(mime);
-            drag->setPixmap(mimeData.pixmap);
-            drag->setHotSpot(event->pos() - circuitElement->pos());
-
-            m_areaManager.ClearAndBackupArea(mimeData.area);
-
-            if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction)
-            {
-                circuitElement->close();
-            }
-            else
-            {
-                circuitElement->show();
-            }
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-            auto eventPos = event->pos();
-
-            QAction* actionSimulate = new QAction("Simulate", this);
-            connect(actionSimulate, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        if (circuitElement->IsNumberParameterValid())
-                        {
-                            emit startFunctionalFaultSimulation(circuitElement->GetId());
-                        }
-                        else
-                        {
-                            QMessageBox::information(this,
-                                tr("Can't simulate on element #")
-                                    + QString::number(circuitElement->GetMimeData().orderId),
-                                tr("Element has empty or invalid number parameter.\n"
-                                   "Please use another one and try again."),
-                                QMessageBox::Ok
-                            );
-                        }
-                    });
-
-            QAction* actionChangeColor = new QAction("Change Color", this);
-            connect(actionChangeColor, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        emit circuitElement->closeDialogs();
-
-                        auto* colorDialog = new QColorDialog(this);
-                        colorDialog->setOptions(QColorDialog::DontUseNativeDialog);
-                        colorDialog->show();
-                        colorDialog->setAttribute(Qt::WA_DeleteOnClose);
-
-                        connect(colorDialog, &QColorDialog::colorSelected,
-                                circuitElement, &CircuitElement::SetColor);
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                colorDialog, &QColorDialog::close);
-                    });
-
-            QAction* actionChangeSize = new QAction("Change Size", this);
-            connect(actionChangeSize, &QAction::triggered,
-                    this, [this, circuitElement, eventPos] (bool) {
-                        emit circuitElement->closeDialogs();
-
-                        auto* elementSizeChanger = new ElementSizeChanger(circuitElement, this);
-                        elementSizeChanger->move(mapToGlobal(eventPos));
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                elementSizeChanger, &ElementSizeChanger::close);
-                        // Magic connect: elementSizeChanger passed as 3rd argument
-                        // to ensure signal tryToRebookArea will work only while
-                        // ElementSizeChanger dialog is opened (and not deleted)
-                        connect(circuitElement, &CircuitElement::tryToRebookArea,
-                                elementSizeChanger, [this, circuitElement](int previousInputsNumber,
-                                                             int previousOutputsNumber,
-                                                             EndingPointVector oldEndingPointVector,
-                                                             StartingPointVector oldStartingPointVector,
-                                                             QRect previousArea){
-                                    EndingPointVector endPoints = circuitElement->GetEndPoints();
-                                    StartingPointVector startPoints = circuitElement->GetStartPoints();
-                                    std::vector<std::pair<QPoint, QPoint>> oldNewPoints;
-                                    quint64 connId = 0;
-                                    StartingPoint::IdsSet connIdSet;
-
-                                    // Ending point incrementing case
-                                    if (endPoints.size() > oldEndingPointVector.size())
-                                    {
-                                        for (std::size_t i = 0; i < oldEndingPointVector.size(); ++i)
-                                        {
-                                            auto oldEndingPoint = oldEndingPointVector[i];
-                                            auto endPoint = endPoints[i];
-                                            oldNewPoints.push_back({oldEndingPoint.connPos,
-                                                                    endPoint.connPos});
-                                        }
-                                        oldNewPoints.push_back({QPoint(),
-                                                                endPoints.back().connPos});
-                                    }
-                                    else
-                                    {
-                                        // Ending point decrementing case
-                                        if (endPoints.size() < oldEndingPointVector.size())
-                                        {
-                                            connId = oldEndingPointVector.back().connId;
-                                        }
-
-                                        for (std::size_t i = 0; i < endPoints.size(); ++i)
-                                        {
-                                            oldNewPoints.push_back({oldEndingPointVector[i].connPos,
-                                                                    endPoints[i].connPos});
-                                        }
-                                    }
-
-                                    // Starting point incrementing case
-                                    if (startPoints.size() > oldStartingPointVector.size())
-                                    {
-                                        for (std::size_t i = 0; i < oldStartingPointVector.size(); ++i)
-                                        {
-                                            auto oldStartingPoint = oldStartingPointVector[i];
-                                            auto startPoint = startPoints[i];
-                                            oldNewPoints.push_back({oldStartingPoint.connPos,
-                                                                    startPoint.connPos});
-                                        }
-                                        oldNewPoints.push_back({QPoint(),
-                                                                startPoints.back().connPos});
-                                    }
-                                    else
-                                    {
-                                        // Starting point decrementing case
-                                        if (startPoints.size() < oldStartingPointVector.size())
-                                        {
-                                            connIdSet = oldStartingPointVector.back().connIds;
-                                        }
-
-                                        for (std::size_t i = 0; i < startPoints.size(); ++i)
-                                        {
-                                            oldNewPoints.push_back({oldStartingPointVector[i].connPos,
-                                                                    startPoints[i].connPos});
-                                        }
-                                    }
-
-                                    m_areaManager.ClearAndBackupArea(previousArea);
-
-                                    QRect area(circuitElement->pos(), circuitElement->size());
-                                    if (m_areaManager.TryBookArea(area, oldNewPoints))
-                                    {
-                                        // Successfully booked new area
-                                        // Decrementing case of inputs size
-                                        if (connId)
-                                        {
-                                            RemoveConnectionById(connId);
-                                        }
-
-                                        // Decrementing case of outputs size
-                                        if (!connIdSet.empty())
-                                        {
-                                            for (const auto& connId : connIdSet)
-                                            {
-                                                RemoveConnectionById(connId);
-                                            }
-                                        }
-
-                                        circuitElement->SetNumberParameter(0);
-                                        emit changeElementItemInputsSize(circuitElement->GetId(),
-                                                                         circuitElement->GetEndingConnectors().size());
-                                    }
-                                    else
-                                    {
-                                        // Can't book new area
-                                        circuitElement->SetInputsNumber(previousInputsNumber);
-                                        emit circuitElement->inputsNumber(previousInputsNumber);
-                                        circuitElement->SetOutputsNumber(previousOutputsNumber);
-                                        emit circuitElement->outputsNumber(previousOutputsNumber);
-                                    }
-
-                                    // To redraw connections
-                                    update();
-                                });
-                    });
-
-            QAction* actionDuplicate = new QAction("Duplicate", this);
-            connect(actionDuplicate, &QAction::triggered,
-                    this, [this, circuitElement, eventPos] (bool) {
-                        emit circuitElement->closeDialogs();
-
-                        const auto orderId = GetOrderIdHint(ItemType::Element);
-                        auto* dialogDuplicate = new DialogDuplicateElementItem(
-                                                circuitElement, orderId, this);
-                        dialogDuplicate->move(mapToGlobal(eventPos));
-
-                        connect(this, &CircuitCanvas::setOrderIdHint,
-                                dialogDuplicate, &DialogDuplicateElementItem::SetOrderIdHint);
-                        connect(circuitElement, &BaseCircuitItem::closeDialogs,
-                                dialogDuplicate, &DialogDuplicateElementItem::close);
-
-            });
-
-            QAction* actionDelete = new QAction("Delete", this);
-            connect(actionDelete, &QAction::triggered,
-                    this, [this, circuitElement] (bool) {
-                        qDebug() << "Action Delete for circuit input invoked, ID ="
-                                 << circuitElement->GetId();
-
-                        RemoveCircuitItem(circuitElement);
-            });
-
-            menu->addAction(actionSimulate);
-            menu->addAction(actionChangeColor);
-            menu->addAction(actionChangeSize);
-            menu->addAction(actionDuplicate);
-            menu->addAction(actionDelete);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
-
-        return;
-    }
-
-    EndingConnector* endingConnector = qobject_cast<EndingConnector*>(child);
-    if (endingConnector)
-    {
-        if (event->button() == Qt::LeftButton && !endingConnector->IsConnected())
-        {
-            QPixmap pixmap = endingConnector->GetPixmap();
-            QPoint endingPosition = endingConnector->GetEndPoint().connPos;
-            quint64 itemId = endingConnector->GetItemId();
-            QPoint offset = {};
+            QPixmap pixmap = connector->GetPixmap();
+            QPoint connectionPoint = connector->GetConnectionPoint();
+            quint64 itemId = connector->GetItemId();
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << endingPosition << offset
-                       << itemId;
+            dataStream << pixmap << connectionPoint << itemId;
 
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData("application/x-oph-endingconnector", itemData);
+            QMimeData* mimeData = new QMimeData;
+            mimeData->setData(connector->GetMimeType(), itemData);
 
             QDrag *drag = new QDrag(this);
             drag->setMimeData(mimeData);
             drag->setPixmap(pixmap);
-            drag->setHotSpot(offset + endingConnector->GetConnectorSize());
-
-            //! TODO: improve design for dragging element
-            QPixmap tempPixmap = pixmap;
-            QPainter painter;
-            painter.begin(&tempPixmap);
-            painter.fillRect(pixmap.rect(), QColor(127, 127, 127, 50));
-            painter.end();
-            //!
-
-            endingConnector->SetPixmap(tempPixmap);
+            drag->setHotSpot(endingConnector->GetConnectorSize());
 
             if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
             {
-                endingConnector->show();
-                endingConnector->SetPixmap(pixmap);
+                connector->show();
             }
-
-            return;
         }
         else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
         {
             QMenu* menu = new QMenu(this);
-            QAction* actionDisconnect = new QAction("Disconnect", this);
-            connect(actionDisconnect, &QAction::triggered,
-                    this, [this, endingConnector] (bool) {
-                        const auto connId = endingConnector->GetConnectionId();
 
-                        RemoveConnectionById(connId);
-
-                        update();
-                    });
-
-            menu->addAction(actionDisconnect);
+            connector->AddActionsToMenu(menu);
 
             menu->move(mapToGlobal(event->pos()));
             menu->show();
             menu->setAttribute(Qt::WA_DeleteOnClose);
         }
-    }
 
-    StartingConnector* startingConnector = qobject_cast<StartingConnector*>(child);
-    if (startingConnector)
-    {
-        if (event->button() == Qt::LeftButton)
-        {
-            QPixmap pixmap = startingConnector->GetPixmap();
-            QPoint startingPosition = startingConnector->GetStartPoint().connPos;
-            quint64 itemId = startingConnector->GetItemId();
-            QPoint offset = {};
-
-            QByteArray itemData;
-            QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << pixmap << startingPosition << offset
-                       << itemId;
-
-            QMimeData *mimeData = new QMimeData;
-            mimeData->setData("application/x-oph-startingconnector", itemData);
-
-            QDrag *drag = new QDrag(this);
-            drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
-            drag->setHotSpot(offset + startingConnector->GetConnectorSize());
-
-            //! TODO: improve design for dragging element
-            QPixmap tempPixmap = pixmap;
-            QPainter painter;
-            painter.begin(&tempPixmap);
-            painter.fillRect(pixmap.rect(), QColor(127, 127, 127, 50));
-            painter.end();
-            //!
-
-            startingConnector->SetPixmap(tempPixmap);
-
-            if (drag->exec(Qt::CopyAction) == Qt::CopyAction)
-            {
-                startingConnector->show();
-                startingConnector->SetPixmap(pixmap);
-            }
-
-            return;
-        }
-        else if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton)
-        {
-            QMenu* menu = new QMenu(this);
-            const auto connIdsSize = startingConnector->GetStartPoint().connIds.size();
-            QAction* actionDisconnect = new QAction(connIdsSize > 1 ? "Disconnect All" : "Disconnect", this);
-            connect(actionDisconnect, &QAction::triggered,
-                    this, [this, startingConnector] (bool) {
-                        const auto connIdSet = startingConnector->GetStartPoint().connIds;
-                        for (const auto& connId : connIdSet)
-                        {
-                            RemoveConnectionById(connId);
-                        }
-
-                        update();
-                    });
-
-            menu->addAction(actionDisconnect);
-
-            menu->move(mapToGlobal(event->pos()));
-            menu->show();
-            menu->setAttribute(Qt::WA_DeleteOnClose);
-        }
+        return;
     }
 }
 
@@ -893,99 +423,6 @@ void CircuitCanvas::AcceptDndEvent(QDropEvent* baseDndEvent)
     {
         baseDndEvent->acceptProposedAction();
     }
-}
-
-void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
-{
-    if (!item)
-    {
-        return;
-    }
-
-    emit item->closeDialogs();
-
-    const auto uid = item->GetId();
-    emit removeItem(uid);
-    m_idHandler.RemoveUid(item->GetId());
-
-    if (auto* circuitInput = qobject_cast<CircuitInput*>(item); circuitInput)
-    {
-        const auto mimeData = circuitInput->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Input, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitOutput = qobject_cast<CircuitOutput*>(item); circuitOutput)
-    {
-        const auto mimeData = circuitOutput->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Output, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else if (auto* circuitElement = qobject_cast<CircuitElement*>(item); circuitElement)
-    {
-        const auto mimeData = circuitElement->GetMimeData();
-        m_idHandler.RemoveOrderId(ItemType::Element, mimeData.orderId);
-
-        const auto& startPoints = mimeData.startingPoints;
-        for (const auto& startPoint : startPoints)
-        {
-            const auto& connIdSet = startPoint.connIds;
-            for (const auto& connId : connIdSet)
-            {
-                RemoveConnectionById(connId);
-            }
-        }
-
-        const auto& endPoints = mimeData.endingPoints;
-        for (const auto& endPoint : endPoints)
-        {
-            const auto connId = endPoint.connId;
-            RemoveConnectionById(connId);
-        }
-    }
-    else
-    {
-        throw std::runtime_error("ItemType is unknown, type = "
-                                 + std::to_string(item->GetItemType()));
-    }
-
-    QRect area(item->pos(), item->size());
-    m_areaManager.ClearArea(area);
-
-    item->close();
-
-    update();
 }
 
 void CircuitCanvas::RemoveConnectionById(quint64 connId)
@@ -1005,6 +442,47 @@ void CircuitCanvas::RemoveConnectionById(quint64 connId)
             item->RemoveConnectionId(connId);
         }
     }
+
+    update();
+}
+
+void CircuitCanvas::RemoveCircuitItem(BaseCircuitItem* item)
+{
+    if (!item)
+    {
+        return;
+    }
+
+    emit item->closeDialogs();
+
+    const auto uid = item->GetId();
+    emit removeItem(uid);
+    m_idHandler.RemoveUid(item->GetId());
+
+    const auto mimeData = item->GetBaseCircuitMimeData();
+    m_idHandler.RemoveOrderId(item->GetItemType(), mimeData.orderId);
+
+    for (const auto* endingConnector : item->GetEndingConnectors())
+    {
+        const auto connId = endingConnector->GetEndPoint().connId;
+        RemoveConnectionById(connId);
+    }
+
+    for (const auto* startingConnector : item->GetStartingConnectors())
+    {
+        const auto& connIdSet = startingConnector->GetStartPoint().connIds;
+        for (const auto& connId : connIdSet)
+        {
+            RemoveConnectionById(connId);
+        }
+    }
+
+    QRect area(item->pos(), item->size());
+    m_areaManager.ClearArea(area);
+
+    item->close();
+
+    update();
 }
 
 void CircuitCanvas::InsertConnection(quint64 startId,

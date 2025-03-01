@@ -1,9 +1,11 @@
 #include "CircuitOutput.hpp"
 #include "connectors/EndingConnector.hpp"
 #include "connectors/StartingConnector.hpp"
+#include "circuits/ItemRegistry.hpp"
 #include "Config.hpp"
 
 #include <QPainter>
+#include <QIODevice>
 
 CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
                              QWidget *parent)
@@ -23,6 +25,9 @@ CircuitOutput::CircuitOutput(const CircuitOutputMimeData& mimeData,
                                                 this);
     endingConnector->move(positionOffset);
     m_endingConnectors.at(0) = endingConnector;
+
+    connect(endingConnector, &BaseConnector::removeConnectionById,
+            this, &BaseCircuitItem::removeConnectionById);
 
     m_id = mimeData.id;
     m_orderId = mimeData.orderId;
@@ -52,6 +57,35 @@ void CircuitOutput::ConstructCircuitOutputFromJson(const RequiredItemMeta& reqMe
 
     auto* item = new CircuitOutput(mimeData, canvas);
     item->move(mimeData.itemPosition);
+}
+
+void CircuitOutput::ConstructCircuitOutputFromStream(const BaseCircuitItemMimeData& baseMimeData,
+                                                     QDataStream& /*additionalData*/,
+                                                     ItemRegistry* itemRegistry)
+{
+    auto* parentWidget = qobject_cast<QWidget*>(itemRegistry->parent());
+    if (!parentWidget)
+    {
+        return;
+    }
+
+    CircuitOutputMimeData mimeData;
+    mimeData.endingPoints = baseMimeData.endingPoints;
+    mimeData.startingPoints = baseMimeData.startingPoints;
+    mimeData.color = baseMimeData.color;
+    mimeData.itemSize = baseMimeData.itemSize;
+    mimeData.itemPosition = baseMimeData.itemPosition;
+    mimeData.id = baseMimeData.id;
+    mimeData.orderId = baseMimeData.orderId;
+
+    auto* item = new CircuitOutput(mimeData, parentWidget);
+    item->move(mimeData.itemPosition);
+
+    connect(item, &BaseCircuitItem::removeCircuitItem,
+            itemRegistry, &ItemRegistry::removeCircuitItem);
+
+    connect(item, &BaseCircuitItem::removeConnectionById,
+            itemRegistry, &ItemRegistry::removeConnectionById);
 }
 
 void CircuitOutput::DrawToPixmap()
@@ -143,4 +177,20 @@ CircuitOutputMimeData CircuitOutput::GetMimeData(QPoint eventPos) const
     }
 
     return mimeData;
+}
+
+void CircuitOutput::AddActionsToMenu(QMenu *menu)
+{
+    AddActionChangeColorToMenu(menu);
+    BaseCircuitItem::AddActionsToMenu(menu);
+}
+
+QByteArray CircuitOutput::WriteToByteArray(QPoint eventPos) const
+{
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    const auto mimeData = GetMimeData(eventPos);
+    dataStream << mimeData;
+
+    return itemData;
 }

@@ -10,7 +10,6 @@
 #include <QDragEnterEvent>
 
 DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
-                                                       int orderId,
                                                        QWidget *parent)
     : QDialog{parent}
     , m_offset{20, 20}
@@ -22,11 +21,11 @@ DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
     setAttribute(Qt::WA_DeleteOnClose);
 
     InitLayout();
-    InitElementItem(original, orderId);
+    InitElementItem(original);
 }
 
-void DialogDuplicateElementItem::SetOrderIdHint(quint64 itemType,
-                                                int orderId)
+void DialogDuplicateElementItem::SetOrderId(quint64 itemType,
+                                            int orderId)
 {
     if (m_newElement && itemType == ItemType::Element)
     {
@@ -126,11 +125,9 @@ void DialogDuplicateElementItem::InitLayout()
     setLayout(hLayout);
 }
 
-void DialogDuplicateElementItem::InitElementItem(CircuitElement* original,
-                                                 int orderId)
+void DialogDuplicateElementItem::InitElementItem(CircuitElement* original)
 {
     auto mimeData = original->GetMimeData({});
-    mimeData.orderId = orderId;
 
     m_newElement = new CircuitElement(mimeData, this, false);
     m_newElement->move(m_offset);

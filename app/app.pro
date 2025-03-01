@@ -14,12 +14,14 @@ SOURCES += \
     circuits/CircuitCanvas.cpp \
     circuits/CircuitCanvasDnd.cpp \
     circuits/IdHandler.cpp \
+    circuits/ItemRegistry.cpp \
     circuits/graph/DndBackup.cpp \
     circuits/graph/GraphDesigner.cpp \
     circuits/items/BaseCircuitItem.cpp \
     circuits/items/CircuitElement.cpp \
     circuits/items/CircuitInput.cpp \
     circuits/items/CircuitOutput.cpp \
+    circuits/items/connectors/BaseConnector.cpp \
     circuits/items/widgets/LogicVectorEdit.cpp \
     circuits/items/connectors/EndingConnector.cpp \
     circuits/items/connectors/StartingConnector.cpp \
@@ -53,6 +55,7 @@ HEADERS += \
     circuits/AreaManager.hpp \
     circuits/CircuitCanvas.hpp \
     circuits/IdHandler.hpp \
+    circuits/ItemRegistry.hpp \
     circuits/graph/DndBackup.hpp \
     circuits/graph/CommonTypes.hpp \
     circuits/graph/GraphDesigner.hpp \
@@ -60,6 +63,7 @@ HEADERS += \
     circuits/items/CircuitElement.hpp \
     circuits/items/CircuitInput.hpp \
     circuits/items/CircuitOutput.hpp \
+    circuits/items/connectors/BaseConnector.hpp \
     circuits/items/widgets/LogicVectorEdit.hpp \
     circuits/items/connectors/EndingConnector.hpp \
     circuits/items/connectors/StartingConnector.hpp \

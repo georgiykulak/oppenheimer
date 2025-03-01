@@ -11,11 +11,10 @@ class DialogDuplicateElementItem : public QDialog
     Q_OBJECT
 public:
     explicit DialogDuplicateElementItem(CircuitElement* original,
-                                        int orderId,
                                         QWidget *parent = nullptr);
 
 public slots:
-    void SetOrderIdHint(quint64 itemType, int orderId);
+    void SetOrderId(quint64 itemType, int orderId);
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -28,7 +27,7 @@ private:
     const QPoint m_offset;
 
     void InitLayout();
-    void InitElementItem(CircuitElement* original, int orderId);
+    void InitElementItem(CircuitElement* original);
 };
 
 #endif // DIALOGDUPLICATEELEMENTITEM_HPP
