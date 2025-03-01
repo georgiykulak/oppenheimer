@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-class MultilineNumberEdit;
+class QPlainTextEdit;
 class QScrollBar;
 
 class LogicVectorEdit : public QWidget
@@ -33,7 +33,7 @@ protected:
 private:
     static constexpr QSize m_margin = QSize(4, 4);
 
-    MultilineNumberEdit* m_textEdit;
+    QPlainTextEdit* m_textEdit;
     QScrollBar* m_scrollbar;
     QString m_currentText;
     std::size_t m_rows = 1;

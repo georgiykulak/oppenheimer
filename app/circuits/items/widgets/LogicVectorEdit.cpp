@@ -1,5 +1,4 @@
 #include "LogicVectorEdit.hpp"
-#include "MultilineNumberEdit.hpp"
 
 #include <QPlainTextEdit>
 #include <QScrollBar>
@@ -10,14 +9,25 @@
 LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     : QWidget{parent}
 {
-    m_textEdit = new MultilineNumberEdit(this);
-    m_textEdit->move(2, 2);
+    m_textEdit = new QPlainTextEdit(this);
 
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QString styleSheet;
+    styleSheet += "background-color: " + QColor(Qt::white).name();
+    styleSheet += ";color: " + QColor(Qt::black).name();
+    m_textEdit->setStyleSheet(styleSheet);
+
+    m_textEdit->setFrameStyle(QFrame::NoFrame);
+    m_textEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_textEdit->document()->setDocumentMargin(1);
+
+    m_textEdit->move(2, 2);
 
     connect(m_textEdit, &QPlainTextEdit::textChanged,
             this, &LogicVectorEdit::onTextChanged);
+
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     setAttribute(Qt::WA_DeleteOnClose);
     show();
