@@ -2,6 +2,7 @@
 #include "MultilineNumberEdit.hpp"
 
 #include <QPlainTextEdit>
+#include <QScrollBar>
 #include <QPainter>
 #include <QResizeEvent>
 #include <QDebug>
@@ -22,9 +23,10 @@ LogicVectorEdit::LogicVectorEdit(QWidget *parent)
     show();
 }
 
-void LogicVectorEdit::set_sb(QScrollBar *sb)
+void LogicVectorEdit::set_sb(QScrollBar* sb)
 {
-    m_textEdit->setVerticalScrollBar(sb);
+    m_scrollbar = sb;
+    m_textEdit->setVerticalScrollBar(m_scrollbar);
 }
 
 QSize LogicVectorEdit::sizeHint() const
@@ -42,6 +44,17 @@ void LogicVectorEdit::setMaximumDigitCount(int digitCount)
     m_digitCount = digitCount;
     // TODO: Use different approach, to avoid overflow
     m_maximumNumber = 1 << digitCount; // 2 ^ N, N = digitCount
+
+    // 6 - maximum input number of element to fit text in field
+    constexpr auto maximumDigitCount = 1 << 6;
+    if (m_digitCount > maximumDigitCount)
+    {
+        m_scrollbar->show();
+    }
+    else
+    {
+        m_scrollbar->hide();
+    }
 }
 
 void LogicVectorEdit::setNotation(bool isBinary)

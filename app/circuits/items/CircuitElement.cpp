@@ -498,6 +498,16 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
 
     m_textField = new LogicVectorEdit(this);
 
+    auto* scrollbar = new QScrollBar(this);
+    QString sbStyleSheet =
+        "QScrollBar:vertical {"
+        "width: 10px;}"
+        "QScrollBar::handle:vertical {"
+        "min-height: 20px;}";
+
+    scrollbar->setStyleSheet(sbStyleSheet);
+    m_textField->set_sb(scrollbar);
+
     const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
     m_textField->setMaximumDigitCount(vectorSize);
     m_textField->setAttribute(Qt::WA_DeleteOnClose);
@@ -547,16 +557,6 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
     vTextEditLayout->addWidget(m_textField);
     vTextEditLayout->addItem(hButtonLayout);
     vTextEditLayout->setSpacing(0);
-
-    auto* scrollbar = new QScrollBar(this);
-    QString sbStyleSheet =
-        "QScrollBar:vertical {"
-            "width: 10px;}"
-        "QScrollBar::handle:vertical {"
-            "min-height: 20px;}";
-
-    scrollbar->setStyleSheet(sbStyleSheet);
-    m_textField->set_sb(scrollbar);
 
     auto* scrollbarVSpacer
         = new QSpacerItem(0, 15,
