@@ -556,8 +556,15 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
             "min-height: 20px;}";
 
     scrollbar->setStyleSheet(sbStyleSheet);
-
     m_textField->set_sb(scrollbar);
+
+    auto* scrollbarVSpacer
+        = new QSpacerItem(0, 15,
+                          QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    auto* vScrollbarLayout = new QVBoxLayout;
+    vScrollbarLayout->addWidget(scrollbar);
+    vScrollbarLayout->addItem(scrollbarVSpacer);
 
     auto* gridVSpacer
         = new QSpacerItem(10, 0,
@@ -581,9 +588,9 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
         +---+---+--------+---+---+
       2 |   | # |........| ^ |   |
         | * | # |........| | | * |
-        |   | # |........| | |   |
-        | * | # |..      |[=]|   |
-        |   | # |[bin]###| v |   |
+        |   | # |........|[=]|   |
+        | * | # |..      | v |   |
+        |   | # |[bin]###|###|   |
         +---+---+--------+---+---+
       3 | # |   |########|   | # |
         +---+---+--------+---+---+
@@ -595,7 +602,7 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
     gridLayout->addWidget(orderIdLabel, 1, 2, Qt::AlignCenter);
     gridLayout->addItem(gridVSpacer, 2, 1);
     gridLayout->addLayout(vTextEditLayout, 2, 2);
-    gridLayout->addWidget(scrollbar, 2, 3, Qt::AlignLeft);
+    gridLayout->addLayout(vScrollbarLayout, 2, 3, Qt::AlignLeft);
     gridLayout->addItem(gridHSpacer, 3, 2);
     gridLayout->addItem(connectorLeftSpacer, 3, 0);
     gridLayout->addItem(connectorRightSpacer, 3, 4);
