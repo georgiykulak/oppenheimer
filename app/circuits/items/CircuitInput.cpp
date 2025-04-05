@@ -32,6 +32,8 @@ CircuitInput::CircuitInput(const CircuitInputMimeData& mimeData,
         m_color = mimeData.color;
     }
 
+    InitLayout(mimeData);
+
     CircuitInput::DrawToPixmap();
     show();
     setAttribute(Qt::WA_DeleteOnClose);
@@ -143,4 +145,18 @@ CircuitInputMimeData CircuitInput::GetMimeData(QPoint eventPos) const
     }
 
     return mimeData;
+}
+
+void CircuitInput::InitLayout(const CircuitInputMimeData &mimeData)
+{
+    // TODO:
+
+    // Input item layout
+    /*
+        +---+--------+---+
+        |   |####### |   |
+        | N |# MMMM #|[#]|
+        |   |####### |   |
+        +---+--------+---+
+    */
 }
