@@ -17,12 +17,11 @@ DialogDuplicateElementItem::DialogDuplicateElementItem(CircuitElement* original,
 {
     setWindowTitle("Duplicate");
     setAcceptDrops(false);
-    setMinimumSize(original->width() + 40, original->height() + m_offset.y() * 2);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 
-    InitLayout();
     InitElementItem(original, orderId);
+    InitLayout();
 }
 
 void DialogDuplicateElementItem::SetOrderIdHint(quint64 itemType,
@@ -115,11 +114,14 @@ void DialogDuplicateElementItem::mousePressEvent(QMouseEvent *event)
 void DialogDuplicateElementItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(150, 80);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
     m_itemFrame->setAttribute(Qt::WA_DeleteOnClose);
+
+    QHBoxLayout* circuitElementLayout = new QHBoxLayout;
+    circuitElementLayout->addWidget(m_newElement, 0, Qt::AlignCenter);
+    m_itemFrame->setLayout(circuitElementLayout);
 
     QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->addWidget(m_itemFrame);
@@ -133,5 +135,4 @@ void DialogDuplicateElementItem::InitElementItem(CircuitElement* original,
     mimeData.orderId = orderId;
 
     m_newElement = new CircuitElement(mimeData, this, false);
-    m_newElement->move(m_offset);
 }
