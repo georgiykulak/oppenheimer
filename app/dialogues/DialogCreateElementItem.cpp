@@ -21,14 +21,12 @@ DialogCreateElementItem::DialogCreateElementItem(QPoint pos,
 {
     setWindowTitle("New Element");
     setAcceptDrops(false);
-    m_minimumHeight = 150;
-    setMinimumSize(330, m_minimumHeight);
     move(pos);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 
-    InitLayout();
     InitElementItem(orderId);
+    InitLayout();
 }
 
 void DialogCreateElementItem::SetInputsNumber(int size)
@@ -134,23 +132,23 @@ void DialogCreateElementItem::mousePressEvent(QMouseEvent *event)
 void DialogCreateElementItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(150, 80);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
     m_itemFrame->setAttribute(Qt::WA_DeleteOnClose);
 
+    QHBoxLayout* circuitElementLayout = new QHBoxLayout;
+    circuitElementLayout->addWidget(m_newElement, 0, Qt::AlignCenter);
+    m_itemFrame->setLayout(circuitElementLayout);
+
     QLabel* enterIdLabel = new QLabel("Enter ID:", this);
-    enterIdLabel->setMinimumWidth(60);
-    enterIdLabel->setMaximumWidth(60);
     enterIdLabel->setAttribute(Qt::WA_DeleteOnClose);
 
     m_spinBox = new QSpinBox(this);
-    m_spinBox->setMinimumWidth(60);
-    m_spinBox->setMaximumWidth(60);
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
+    // TODO: Put inputs & outputs labels & boxes to grid layout
     QLabel* inputsLabel = new QLabel("Inputs", this);
     inputsLabel->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -165,7 +163,16 @@ void DialogCreateElementItem::InitLayout()
     m_outputsCount->setRange(1, 16);
     m_outputsCount->setAttribute(Qt::WA_DeleteOnClose);
 
-    QSpacerItem* spacer = new QSpacerItem(150, 90,
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newElement, &BaseCircuitItem::SetOrderId);
+
+    connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
+            this, &DialogCreateElementItem::SetInputsNumber);
+
+    connect(m_outputsCount, qOverload<int>(&QSpinBox::valueChanged),
+            this, &DialogCreateElementItem::SetOutputsNumber);
+
+    QSpacerItem* spacer = new QSpacerItem(5, 5,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
 
@@ -203,21 +210,12 @@ void DialogCreateElementItem::InitElementItem(int orderId)
                                             StartingPoint::IdsSet()});
 
     m_newElement = new CircuitElement(mimeData, this, false);
-    m_newElement->move(offset);
-
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            m_newElement, &BaseCircuitItem::SetOrderId);
-
-    connect(m_inputsCount, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateElementItem::SetInputsNumber);
-
-    connect(m_outputsCount, qOverload<int>(&QSpinBox::valueChanged),
-            this, &DialogCreateElementItem::SetOutputsNumber);
+    //m_newElement->move(offset);
 }
 
 void DialogCreateElementItem::ResizeWindow()
 {
-    // 40 == (CircuitElement()->height() - m_minimumHeight)
+    // 40 == (CircuitElement()->height() - minimum height)
     const auto itemHeight = m_newElement->height() + 40;
     resize(width(), itemHeight);
 }

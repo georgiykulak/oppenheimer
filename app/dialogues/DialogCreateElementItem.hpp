@@ -31,7 +31,6 @@ private:
     QSpinBox* m_inputsCount;
     QSpinBox* m_outputsCount;
     CircuitElement* m_newElement;
-    int m_minimumHeight;
 
     void InitLayout();
     void InitElementItem(int orderId);
