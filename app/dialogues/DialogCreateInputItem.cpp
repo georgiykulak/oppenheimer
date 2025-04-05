@@ -21,13 +21,12 @@ DialogCreateInputItem::DialogCreateInputItem(QPoint pos,
 {
     setWindowTitle("New Input");
     setAcceptDrops(false);
-    setMinimumSize(230, 70);
     move(pos);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 
-    InitLayout();
     InitInputItem(orderId);
+    InitLayout();
 }
 
 void DialogCreateInputItem::SetOrderIdHint(quint64 itemType, int orderId)
@@ -121,24 +120,27 @@ void DialogCreateInputItem::mousePressEvent(QMouseEvent *event)
 void DialogCreateInputItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(100, 40);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
     m_itemFrame->setAttribute(Qt::WA_DeleteOnClose);
 
+    QHBoxLayout* circuitInputLayout = new QHBoxLayout;
+    circuitInputLayout->addWidget(m_newInput, 0, Qt::AlignCenter);
+    m_itemFrame->setLayout(circuitInputLayout);
+
     QLabel* enterIdLabel = new QLabel("Enter ID:", this);
-    enterIdLabel->setMinimumWidth(60);
-    enterIdLabel->setMaximumWidth(60);
     enterIdLabel->setAttribute(Qt::WA_DeleteOnClose);
 
     m_spinBox = new QSpinBox(this);
-    m_spinBox->setMinimumWidth(60);
     m_spinBox->setMaximumWidth(60);
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
-    QSpacerItem* spacer = new QSpacerItem(120, 90,
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newInput, &BaseCircuitItem::SetOrderId);
+
+    QSpacerItem* spacer = new QSpacerItem(5, 5,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
 
@@ -163,8 +165,4 @@ void DialogCreateInputItem::InitInputItem(int orderId)
     mimeData.orderId = orderId;
 
     m_newInput = new CircuitInput(mimeData, this);
-    m_newInput->move(offset);
-
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            m_newInput, &BaseCircuitItem::SetOrderId);
 }
