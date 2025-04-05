@@ -54,8 +54,8 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    m_numberParam = mimeData.numberParam;
-    m_textField->setNumber(m_numberParam);
+    m_logicalVector = mimeData.logicalVector;
+    m_textField->setLogicalVector(m_logicalVector);
     m_notationSwitchButton->setText(mimeData.isNotationBinary ? "bin" : "dec");
     m_textField->setNotation(mimeData.isNotationBinary);
 
@@ -79,7 +79,7 @@ void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& req
     mimeData.id = reqMeta.id;
     mimeData.orderId = reqMeta.orderId;
 
-    mimeData.numberParam = itemMeta.at("numberParam").template get<int>();
+    mimeData.logicalVector = itemMeta.at("logicalVector").template get<std::vector<bool>>();
     mimeData.isNotationBinary =
         itemMeta.at("isNotationBinary").template get<bool>();
 
@@ -150,10 +150,10 @@ void CircuitElement::DrawToPixmap()
     }
 }
 
-void CircuitElement::SetNumberParameter(int numberParam)
+void CircuitElement::SetLogicalVector(const std::vector<bool>& lv)
 {
-    m_numberParam = numberParam;
-    m_textField->setNumber(numberParam);
+    m_logicalVector = lv;
+    m_textField->setLogicalVector(m_logicalVector);
 }
 
 void CircuitElement::SetValue(bool value)
@@ -165,7 +165,7 @@ json CircuitElement::GetJsonMeta() const
 {
     auto elementMeta = BaseCircuitItem::GetJsonMeta();
 
-    elementMeta["numberParam"] = m_numberParam;
+    elementMeta["logicalVector"] = m_logicalVector;
     elementMeta["isNotationBinary"] = m_textField->IsNotationBinary();
 
     return elementMeta;
@@ -179,8 +179,8 @@ void CircuitElement::SetInputsNumber(int size)
     const std::size_t number = size;
 
     const auto vectorSize = 1 << number; // 2 ^ N
-    m_textField->setMaximumDigitCount(vectorSize);
-    m_textField->setNumber(m_numberParam);
+    m_textField->setDigitCount(vectorSize);
+    m_textField->setLogicalVector(m_logicalVector);
 
     if (number > m_endingConnectors.size())
     {
@@ -445,9 +445,9 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     return mimeData;
 }
 
-bool CircuitElement::IsNumberParameterValid() const
+bool CircuitElement::IsLogicalVectorValid() const
 {
-    return m_numberParameterIsValid;
+    return m_logicalVectorIsValid;
 }
 
 template<class Connector, class Point>
@@ -509,21 +509,21 @@ void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
     m_textField->set_sb(scrollbar);
 
     const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
-    m_textField->setMaximumDigitCount(vectorSize);
+    m_textField->setDigitCount(vectorSize);
     m_textField->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(m_textField, &LogicVectorEdit::numberChangedAndValid,
-            this, [this](int number)
+    connect(m_textField, &LogicVectorEdit::logicalVectorChangedAndValid,
+            this, [this](const std::vector<bool>& validLV)
             {
-                m_numberParam = number;
-                emit setNumberParameterToElementItem(
-                    GetId(), m_numberParam
+                m_logicalVector = validLV;
+                emit setLogicalVectorToElementItem(
+                    GetId(), m_logicalVector
                     );
             });
     connect(m_textField, &LogicVectorEdit::setNumberValidity,
             this, [this](bool isValid)
             {
-                m_numberParameterIsValid = isValid;
+                m_logicalVectorIsValid = isValid;
             });
 
     m_notationSwitchButton = new QPushButton("bin", this);

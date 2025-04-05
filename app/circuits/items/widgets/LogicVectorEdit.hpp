@@ -16,13 +16,13 @@ public:
 
     QSize sizeHint() const override;
     void setEnabled(bool enable);
-    void setMaximumDigitCount(int digitCount);
-    void setNumber(int number);
+    void setDigitCount(int digitCount);
+    void setLogicalVector(const std::vector<bool>& lv);
     void setNotation(bool isBinary);
     bool IsNotationBinary() const;
 
 signals:
-    void numberChangedAndValid(int validNumber);
+    void logicalVectorChangedAndValid(const std::vector<bool>& validLV);
     void setNumberValidity(bool isValid);
     void textRowsCountChanged();
 
@@ -35,10 +35,10 @@ private:
 
     QPlainTextEdit* m_textEdit;
     QScrollBar* m_scrollbar;
-    QString m_currentText;
+    QString m_currentText = "<invalid>";
+    std::vector<bool> m_logicalVector;
     std::size_t m_rows = 1;
-    int m_digitCount = 1;
-    int m_maximumNumber = 1;
+    int m_digitCount = 2;
     bool m_valid = true;
     bool m_isBinaryNotation = true;
 

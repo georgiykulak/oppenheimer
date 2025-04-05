@@ -278,8 +278,8 @@ void CircuitCanvas::ProcessDropEvent(QDropEvent *event)
             CircuitElement *cElement = new CircuitElement(mimeData, this);
             cElement->move(mimeData.itemPosition);
 
-            connect(cElement, &CircuitElement::setNumberParameterToElementItem,
-                    this, &CircuitCanvas::setNumberParameterToElementItem);
+            connect(cElement, &CircuitElement::setLogicalVectorToElementItem,
+                    this, &CircuitCanvas::setLogicalVectorToElementItem);
 
             // To redraw connections
             update();
@@ -563,7 +563,7 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
             QAction* actionSimulate = new QAction("Simulate", this);
             connect(actionSimulate, &QAction::triggered,
                     this, [this, circuitElement] (bool) {
-                        if (circuitElement->IsNumberParameterValid())
+                        if (circuitElement->IsLogicalVectorValid())
                         {
                             emit startFunctionalFaultSimulation(circuitElement->GetId());
                         }
@@ -696,7 +696,12 @@ void CircuitCanvas::ProcessMousePressEvent(QMouseEvent *event)
                                             }
                                         }
 
-                                        circuitElement->SetNumberParameter(0);
+                                        std::vector<bool> lv(1 << circuitElement->GetEndingConnectors().size());
+                                        for (std::size_t i = 0; i < lv.size(); ++i)
+                                        {
+                                            lv[i] = false;
+                                        }
+                                        circuitElement->SetLogicalVector(lv);
                                         emit changeElementItemInputsSize(circuitElement->GetId(),
                                                                          circuitElement->GetEndingConnectors().size());
                                     }

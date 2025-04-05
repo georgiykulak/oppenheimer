@@ -28,7 +28,7 @@ public slots:
     void ChangeElementItemInputsSize(quint64 id, std::size_t inputsSize);
     void ClearAllItems();
     void AddNewConnection(quint64 idStart, quint64 idEnd);
-    void SetNumberParameterToElementItem(quint64 id, int numParam);
+    void SetLogicalVectorToElementItem(quint64 id, const std::vector<bool>& lv);
     void StartFunctionalFaultSimulation(quint64 elementId);
 
 private:

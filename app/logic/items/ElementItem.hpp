@@ -16,14 +16,14 @@ public:
     virtual int GetOrderId() const override;
     virtual void SetValue(bool value) override;
     virtual bool GetValue() const override;
-    virtual void SetNumParam(int numParam) override;
-    virtual int GetNumParam() const override;
+    virtual void SetLogicalVector(const std::vector<bool>& lv) override;
+    virtual const std::vector<bool>& GetLogicalVector() const override;
     virtual void SetInputsSize(std::size_t inputsSize) override;
     virtual std::size_t GetInputsSize() const override;
 
 private:
     int m_orderId = -1;
-    int m_numberParam = 0;
+    std::vector<bool> m_logicalVector;
     bool m_outputValue = 0;
     std::size_t m_inputsSize;
 };

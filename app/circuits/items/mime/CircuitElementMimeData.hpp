@@ -7,7 +7,7 @@ struct CircuitElementMimeData : public BaseCircuitItemMimeData
 {
     CircuitElementMimeData(QPoint eventPos = {});
 
-    int numberParam = 0;
+    std::vector<bool> logicalVector;
     bool isNotationBinary = true;
 };
 
