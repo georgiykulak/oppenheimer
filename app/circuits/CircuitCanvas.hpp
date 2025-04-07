@@ -18,7 +18,7 @@ public:
 
 signals:
     // incoming signals
-    void setNumberParameterToElementItem(quint64 id, int numParam);
+    void setLogicalVectorToElementItem(quint64 id, const std::vector<bool>& lv);
 
     // outgoing signals
     void addNewItem(quint64 itemType, quint64 id, std::size_t inputsSize);

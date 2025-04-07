@@ -25,7 +25,7 @@ public:
 
     virtual void DrawToPixmap() override;
 
-    void SetNumberParameter(int numParam);
+    void SetLogicalVector(const std::vector<bool>& lv);
     // Warning: Not used
     virtual void SetValue(bool value) override;
     virtual json GetJsonMeta() const override;
@@ -39,10 +39,10 @@ public:
 
     CircuitElementMimeData GetMimeData(QPoint eventPos = {}) const;
 
-    bool IsNumberParameterValid() const;
+    bool IsLogicalVectorValid() const;
 
 signals:
-    void setNumberParameterToElementItem(quint64 id, int numParam);
+    void setLogicalVectorToElementItem(quint64 id, const std::vector<bool>& lv);
     void inputsNumber(int value);
     void outputsNumber(int value);
     void tryToRebookArea(int inputsNumber,
@@ -56,13 +56,16 @@ private:
 
     LogicVectorEdit* m_textField;
     QPushButton* m_notationSwitchButton;
+    std::vector<bool> m_logicalVector;
 
     int m_minimumHeight;
     int m_minimumYShift;
 
-    int m_numberParam = 0;
-    bool m_numberParameterIsValid = true;
+    bool m_logicalVectorIsValid = true;
     bool m_outputValue = 0;
+
+    void InitConnectors(const CircuitElementMimeData& mimeData);
+    void InitLayout(const CircuitElementMimeData& mimeData);
 };
 
 #endif // CIRCUITELEMENT_HPP

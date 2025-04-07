@@ -26,14 +26,14 @@ bool ElementItem::GetValue() const
     return m_outputValue;
 }
 
-void ElementItem::SetNumParam(int numParam)
+void ElementItem::SetLogicalVector(const std::vector<bool>& lv)
 {
-    m_numberParam = numParam;
+    m_logicalVector = lv;
 }
 
-int ElementItem::GetNumParam() const
+const std::vector<bool>& ElementItem::GetLogicalVector() const
 {
-    return m_numberParam;
+    return m_logicalVector;
 }
 
 void ElementItem::SetInputsSize(std::size_t inputsSize)

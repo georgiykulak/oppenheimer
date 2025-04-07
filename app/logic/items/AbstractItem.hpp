@@ -18,8 +18,13 @@ public:
     virtual int GetOrderId() const            { WarnNotImplemented(-1); }
     virtual void SetValue(bool)               { WarnNotImplemented();   }
     virtual bool GetValue() const             { WarnNotImplemented(0);  }
-    virtual void SetNumParam(int)             { WarnNotImplemented();   }
-    virtual int GetNumParam() const           { WarnNotImplemented(-1); }
+    virtual void SetLogicalVector(const std::vector<bool>&)
+    { WarnNotImplemented(); }
+    virtual const std::vector<bool>& GetLogicalVector() const
+    {
+        static std::vector<bool> vec;
+        WarnNotImplemented(vec);
+    }
     virtual void SetInputsSize(std::size_t)   { WarnNotImplemented();   }
     virtual std::size_t GetInputsSize() const { WarnNotImplemented(0);  }
 };

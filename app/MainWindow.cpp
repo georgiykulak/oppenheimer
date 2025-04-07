@@ -47,8 +47,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::saveAsTriggered,
             m_canvas, &CircuitCanvas::NewSavingFile);
 
-    connect(m_canvas, &CircuitCanvas::setNumberParameterToElementItem,
-            m_logicController, &LogicController::SetNumberParameterToElementItem);
+    connect(m_canvas, &CircuitCanvas::setLogicalVectorToElementItem,
+            m_logicController, &LogicController::SetLogicalVectorToElementItem);
 
     connect(m_canvas, &CircuitCanvas::startFunctionalFaultSimulation,
             m_logicController, &LogicController::StartFunctionalFaultSimulation);

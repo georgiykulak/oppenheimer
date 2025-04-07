@@ -5,7 +5,12 @@
 #include "Config.hpp"
 
 #include <QPainter>
+#include <QLabel>
+#include <QScrollBar>
 #include <QPushButton>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGridLayout>
 
 CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
                                QWidget *parent,
@@ -26,7 +31,7 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         const auto realHeight = m_minimumHeight + m_offsetBetweenConnection *
                            (std::max(mimeData.endingPoints.size(),
                                      mimeData.startingPoints.size()) - 1);
-        size = QSize(110, realHeight);
+        size = QSize(120, realHeight);
     }
     setFixedSize(size);
     m_pixmap = QPixmap(this->size());
@@ -36,101 +41,6 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
     pixmap.fill(QColor(Qt::transparent));
     QPainter painter(&pixmap);
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    int i = 0;
-    for (const auto& endPoint : mimeData.endingPoints)
-    {
-        const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
-        QPoint positionOffset(3, yShift - 4);
-        EndingConnector* endingConnector =
-            new EndingConnector(endPoint, positionOffset, this);
-
-        endingConnector->move(positionOffset);
-        endingConnector->update();
-        endingConnector->show();
-        endingConnector->setAttribute(Qt::WA_DeleteOnClose);
-
-        m_endingConnectors.push_back(endingConnector);
-    }
-
-    i = 0;
-    for (const auto& startPoint : mimeData.startingPoints)
-    {
-        const int yShift = m_minimumYShift + m_offsetBetweenConnection * i++;
-        QPoint positionOffset(95, yShift - 4);
-        StartingConnector* startingConnector =
-            new StartingConnector(startPoint, positionOffset, this);
-
-        startingConnector->move(positionOffset);
-        startingConnector->update();
-        startingConnector->show();
-        startingConnector->setAttribute(Qt::WA_DeleteOnClose);
-
-        m_startingConnectors.push_back(startingConnector);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    m_textField = new LogicVectorEdit(this);
-    m_textField->setMinimumSize(60, 30);
-    m_textField->setMaximumSize(60, 30);
-    m_textField->move(25, 45);
-    m_textField->show();
-    m_textField->setEnabled(numParamEnabled);
-
-    const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
-    m_textField->setMaximumDigitCount(vectorSize);
-    m_textField->setAttribute(Qt::WA_DeleteOnClose);
-
-    connect(m_textField, &LogicVectorEdit::numberChangedAndValid,
-            this, [this](int number)
-            {
-                m_numberParam = number;
-                emit setNumberParameterToElementItem(
-                    GetId(), m_numberParam
-                );
-            });
-    connect(m_textField, &LogicVectorEdit::setNumberValidity,
-            this, [this](bool isValid)
-            {
-                m_numberParameterIsValid = isValid;
-            });
-    connect(m_textField, &LogicVectorEdit::textRowsCountChanged,
-            this, [this]()
-            {
-                auto lePos = m_textField->pos();
-                m_notationSwitchButton->move(lePos.x(),
-                                             lePos.y() + m_textField->height());
-
-                update();
-            });
-
-    m_notationSwitchButton = new QPushButton("bin", this);
-    m_notationSwitchButton->setMinimumSize(30, 15);
-    m_notationSwitchButton->setMaximumSize(30, 15);
-    auto lePos = m_textField->pos();
-    m_notationSwitchButton->move(lePos.x(), lePos.y() + m_textField->height());
-    m_textField->show();
-    m_textField->setAttribute(Qt::WA_DeleteOnClose);
-
-    connect(m_notationSwitchButton, &QAbstractButton::released,
-            this, [this](){
-                if (m_textField->IsNotationBinary())
-                {
-                    m_notationSwitchButton->setText("dec");
-                    m_textField->setNotation(false);
-                }
-                else
-                {
-                    m_notationSwitchButton->setText("bin");
-                    m_textField->setNotation(true);
-                }
-            });
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-
     m_id = mimeData.id;
     m_orderId = mimeData.orderId;
     m_outputValue = mimeData.value;
@@ -139,10 +49,17 @@ CircuitElement::CircuitElement(const CircuitElementMimeData& mimeData,
         m_color = mimeData.color;
     }
 
-    m_numberParam = mimeData.numberParam;
-    m_textField->setNumber(m_numberParam);
+    InitConnectors(mimeData);
+    InitLayout(mimeData);
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
+    m_logicalVector = mimeData.logicalVector;
+    m_textField->setLogicalVector(m_logicalVector);
     m_notationSwitchButton->setText(mimeData.isNotationBinary ? "bin" : "dec");
     m_textField->setNotation(mimeData.isNotationBinary);
+
+    m_textField->setEnabled(numParamEnabled);
 
     CircuitElement::DrawToPixmap();
     show();
@@ -162,7 +79,7 @@ void CircuitElement::ConstructCircuitElementFromJson(const RequiredItemMeta& req
     mimeData.id = reqMeta.id;
     mimeData.orderId = reqMeta.orderId;
 
-    mimeData.numberParam = itemMeta.at("numberParam").template get<int>();
+    mimeData.logicalVector = itemMeta.at("logicalVector").template get<std::vector<bool>>();
     mimeData.isNotationBinary =
         itemMeta.at("isNotationBinary").template get<bool>();
 
@@ -175,13 +92,13 @@ void CircuitElement::DrawToPixmap()
     QPainter painter(&m_pixmap);
 
     QPen mPen;
+    const int borderWidth = 2;
+    int wBig = width() - 12;
+    int hBig = height() - borderWidth;
     mPen.setColor(m_color);
     painter.setPen(mPen);
     painter.setBrush(m_color);
-    int wBig = 90;
-    int hBig = height();
-    const int borderWidth = 2;
-    painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
+    painter.drawRoundedRect(6, borderWidth - 1, wBig, hBig, 10, 10, Qt::AbsoluteSize);
 
 #ifdef DRAW_ELEMENT_ITEM_BORDERS
     mPen.setWidth(borderWidth);
@@ -190,9 +107,9 @@ void CircuitElement::DrawToPixmap()
     painter.drawRoundedRect(10, borderWidth - 1, wBig, hBig - borderWidth, 10, 10, Qt::AbsoluteSize);
 #endif
 
-    int xStartText = 25;
+    /*int xStartText = 25;
     int yStartText = 45;
-    int wSmall = 60;
+    int wSmall = m_textField->width();
     int hSmall = m_textField->height();
     mPen.setWidth(2);
     mPen.setColor(Qt::darkGray);
@@ -204,21 +121,21 @@ void CircuitElement::DrawToPixmap()
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
     QString strParam = "...";
-    painter.drawText(QRect(xStartText, yStartText, wSmall, hSmall), Qt::AlignCenter, strParam);
+    painter.drawText(QRect(xStartText, yStartText, wSmall, hSmall), Qt::AlignCenter, strParam);*/
 
-    mPen.setColor(Qt::black);
+    /*mPen.setColor(Qt::black);
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
     QString strVal;
     strVal.setNum(m_outputValue);
-    painter.drawText(QRect(80, 10, 10, 15), Qt::AlignCenter, strVal);
+    painter.drawText(QRect(100, 10, 10, 15), Qt::AlignCenter, strVal);*/
 
-    mPen.setColor(Qt::black);
+    /*mPen.setColor(Qt::black);
     painter.setPen(mPen);
     painter.setFont(QFont("Arial"));
     QString strNum;
     strNum.setNum(m_orderId);
-    painter.drawText(QRect(30, 10, 50, 30), Qt::AlignCenter, strNum);
+    painter.drawText(QRect(30, 10, 50, 30), Qt::AlignCenter, strNum);*/
 
     for (auto* endingConnector : m_endingConnectors)
     {
@@ -233,10 +150,10 @@ void CircuitElement::DrawToPixmap()
     }
 }
 
-void CircuitElement::SetNumberParameter(int numberParam)
+void CircuitElement::SetLogicalVector(const std::vector<bool>& lv)
 {
-    m_numberParam = numberParam;
-    m_textField->setNumber(numberParam);
+    m_logicalVector = lv;
+    m_textField->setLogicalVector(m_logicalVector);
 }
 
 void CircuitElement::SetValue(bool value)
@@ -248,7 +165,7 @@ json CircuitElement::GetJsonMeta() const
 {
     auto elementMeta = BaseCircuitItem::GetJsonMeta();
 
-    elementMeta["numberParam"] = m_numberParam;
+    elementMeta["logicalVector"] = m_logicalVector;
     elementMeta["isNotationBinary"] = m_textField->IsNotationBinary();
 
     return elementMeta;
@@ -262,18 +179,12 @@ void CircuitElement::SetInputsNumber(int size)
     const std::size_t number = size;
 
     const auto vectorSize = 1 << number; // 2 ^ N
-    m_textField->setMaximumDigitCount(vectorSize);
-    m_textField->setNumber(m_numberParam);
-    const auto calculatedHeight =
-        25 + m_textField->height() + m_notationSwitchButton->height() + 25;
+    m_textField->setDigitCount(vectorSize);
+    m_textField->setLogicalVector(m_logicalVector);
 
     if (number > m_endingConnectors.size())
     {
         int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
-        if (calculatedHeight > newHeight)
-        {
-            newHeight = calculatedHeight;
-        }
 
         if (newHeight > height())
         {
@@ -295,7 +206,7 @@ void CircuitElement::SetInputsNumber(int size)
             EndingPoint endPoint = {shift, 0};
 
             const int yShift = m_minimumYShift + m_offsetBetweenConnection * i;
-            QPoint positionOffset(3, yShift - 4);
+            QPoint positionOffset(0, yShift - 4);
             EndingConnector* endingConnector =
                 new EndingConnector(endPoint, positionOffset, this);
 
@@ -317,10 +228,6 @@ void CircuitElement::SetInputsNumber(int size)
         m_endingConnectors.resize(number);
 
         int newHeight = m_minimumHeight + (number - 1) * m_offsetBetweenConnection;
-        if (calculatedHeight > newHeight)
-        {
-            newHeight = calculatedHeight;
-        }
 
         if (newHeight < height() && number >= m_startingConnectors.size())
         {
@@ -399,7 +306,7 @@ void CircuitElement::SetOutputsNumber(int size)
             StartingPoint startPoint = {shift, StartingPoint::IdsSet()};
 
             const int yShift = m_minimumYShift + m_offsetBetweenConnection * i;
-            QPoint positionOffset(95, yShift - 4);
+            QPoint positionOffset(width() - 12, yShift - 4);
             StartingConnector* startingConnector =
                 new StartingConnector(startPoint, positionOffset, this);
 
@@ -538,7 +445,169 @@ CircuitElementMimeData CircuitElement::GetMimeData(QPoint eventPos) const
     return mimeData;
 }
 
-bool CircuitElement::IsNumberParameterValid() const
+bool CircuitElement::IsLogicalVectorValid() const
 {
-    return m_numberParameterIsValid;
+    return m_logicalVectorIsValid;
+}
+
+template<class Connector, class Point>
+void InitConnectorsOnSide(CircuitElement* parent,
+                          std::vector<Connector*>& connectors,
+                          const std::vector<Point>& points,
+                          const int minimumYShift,
+                          const int connectorOffset,
+                          const int xOffset)
+{
+    int i = 0;
+    for (const auto& point : points)
+    {
+        const int yShift = minimumYShift + connectorOffset * i++;
+        QPoint positionOffset(xOffset, yShift - 4);
+        Connector* connector =
+            new Connector(point, positionOffset, parent);
+
+        connector->move(positionOffset);
+        connector->update();
+        connector->show();
+        connector->setAttribute(Qt::WA_DeleteOnClose);
+
+        connectors.push_back(connector);
+    }
+}
+
+void CircuitElement::InitConnectors(const CircuitElementMimeData& mimeData)
+{
+    InitConnectorsOnSide(this, m_endingConnectors, mimeData.endingPoints,
+                         m_minimumYShift, m_offsetBetweenConnection, 0);
+
+    InitConnectorsOnSide(this, m_startingConnectors, mimeData.startingPoints,
+                         m_minimumYShift, m_offsetBetweenConnection, width() - 12);
+}
+
+void CircuitElement::InitLayout(const CircuitElementMimeData& mimeData)
+{
+    auto* outputValueLabel = new QLabel("0", this);
+    QPalette palette1 = outputValueLabel->palette();
+    palette1.setColor(QPalette::WindowText, Qt::black);
+    outputValueLabel->setPalette(palette1);
+
+    auto* orderIdLabel = new QLabel(QString::number(m_orderId), this);
+    QPalette palette2 = orderIdLabel->palette();
+    palette2.setColor(QPalette::WindowText, Qt::black);
+    orderIdLabel->setPalette(palette2);
+
+    m_textField = new LogicVectorEdit(this);
+
+    auto* scrollbar = new QScrollBar(this);
+    QString sbStyleSheet =
+        "QScrollBar:vertical {"
+        "width: 10px;}"
+        "QScrollBar::handle:vertical {"
+        "min-height: 20px;}";
+
+    scrollbar->setStyleSheet(sbStyleSheet);
+    m_textField->set_sb(scrollbar);
+
+    const auto vectorSize = 1 << mimeData.endingPoints.size(); // 2 ^ N
+    m_textField->setDigitCount(vectorSize);
+    m_textField->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(m_textField, &LogicVectorEdit::logicalVectorChangedAndValid,
+            this, [this](const std::vector<bool>& validLV)
+            {
+                m_logicalVector = validLV;
+                emit setLogicalVectorToElementItem(
+                    GetId(), m_logicalVector
+                    );
+            });
+    connect(m_textField, &LogicVectorEdit::setNumberValidity,
+            this, [this](bool isValid)
+            {
+                m_logicalVectorIsValid = isValid;
+            });
+
+    m_notationSwitchButton = new QPushButton("bin", this);
+    m_notationSwitchButton->setMinimumSize(30, 15);
+    m_notationSwitchButton->setMaximumSize(30, 15);
+
+    connect(m_notationSwitchButton, &QAbstractButton::released,
+            this, [this](){
+                if (m_textField->IsNotationBinary())
+                {
+                    m_notationSwitchButton->setText("dec");
+                    m_textField->setNotation(false);
+                }
+                else
+                {
+                    m_notationSwitchButton->setText("bin");
+                    m_textField->setNotation(true);
+                }
+            });
+
+    auto* buttonHSpacer
+        = new QSpacerItem(20, 0,
+                QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    auto* vTextEditLayout = new QVBoxLayout;
+    auto* hButtonLayout = new QHBoxLayout;
+
+    hButtonLayout->addWidget(m_notationSwitchButton);
+    hButtonLayout->addItem(buttonHSpacer);
+
+    vTextEditLayout->addWidget(m_textField);
+    vTextEditLayout->addItem(hButtonLayout);
+    vTextEditLayout->setSpacing(0);
+
+    auto* scrollbarVSpacer
+        = new QSpacerItem(0, 15,
+                          QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    auto* vScrollbarLayout = new QVBoxLayout;
+    vScrollbarLayout->addWidget(scrollbar);
+    vScrollbarLayout->addItem(scrollbarVSpacer);
+
+    auto* gridVSpacer
+        = new QSpacerItem(10, 0,
+                QSizePolicy::Fixed, QSizePolicy::Expanding);
+    auto* gridHSpacer = new QSpacerItem(0, 15,
+                                        QSizePolicy::Expanding,
+                                        QSizePolicy::Minimum);
+    auto* connectorLeftSpacer = new QSpacerItem(12, 15,
+                QSizePolicy::Fixed, QSizePolicy::Minimum);
+    auto* connectorRightSpacer = new QSpacerItem(12, 15,
+                QSizePolicy::Fixed, QSizePolicy::Minimum);
+
+    // width 130
+    //  <12><10><><10><12>
+    // (4 rows x 3 columns)
+    /*    0   1     2      3   4
+        +---+---+--------+---+---+
+      0 |   |   |        | x |   |
+        +---+---+--------+---+---+
+      1 |   |   |  yyyy  |   |   |
+        +---+---+--------+---+---+
+      2 |   | # |........| ^ |   |
+        | * | # |........| | | * |
+        |   | # |........|[=]|   |
+        | * | # |..      | v |   |
+        |   | # |[bin]###|###|   |
+        +---+---+--------+---+---+
+      3 | # |   |########|   | # |
+        +---+---+--------+---+---+
+    */
+    auto* gridLayout = new QGridLayout;
+
+    gridLayout->addWidget(outputValueLabel, 0, 3,
+                          Qt::AlignLeft | Qt::AlignBottom);
+    gridLayout->addWidget(orderIdLabel, 1, 2, Qt::AlignCenter);
+    gridLayout->addItem(gridVSpacer, 2, 1);
+    gridLayout->addLayout(vTextEditLayout, 2, 2);
+    gridLayout->addLayout(vScrollbarLayout, 2, 3, Qt::AlignLeft);
+    gridLayout->addItem(gridHSpacer, 3, 2);
+    gridLayout->addItem(connectorLeftSpacer, 3, 0);
+    gridLayout->addItem(connectorRightSpacer, 3, 4);
+    gridLayout->setSpacing(0);
+    gridLayout->setContentsMargins(0, 0, 0, 0);
+
+    setLayout(gridLayout);
 }

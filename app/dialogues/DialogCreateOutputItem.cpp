@@ -21,13 +21,12 @@ DialogCreateOutputItem::DialogCreateOutputItem(QPoint pos,
 {
     setWindowTitle("New Output");
     setAcceptDrops(false);
-    setMinimumSize(230, 70);
     move(pos);
     show();
     setAttribute(Qt::WA_DeleteOnClose);
 
-    InitLayout();
     InitOutputItem(orderId);
+    InitLayout();
 }
 
 void DialogCreateOutputItem::SetOrderIdHint(quint64 itemType, int orderId)
@@ -121,24 +120,27 @@ void DialogCreateOutputItem::mousePressEvent(QMouseEvent *event)
 void DialogCreateOutputItem::InitLayout()
 {
     m_itemFrame = new QFrame(this);
-    m_itemFrame->setMinimumSize(100, 40);
     m_itemFrame->setFrameShape(QFrame::Box);
     m_itemFrame->setFrameShadow(QFrame::Raised);
     m_itemFrame->setLineWidth(2);
     m_itemFrame->setAttribute(Qt::WA_DeleteOnClose);
 
+    QHBoxLayout* circuitOutputLayout = new QHBoxLayout;
+    circuitOutputLayout->addWidget(m_newOutput, 0, Qt::AlignCenter);
+    m_itemFrame->setLayout(circuitOutputLayout);
+
     QLabel* enterIdLabel = new QLabel("Enter ID:", this);
-    enterIdLabel->setMinimumWidth(60);
-    enterIdLabel->setMaximumWidth(60);
     enterIdLabel->setAttribute(Qt::WA_DeleteOnClose);
 
     m_spinBox = new QSpinBox(this);
-    m_spinBox->setMinimumWidth(60);
     m_spinBox->setMaximumWidth(60);
     m_spinBox->setMaximum(9999);
     m_spinBox->setAttribute(Qt::WA_DeleteOnClose);
 
-    QSpacerItem* spacer = new QSpacerItem(120, 90,
+    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
+            m_newOutput, &BaseCircuitItem::SetOrderId);
+
+    QSpacerItem* spacer = new QSpacerItem(5, 5,
                                           QSizePolicy::Minimum,
                                           QSizePolicy::Expanding);
 
@@ -163,8 +165,4 @@ void DialogCreateOutputItem::InitOutputItem(int orderId)
     mimeData.orderId = orderId;
 
     m_newOutput = new CircuitOutput(mimeData, this);
-    m_newOutput->move(offset);
-
-    connect(m_spinBox, qOverload<int>(&QSpinBox::valueChanged),
-            m_newOutput, &BaseCircuitItem::SetOrderId);
 }

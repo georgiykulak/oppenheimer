@@ -77,7 +77,12 @@ void LogicController::ChangeElementItemInputsSize(quint64 id, std::size_t inputs
      && element->second->GetInputsSize() != inputsSize)
     {
         element->second->SetInputsSize(inputsSize);
-        element->second->SetNumParam(0);
+        std::vector<bool> lv(inputsSize);
+        for (std::size_t i = 0; i < lv.size(); ++i)
+        {
+            lv[i] = false;
+        }
+        element->second->SetLogicalVector(lv);
     }
 }
 
@@ -102,16 +107,16 @@ void LogicController::AddNewConnection(quint64 idStart, quint64 idEnd)
     m_conectionGraph.push_back(connection);
 }
 
-void LogicController::SetNumberParameterToElementItem(quint64 id, int numParam)
+void LogicController::SetLogicalVectorToElementItem(quint64 id, const std::vector<bool>& lv)
 {
     qDebug() << "Set number parameter: size =" << m_items.size() << "id =" << id
-             << "type =" << m_items.at(id)->GetItemType() << "numParam =" << numParam;
+             << "type =" << m_items.at(id)->GetItemType() << "logical vector size =" << lv.size();
 
     auto element = m_items.find(id);
     if (element != m_items.end()
      && element->second->GetItemType() == ItemType::Element)
     {
-        element->second->SetNumParam(numParam);
+        element->second->SetLogicalVector(lv);
     }
 }
 
@@ -130,19 +135,19 @@ void LogicController::StartFunctionalFaultSimulation(quint64 elementId)
     qDebug() << "LogicController: Starting functional fault simulation for "
                 "element with id =" << elementId;
 
-    const auto qNumber = element->second->GetNumParam();
+    const auto qLogicalVector = element->second->GetLogicalVector();
     const auto inputsSize = element->second->GetInputsSize();
     const auto inputVectorSize = 1 << inputsSize; // 2 ^ N, N = inputsSize
 
     DHQTable dhqTable;
+    dhqTable.qVector = qLogicalVector;
 
     m_simulator->SimulateFunctionalFault(inputVectorSize,
-                                         qNumber,
+                                         qLogicalVector,
                                          dhqTable.qMatrix,
                                          dhqTable.hMatrix,
                                          dhqTable.dMatrix,
-                                         dhqTable.truthTable,
-                                         dhqTable.qVector);
+                                         dhqTable.truthTable);
 
     emit presentDHQTable(dhqTable);
 }

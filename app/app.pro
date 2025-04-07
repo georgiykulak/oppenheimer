@@ -3,6 +3,7 @@ QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 QMAKE_CXXFLAGS += -std=c++2a
+CONFIG += c++2a
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -27,7 +28,6 @@ SOURCES += \
     circuits/items/mime/CircuitElementMimeData.cpp \
     circuits/items/mime/CircuitInputMimeData.cpp \
     circuits/items/mime/CircuitOutputMimeData.cpp \
-    circuits/items/widgets/MultilineNumberEdit.cpp \
     config/ProjectConfigurationManager.cpp \
     dialogues/DialogCreateElementItem.cpp \
     dialogues/DialogCreateInputItem.cpp \
@@ -67,7 +67,6 @@ HEADERS += \
     circuits/items/mime/CircuitElementMimeData.hpp \
     circuits/items/mime/CircuitInputMimeData.hpp \
     circuits/items/mime/CircuitOutputMimeData.hpp \
-    circuits/items/widgets/MultilineNumberEdit.hpp \
     config/ProjectConfigurationManager.hpp \
     dialogues/DialogCreateElementItem.hpp \
     dialogues/DialogCreateInputItem.hpp \

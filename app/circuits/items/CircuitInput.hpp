@@ -28,6 +28,8 @@ public:
 
 private:
     bool m_inputValue = 0;
+
+    void InitLayout(const CircuitInputMimeData& mimeData);
 };
 
 #endif // CIRCUITINPUT_HPP
