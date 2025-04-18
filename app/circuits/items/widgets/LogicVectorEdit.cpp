@@ -210,6 +210,7 @@ void LogicVectorEdit::onTextChanged()
                 }
             }
         }
+        else
         {
             valid = false;
         }
